@@ -2,38 +2,33 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Student Login</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Hub</title>
 <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<div class="container">
+<div class="login-container">
 
-<h2>Student Registration</h2>
+<h1 class="title">🎓 Student Hub</h1>
+<p class="subtitle">Connect with your classmates</p>
 
-<form id="registerForm">
+<input type="text" id="name" placeholder="Full Name">
 
-<input type="text" placeholder="Full Name" id="name" required>
+<input type="text" id="roll" placeholder="Roll Number">
 
-<input type="text" placeholder="Roll Number" id="roll" required>
+<input type="text" id="nickname" placeholder="Nickname (optional)">
 
-<input type="text" placeholder="Nickname (Optional)" id="nick">
+<input type="email" id="email" placeholder="College Email">
 
-<div class="emailBox">
-<input type="email" placeholder="Email" id="email" required>
-<button type="button" onclick="verifyEmail()">Verify</button>
-</div>
+<button class="verify">Verify Email</button>
 
-<button type="submit">Submit for Approval</button>
+<button class="login">Submit for Approval</button>
 
-</form>
-
-<p id="message"></p>
+<p class="note">Admin approval required before entering the app</p>
 
 </div>
-
-<script src="script.js"></script>
 
 </body>
 </html>
