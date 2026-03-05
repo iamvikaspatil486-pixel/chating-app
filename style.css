@@ -1,66 +1,18 @@
-body {
-  font-family: Arial, sans-serif;
-  background: #f2f2f2;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  margin: 0;
-}
-
-.hidden {
-  display: none;
-}
-
-#login-container,
-#chat-container {
-  background: white;
-  padding: 30px;
-  border-radius: 10px;
-  width: 350px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
-}
-
-h2 {
-  text-align: center;
-}
-
-input {
-  width: 100%;
+.students-panel {
+  width: 220px;
+  background: #ffffff;
+  border-radius: 15px;
   padding: 10px;
-  margin: 10px 0;
-  border-radius: 5px;
-  border: 1px solid #ccc;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
 
-button {
-  width: 100%;
-  padding: 10px;
-  border: none;
-  border-radius: 5px;
-  background: #007bff;
-  color: white;
-  cursor: pointer;
+.students-panel li {
+  list-style: none;
+  padding: 8px;
+  border-radius: 8px;
+  margin-bottom: 5px;
 }
 
-button:hover {
-  background: #0056b3;
-}
-
-#messages {
-  height: 200px;
-  overflow-y: auto;
-  border: 1px solid #ddd;
-  padding: 10px;
-  margin-bottom: 10px;
-  background: #fafafa;
-}
-
-.message {
-  margin-bottom: 8px;
-}
-
-.logout-btn {
-  margin-top: 10px;
-  background: red;
+.students-panel li:hover {
+  background: #EEF2F8;
 }
