@@ -1,18 +1,65 @@
-.students-panel {
-  width: 220px;
-  background: #ffffff;
-  border-radius: 15px;
-  padding: 10px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+body{
+margin:0;
+font-family:Arial, sans-serif;
+background:linear-gradient(135deg,#667eea,#764ba2);
+height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
 }
 
-.students-panel li {
-  list-style: none;
-  padding: 8px;
-  border-radius: 8px;
-  margin-bottom: 5px;
+.login-container{
+background:white;
+padding:40px;
+border-radius:20px;
+width:320px;
+box-shadow:0 10px 30px rgba(0,0,0,0.2);
+text-align:center;
 }
 
-.students-panel li:hover {
-  background: #EEF2F8;
+.title{
+margin:0;
+font-size:28px;
+}
+
+.subtitle{
+color:gray;
+margin-bottom:25px;
+}
+
+input{
+width:100%;
+padding:12px;
+margin:8px 0;
+border-radius:10px;
+border:1px solid #ddd;
+font-size:14px;
+}
+
+.verify{
+width:100%;
+padding:12px;
+background:#4CAF50;
+color:white;
+border:none;
+border-radius:10px;
+margin-top:10px;
+cursor:pointer;
+}
+
+.login{
+width:100%;
+padding:12px;
+background:#667eea;
+color:white;
+border:none;
+border-radius:10px;
+margin-top:10px;
+cursor:pointer;
+}
+
+.note{
+font-size:12px;
+color:gray;
+margin-top:15px;
 }
