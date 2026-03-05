@@ -1,36 +1,39 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Student Chat App</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<title>Student Login</title>
+<link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
-  <!-- Login Section -->
-  <div id="login-container">
-    <h2>Student Login</h2>
-    <input type="text" id="name" placeholder="Enter your name">
-    <input type="number" id="age" placeholder="Enter your age">
-    <button onclick="login()">Login</button>
-  </div>
+<div class="container">
 
-  <!-- Chat Section -->
-  <div id="chat-container" class="hidden">
-    <h2>Student Chat Room</h2>
-    <div id="messages"></div>
+<h2>Student Registration</h2>
 
-    <div class="chat-input">
-      <input type="text" id="messageInput" placeholder="Type a message">
-      <button onclick="sendMessage()">Send</button>
-    </div>
+<form id="registerForm">
 
-    <button class="logout-btn" onclick="logout()">Logout</button>
-  </div>
+<input type="text" placeholder="Full Name" id="name" required>
 
-  <!-- Supabase CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="script.js"></script>
+<input type="text" placeholder="Roll Number" id="roll" required>
+
+<input type="text" placeholder="Nickname (Optional)" id="nick">
+
+<div class="emailBox">
+<input type="email" placeholder="Email" id="email" required>
+<button type="button" onclick="verifyEmail()">Verify</button>
+</div>
+
+<button type="submit">Submit for Approval</button>
+
+</form>
+
+<p id="message"></p>
+
+</div>
+
+<script src="script.js"></script>
 
 </body>
 </html>
