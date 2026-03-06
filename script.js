@@ -1,29 +1,42 @@
 // 🔹 REPLACE WITH YOUR OWN
 const SUPABASE_URL = "ntfglwfrhljjkzecifuh";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50Zmdsd2ZyaGxqamt6ZWNpZnVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1OTEyNTYsImV4cCI6MjA4ODE2NzI1Nn0.xVC4IFBD72prT7KS-jiHlRQixVrR81QUVX2av_jU7uM";
+// Select buttons
+const registerBtn = document.querySelector(".register");
+const loginBtn = document.querySelector(".login");
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// When Register button is clicked
+registerBtn.addEventListener("click", function () {
+    
+    alert("Opening Register Page...");
 
-let currentUser = null;
+    // redirect to register page
+    window.location.href = "register.html";
+});
 
-// LOGIN FUNCTION
-async function loadStudents() {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('name');
 
-  const list = document.getElementById("studentsList");
+// When Login button is clicked
+loginBtn.addEventListener("click", function () {
 
-  data.forEach(student => {
-    const li = document.createElement("li");
-    li.textContent = student.name;
-    list.appendChild(li);
-  });
-}
+    alert("Opening Login Page...");
 
-loadStudents();
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("sw.js")
-  .then(() => console.log("Service Worker Registered"));
-}
-  
+    // redirect to login page
+    window.location.href = "login.html";
+});
+
+
+// Small welcome animation when page loads
+window.addEventListener("load", function(){
+
+    const card = document.querySelector(".card");
+
+    card.style.transform = "scale(0.9)";
+    card.style.opacity = "0";
+
+    setTimeout(() => {
+        card.style.transition = "0.5s";
+        card.style.transform = "scale(1)";
+        card.style.opacity = "1";
+    }, 100);
+
+});
