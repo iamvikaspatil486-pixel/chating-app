@@ -1,65 +1,45 @@
 body{
 margin:0;
-font-family:Arial, sans-serif;
-background:linear-gradient(135deg,#667eea,#764ba2);
+font-family:'Poppins',sans-serif;
 height:100vh;
 display:flex;
 justify-content:center;
 align-items:center;
+background:linear-gradient(135deg,#6a5cff,#9b8cff,#c7beff);
 }
 
-.login-container{
-background:white;
+.card{
+width:340px;
 padding:40px;
-border-radius:20px;
-width:320px;
-box-shadow:0 10px 30px rgba(0,0,0,0.2);
+border-radius:25px;
+background:rgba(255,255,255,0.25);
+backdrop-filter:blur(15px);
+box-shadow:0 15px 40px rgba(0,0,0,0.2);
 text-align:center;
-}
-
-.title{
-margin:0;
-font-size:28px;
-}
-
-.subtitle{
-color:gray;
-margin-bottom:25px;
-}
-
-input{
-width:100%;
-padding:12px;
-margin:8px 0;
-border-radius:10px;
-border:1px solid #ddd;
-font-size:14px;
-}
-
-.verify{
-width:100%;
-padding:12px;
-background:#4CAF50;
 color:white;
+}
+
+button{
+width:100%;
+margin-top:20px;
+padding:13px;
 border:none;
-border-radius:10px;
-margin-top:10px;
+border-radius:14px;
+font-size:16px;
 cursor:pointer;
+transition:0.3s;
+}
+
+.register{
+background:white;
+color:#6a5cff;
 }
 
 .login{
-width:100%;
-padding:12px;
-background:#667eea;
+background:#6a5cff;
 color:white;
-border:none;
-border-radius:10px;
-margin-top:10px;
-cursor:pointer;
 }
 
-.note{
-font-size:12px;
-color:gray;
-margin-top:15px;
+button:hover{
+transform:scale(1.05);
 }
