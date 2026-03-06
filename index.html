@@ -1,34 +1,81 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<title>college chat app</title>
-<link rel="manifest" href="manifest.json">
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Student Hub</title>
-<link rel="stylesheet" href="style.css">
+<title>Students Harate</title>
+
+<style>
+
+body{
+margin:0;
+font-family: 'Poppins', sans-serif;
+height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+background:linear-gradient(135deg,#6a5cff,#9b8cff,#c7beff);
+}
+
+.card{
+width:340px;
+padding:40px;
+border-radius:25px;
+background:rgba(255,255,255,0.25);
+backdrop-filter:blur(15px);
+box-shadow:0 15px 40px rgba(0,0,0,0.2);
+text-align:center;
+color:white;
+}
+
+h1{
+margin-bottom:30px;
+}
+
+input{
+width:100%;
+padding:12px;
+margin-top:15px;
+border:none;
+border-radius:12px;
+outline:none;
+}
+
+button{
+width:100%;
+margin-top:20px;
+padding:13px;
+border:none;
+border-radius:14px;
+font-size:16px;
+cursor:pointer;
+transition:0.3s;
+}
+
+.register{
+background:white;
+color:#6a5cff;
+}
+
+.login{
+background:#6a5cff;
+color:white;
+}
+
+button:hover{
+transform:scale(1.05);
+}
+
+</style>
 </head>
 
 <body>
 
-<div class="login-container">
+<div class="card">
 
-<h1 class="title">college chat app</h1>
-<p class="subtitle">Connect with your classmates</p>
+<h1>Students Harate</h1>
 
-<input type="text" id="name" placeholder="Full Name">
+<button class="register">Register</button>
 
-<input type="text" id="roll" placeholder="Roll Number">
-
-<input type="text" id="nickname" placeholder="Nickname (optional)">
-
-<input type="email" id="email" placeholder="College Email">
-
-<button class="verify">Verify Email</button>
-
-<button class="login">Submit for Approval</button>
-
-<p class="note">Admin approval required before entering the app</p>
+<button class="login">Login</button>
 
 </div>
 
