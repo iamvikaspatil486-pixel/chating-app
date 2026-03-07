@@ -1,74 +1,195 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#6a5cff">
-<link rel="icon" href="college.png">
-<title>Login</title>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<title>Students Harate Login</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
 
 <style>
 
 body{
-margin:0;
-font-family:Arial;
-background:linear-gradient(135deg,#6a5cff,#8f7bff,#b7aaff);
-height:100vh;
-display:flex;
-justify-content:center;
-align-items:center;
+touch-action: pan-x pan-y;
+overscroll-behavior:none;
 }
 
-.box{
-background:white;
-padding:35px;
-border-radius:20px;
-width:320px;
-box-shadow:0 10px 30px rgba(0,0,0,0.2);
+.step{
+display:none;
 }
 
-h2{
-text-align:center;
-margin-bottom:25px;
-}
-
-input{
-width:100%;
-padding:12px;
-margin-top:12px;
-border-radius:10px;
-border:1px solid #ddd;
-}
-
-button{
-width:100%;
-margin-top:20px;
-padding:12px;
-border:none;
-border-radius:12px;
-background:#6a5cff;
-color:white;
-font-size:16px;
-cursor:pointer;
+.step.active{
+display:block;
 }
 
 </style>
 
 </head>
 
-<body>
+<body class="bg-slate-900 text-white font-sans min-h-screen flex flex-col px-6 py-10">
 
-<div class="box">
 
-<h2>Login</h2>
+<div class="w-full max-w-md mx-auto">
 
-<input type="email" placeholder="Email">
+<h2 class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-6 text-center">
 
-<button>Login</button>
+STUDENTS HARATE
+
+</h2>
+
+
+<form id="loginForm" class="space-y-4">
+
+<!-- LOGIN STEP -->
+
+<div id="loginStep" class="step active space-y-4">
+
+<p class="text-slate-400 text-xs uppercase tracking-widest font-bold mb-4">
+Login
+</p>
+
+
+<input
+type="text"
+id="identity"
+placeholder="Name or Roll Number"
+class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 outline-none focus:border-cyan-500 transition-all"
+required>
+
+
+<div class="relative">
+
+<input
+type="password"
+id="password"
+placeholder="Password"
+class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 outline-none focus:border-cyan-500 transition-all"
+required>
+
+
+<button
+type="button"
+onclick="togglePass('password')"
+class="absolute right-4 top-3.5 text-slate-500">
+
+<i data-lucide="eye" class="w-5 h-5"></i>
+
+</button>
 
 </div>
 
-</body>
 
+<button
+type="submit"
+class="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-2xl font-bold shadow-lg shadow-cyan-500/20 active:scale-95 transition-all">
+
+Login
+
+</button>
+
+
+<p
+onclick="showForgot()"
+class="text-center text-sm text-cyan-400 cursor-pointer mt-2">
+
+Forgot Password?
+
+</p>
+
+</div>
+
+
+
+<!-- FORGOT PASSWORD STEP -->
+
+<div id="forgotStep" class="step space-y-4">
+
+<p class="text-slate-400 text-xs uppercase tracking-widest font-bold mb-4">
+Reset Password
+</p>
+
+
+<input
+type="email"
+id="resetEmail"
+placeholder="Enter your Email"
+class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 outline-none focus:border-cyan-500 transition-all"
+required>
+
+
+<button
+type="button"
+onclick="sendReset()"
+class="w-full py-4 bg-cyan-600 rounded-2xl font-bold active:scale-95">
+
+Send Verification
+
+</button>
+
+
+<button
+type="button"
+onclick="backToLogin()"
+class="w-full py-4 bg-slate-800 border border-slate-700 rounded-2xl font-bold active:scale-95">
+
+Back to Login
+
+</button>
+
+</div>
+
+</form>
+
+</div>
+
+
+
+<script>
+
+lucide.createIcons();
+
+
+function togglePass(id){
+
+const el=document.getElementById(id);
+
+el.type=el.type==="password"?"text":"password";
+
+}
+
+
+function showForgot(){
+
+document.getElementById("loginStep").classList.remove("active");
+
+document.getElementById("forgotStep").classList.add("active");
+
+}
+
+
+function backToLogin(){
+
+document.getElementById("forgotStep").classList.remove("active");
+
+document.getElementById("loginStep").classList.add("active");
+
+}
+
+
+function sendReset(){
+
+alert("Verification email sent. Check your inbox.");
+
+/* Later connect Supabase password reset here */
+
+}
+
+</script>
+
+</body>
 </html>
