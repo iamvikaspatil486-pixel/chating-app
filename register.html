@@ -220,21 +220,55 @@ document.getElementById('step1').classList.add('active');
 
 }
 
-function handleFinalSubmit(event){
+async function handleFinalSubmit(event){
 
 event.preventDefault();
 
-const btn=document.getElementById('submitBtn');
+const name = document.getElementById("fullName").value;
+const roll = document.getElementById("rollNo").value;
+const nick = document.getElementById("nickname").value;
+const email = document.getElementById("email").value;
+const pass = document.getElementById("pass").value;
+const confPass = document.getElementById("confPass").value;
+
+if(pass !== confPass){
+alert("Passwords do not match");
+return;
+}
+
+const btn = document.getElementById("submitBtn");
+
+btn.innerHTML="Sending...";
+btn.disabled=true;
+
+const { data, error } = await supabase
+.from("students")
+.insert([
+{
+name: name,
+roll_no: roll,
+nickname: nick,
+email: email,
+password: pass,
+status: "pending"
+}
+]);
+
+if(error){
+
+alert("Roll number or email already registered");
+
+btn.innerHTML="Request Admin Approval";
+btn.disabled=false;
+
+}else{
 
 btn.innerHTML="Request Sent";
 
 btn.classList.remove('from-cyan-600','to-blue-600');
-
 btn.classList.add('bg-slate-700','cursor-default');
 
-btn.disabled=true;
-
-/* Supabase insert logic will go here */
+}
 
 }
 
