@@ -1,162 +1,41 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
-<meta charset="UTF-8">
-
-<meta name="viewport"
-content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
-<title>STUDENTS HARATE</title>
-
-<style>
-
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-font-family:Arial, sans-serif;
-}
-
-/* Stop page movement */
-
-html,body{
-height:100%;
-overflow:hidden;
-}
-
-/* background */
-
-body{
-display:flex;
-justify-content:center;
-align-items:center;
-background:linear-gradient(135deg,#4f46e5,#9333ea);
-}
-
-/* app card */
-
-.container{
-
-width:100%;
-max-width:380px;
-height:90vh;
-
-background:white;
-
-border-radius:25px;
-
-display:flex;
-flex-direction:column;
-justify-content:center;
-align-items:center;
-
-padding:30px;
-
-box-shadow:0 10px 30px rgba(0,0,0,0.2);
-
-}
-
-/* title */
-
-.title{
-font-size:28px;
-font-weight:bold;
-color:#4f46e5;
-margin-bottom:10px;
-}
-
-/* subtitle */
-
-.subtitle{
-font-size:14px;
-color:#666;
-margin-bottom:40px;
-text-align:center;
-}
-
-/* buttons */
-
-.btn{
-
-width:100%;
-padding:15px;
-
-border:none;
-border-radius:12px;
-
-font-size:16px;
-font-weight:bold;
-
-cursor:pointer;
-
-margin-bottom:15px;
-
-transition:0.3s;
-
-}
-
-/* login */
-
-.login{
-background:#4f46e5;
-color:white;
-}
-
-.login:active{
-background:#3730a3;
-}
-
-/* register */
-
-.register{
-background:#9333ea;
-color:white;
-}
-
-.register:active{
-background:#7e22ce;
-}
-
-.footer{
-margin-top:20px;
-font-size:12px;
-color:#777;
-}
-
-</style>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>STUDENTS HARATE</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            touch-action: pan-x pan-y;
+            overscroll-behavior: none;
+        }
+    </style>
 </head>
+<body class="bg-slate-900 text-white font-sans flex flex-col h-screen overflow-hidden">
 
-<body>
+    <main class="flex-grow flex flex-col items-center justify-center px-6 text-center">
+        <div class="mb-8">
+            <h1 class="text-4xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-2">
+                STUDENTS HARATE
+            </h1>
+            <p class="text-slate-400 text-lg">Where college conversations happen.</p>
+        </div>
 
-<div class="container">
+        <div class="w-full max-w-xs space-y-4">
+            <button onclick="location.href='/login'" class="w-full py-4 bg-blue-600 hover:bg-blue-500 rounded-2xl font-bold text-lg transition-all active:scale-95 shadow-lg shadow-blue-500/20">
+                Login
+            </button>
+            <button onclick="location.href='/register'" class="w-full py-4 bg-slate-800 border border-slate-700 hover:bg-slate-700 rounded-2xl font-bold text-lg transition-all active:scale-95">
+                Join Now
+            </button>
+        </div>
+    </main>
 
-<div class="title">
-STUDENTS HARATE
-</div>
-
-<div class="subtitle">
-Private chat for college students
-</div>
-
-<button class="btn login"
-onclick="location.href='login.html'">
-Login
-</button>
-
-<button class="btn register"
-onclick="location.href='register.html'">
-Register
-</button>
-
-<div class="footer">
-Only approved students can join
-</div>
-
-</div>
+    <footer class="pb-10 text-slate-500 text-sm">
+        &copy; 2026 Students Harate
+    </footer>
 
 </body>
-
 </html>
+
