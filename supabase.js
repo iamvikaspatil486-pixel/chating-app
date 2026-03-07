@@ -1,4 +1,4 @@
 const supabase = window.supabase.createClient(
-"https://YOUR_PROJECT_ID.supabase.co",
+"sb_publishable_DSJM3JDKkxOvoIALukBspA_p7YpOotY.supabase.co",
 "YOUR_ANON_KEY"
 );
