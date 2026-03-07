@@ -46,3 +46,24 @@ navigator.serviceWorker.register("service-worker.js")
 console.log("Service Worker Registered");
 });
 }
+async function sendVerification(){
+
+const email = document.getElementById("email").value
+
+if(!email){
+alert("Enter email first")
+return
+}
+
+const { data, error } = await supabase.auth.signUp({
+email: email,
+password: "temporary123"
+})
+
+if(error){
+alert("Error sending verification")
+}else{
+alert("Verification email sent. Check your inbox.")
+}
+
+}
