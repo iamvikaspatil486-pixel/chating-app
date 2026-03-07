@@ -14,9 +14,14 @@ content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable
 
 <style>
 
+html, body{
+height:100%;
+overflow:hidden;      /* stops scrolling */
+}
+
 body{
-touch-action: pan-x pan-y;
-overscroll-behavior: none;
+touch-action:manipulation;
+overscroll-behavior:none;
 }
 
 .step{
@@ -28,7 +33,6 @@ display:block;
 }
 
 </style>
-
 </head>
 
 <body class="bg-slate-900 text-white font-sans h-screen flex items-center justify-center px-6">
