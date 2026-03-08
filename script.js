@@ -1,84 +1,63 @@
-// 🔹 CONFIGURATION
-const SUPABASE_URL = "https://ntfglwfrhljjkzecifuh.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."; // Keep your key here
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// 1. Initialize Supabase (Use your actual keys from Supabase Dashboard)
+const supabaseUrl = 'ntfglwfrhljjkzecifuh.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50Zmdsd2ZyaGxqamt6ZWNpZnVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1OTEyNTYsImV4cCI6MjA4ODE2NzI1Nn0.xVC4IFBD72prT7KS-jiHlRQixVrR81QUVX2av_jU7uM';
+const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-// Select elements
-const loginBtn = document.querySelector(".login");
-const githubBtn = document.querySelector(".github-login"); // Add this to your HTML
+// 2. The "Join Now" logic with Error Handling
+async function handleJoinNow(event) {
+    event.preventDefault(); // Prevents the page from refreshing
+    
+    const btn = document.getElementById('submitBtn');
+    const fullName = document.getElementById('fullName').value;
+    const nickname = document.getElementById('nickname').value || '';
+    const rollNo = document.getElementById('rollNo').value;
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
 
-// 1. LOGIN WITH GITHUB
-async function signInWithGitHub() {
-    const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'github',
-        options: {
-            // This is where GitHub sends the user back after clicking "Authorize"
-            redirectTo: window.location.origin + '/index.html', 
-        }
-    });
+    // Start "Sending" state
+    btn.innerText = "Sending Request...";
+    btn.disabled = true;
 
-    if (error) {
-        alert("Error connecting to GitHub: " + error.message);
-    }
-}
-
-// 2. SIGN UP WITH EMAIL + STORE NAME
-// Note: This requires a 'name' input field in your HTML
-async function handleSignUp() {
-    const email = document.getElementById("email").value;
-    const fullName = document.getElementById("name").value; // Added name field
-
-    if (!email || !fullName) {
-        alert("Please enter both email and name");
-        return;
-    }
-
-    const { data, error } = await supabase.auth.signUp({
-        email: email,
-        password: "temporary123", // Ideally, let users pick a password
-        options: {
-            data: {
-                full_name: fullName,
-                display_name: fullName.split(' ')[0]
+    try {
+        // Sign up user with Metadata
+        const { data, error } = await _supabase.auth.signUp({
+            email: email,
+            password: password,
+            options: {
+                data: { 
+                    full_name: fullName,
+                    roll_no: rollNo,
+                    nickname: nickname,
+                    is_approved: false // For your admin approval logic
+                }
             }
-        }
-    });
+        });
 
-    if (error) {
-        alert("Error: " + error.message);
-    } else {
-        alert("Check your email for the confirmation link!");
+        if (error) throw error; // If Supabase says no, jump to the catch block
+
+        // Success!
+        btn.innerText = "Check Your Email!";
+        alert("Account request sent! Please verify your email. Admins will check your Roll No: " + rollNo);
+        
+    } catch (err) {
+        // Reset the button so the user can try again
+        console.error("Registration Error:", err.message);
+        btn.innerText = "Request Admin Approval";
+        btn.disabled = false;
+
+        // Specific message for the 2-email limit
+        if (err.message.includes("rate limit")) {
+            alert("Limit reached! Supabase allows 2 requests per hour. Please wait a bit.");
+        } else {
+            alert("Error: " + err.message);
+        }
     }
 }
 
-// 3. CHECK AUTH STATUS ON LOAD
-window.addEventListener("load", async () => {
-    // Small welcome animation
-    const card = document.querySelector(".card");
-    if (card) {
-        card.style.transform = "scale(0.9)";
-        card.style.opacity = "0";
-        setTimeout(() => {
-            card.style.transition = "0.5s";
-            card.style.transform = "scale(1)";
-            card.style.opacity = "1";
-        }, 100);
-    }
-
-    // Check if user is logged in
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-        console.log("Welcome back,", user.user_metadata.full_name || user.email);
-        // Optional: Redirect to a dashboard if already logged in
+// 3. Connect the form to this script
+document.addEventListener('DOMContentLoaded', () => {
+    const registrationForm = document.getElementById('registrationForm');
+    if (registrationForm) {
+        registrationForm.addEventListener('submit', handleJoinNow);
     }
 });
-
-// Event Listeners
-if (githubBtn) githubBtn.addEventListener("click", signInWithGitHub);
-
-// Service Worker
-if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("service-worker.js").then(() => {
-        console.log("Service Worker Registered");
-    });
-}
