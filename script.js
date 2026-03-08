@@ -1,11 +1,5 @@
-// 1. Initialize Supabase (Use your actual keys from Supabase Dashboard)
-const supabaseUrl = 'https://ntfglwfrhljjkzecifuh.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50Zmdsd2ZyaGxqamt6ZWNpZnVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1OTEyNTYsImV4cCI6MjA4ODE2NzI1Nn0.xVC4IFBD72prT7KS-jiHlRQixVrR81QUVX2av_jU7uM';
-const _supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
-
-// 2. The "Join Now" logic with Error Handling
 async function handleJoinNow(event) {
-    event.preventDefault(); // Prevents the page from refreshing
+    event.preventDefault(); // Prevents page refresh
     
     const btn = document.getElementById('submitBtn');
     const fullName = document.getElementById('fullName').value;
@@ -13,14 +7,22 @@ async function handleJoinNow(event) {
     const rollNo = document.getElementById('rollNo').value;
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
+    const confPass = document.getElementById('confPass').value;
+
+    // Check if passwords match
+    if (password !== confPass) {
+        alert("Passwords do not match!");
+        return;
+    }
 
     // Start "Sending" state
     btn.innerText = "Sending Request...";
     btn.disabled = true;
 
     try {
-        // Sign up user with Metadata
-        const { data, error } = await _supabase.auth.signUp({
+        // Sign up user via Supabase Auth
+        // This creates a user and stores extra info in 'user_metadata'
+        const { data, error } = await supabase.auth.signUp({
             email: email,
             password: password,
             options: {
@@ -28,33 +30,34 @@ async function handleJoinNow(event) {
                     full_name: fullName,
                     roll_no: rollNo,
                     nickname: nickname,
-                    is_approved: false // For your admin approval logic
+                    is_approved: false 
                 }
             }
         });
 
-        if (error) throw error; // If Supabase says no, jump to the catch block
+        if (error) throw error;
 
-        // Success!
+        // Success state
         btn.innerText = "Check Your Email!";
-        alert("Account request sent! Please verify your email. Admins will check your Roll No: " + rollNo);
+        btn.classList.remove('from-cyan-600', 'to-blue-600');
+        btn.classList.add('bg-slate-700', 'cursor-default');
+        
+        alert("Account request sent! Please check your email inbox to verify your account.");
         
     } catch (err) {
-        // Reset the button so the user can try again
         console.error("Registration Error:", err.message);
         btn.innerText = "Request Admin Approval";
         btn.disabled = false;
 
-        // Specific message for the 2-email limit
         if (err.message.includes("rate limit")) {
-            alert("Limit reached! Supabase allows 2 requests per hour. Please wait a bit.");
+            alert("Limit reached! Please wait an hour before trying again.");
         } else {
             alert("Error: " + err.message);
         }
     }
 }
 
-// 3. Connect the form to this script
+// Connect the form to the script after the page loads
 document.addEventListener('DOMContentLoaded', () => {
     const registrationForm = document.getElementById('registrationForm');
     if (registrationForm) {
