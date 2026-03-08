@@ -18,37 +18,43 @@ async function handleJoinNow(event) {
     btn.disabled = true;
 
     try {
-        // Notice we use _supabase here to match supabase.js
-        const { data, error } = await _supabase.auth.signUp({
+        // STEP 1: Create user in Supabase Auth
+        const { data: authData, error: authError } = await _supabase.auth.signUp({
             email: email,
             password: password,
             options: {
-                data: { 
-                    full_name: fullName,
-                    roll_no: rollNo,
-                    nickname: nickname,
-                    is_approved: false 
-                }
+                data: { full_name: fullName, roll_no: rollNo } // Backup in metadata
             }
         });
 
-        if (error) throw error;
+        if (authError) throw authError;
 
+        // STEP 2: Insert directly into your 'students' table
+        // We use the ID generated in Step 1 to link the two
+        const { error: dbError } = await _supabase
+            .from('students')
+            .insert([
+                { 
+                    id: authData.user.id, 
+                    full_name: fullName, 
+                    nickname: nickname,
+                    roll_no: rollNo, 
+                    email: email,
+                    is_approved: false 
+                }
+            ]);
+
+        if (dbError) throw dbError;
+
+        // Success state
         btn.innerText = "Check Your Email!";
         btn.classList.add('bg-slate-700');
-        alert("Success! Check your email to verify your account.");
+        alert("Success! Check your email to verify. Admins will approve Roll No: " + rollNo);
         
     } catch (err) {
-        console.error("Auth Error:", err.message);
+        console.error("System Error:", err.message);
         btn.innerText = "Request Admin Approval";
         btn.disabled = false;
         alert("Error: " + err.message);
     }
 }
-
-document.addEventListener('DOMContentLoaded', () => {
-    const form = document.getElementById('registrationForm');
-    if (form) {
-        form.addEventListener('submit', handleJoinNow);
-    }
-});
