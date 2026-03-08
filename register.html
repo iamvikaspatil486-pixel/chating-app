@@ -16,10 +16,9 @@ content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable
 
 <style>
 
-
 html, body{
 height:100%;
-overflow:hidden;      /* stops scrolling */
+overflow:hidden;
 }
 
 body{
@@ -76,29 +75,12 @@ id="nickname"
 placeholder="Nickname (Optional)"
 class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 outline-none focus:border-cyan-500 transition-all">
 
-
-<!-- EMAIL SECTION FIXED -->
-
-<div class="flex gap-2 items-center">
-
 <input
 type="email"
 id="email"
 placeholder="Email"
 class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 outline-none focus:border-cyan-500 transition-all"
 required>
-
-<button
-type="button"
-onclick="sendVerification()"
-class="px-4 py-3 bg-cyan-600 rounded-xl text-xs font-bold active:scale-95 whitespace-nowrap">
-
-Verify
-
-</button>
-
-</div>
-
 
 <button
 type="button"
@@ -207,7 +189,6 @@ el.type=el.type==="password"?"text":"password";
 function nextStep(){
 
 document.getElementById('step1').classList.remove('active');
-
 document.getElementById('step2').classList.add('active');
 
 }
@@ -215,7 +196,6 @@ document.getElementById('step2').classList.add('active');
 function prevStep(){
 
 document.getElementById('step2').classList.remove('active');
-
 document.getElementById('step1').classList.add('active');
 
 }
@@ -249,7 +229,6 @@ name: name,
 roll_no: roll,
 nickname: nick,
 email: email,
-password: pass,
 status: "pending"
 }
 ]);
