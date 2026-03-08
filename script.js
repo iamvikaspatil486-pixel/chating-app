@@ -1,7 +1,7 @@
 // 1. Initialize Supabase (Use your actual keys from Supabase Dashboard)
 const supabaseUrl = 'https://ntfglwfrhljjkzecifuh.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50Zmdsd2ZyaGxqamt6ZWNpZnVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1OTEyNTYsImV4cCI6MjA4ODE2NzI1Nn0.xVC4IFBD72prT7KS-jiHlRQixVrR81QUVX2av_jU7uM';
-const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+const _supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
 // 2. The "Join Now" logic with Error Handling
 async function handleJoinNow(event) {
