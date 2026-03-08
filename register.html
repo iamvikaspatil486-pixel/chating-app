@@ -4,10 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Join Students Harate</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase.js"></script>
-<script src="script.js" defer></script> 
-</style>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase.js"></script>
+    <script src="script.js" defer></script> 
+
+    <style>
         html, body { height:100%; overflow:hidden; }
         body { touch-action:manipulation; overscroll-behavior:none; }
         .step { display:none; }
@@ -51,15 +55,19 @@
 </div>
 
 <script>
+    // Initialize icons
     lucide.createIcons();
+
     function togglePass(id) {
         const el = document.getElementById(id);
         el.type = el.type === "password" ? "text" : "password";
     }
+
     function nextStep() {
         document.getElementById('step1').classList.remove('active');
         document.getElementById('step2').classList.add('active');
     }
+
     function prevStep() {
         document.getElementById('step2').classList.remove('active');
         document.getElementById('step1').classList.add('active');
