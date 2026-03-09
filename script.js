@@ -1,19 +1,43 @@
+const supabaseUrl = "https://ntfglwfrhljjkzecifuh.supabase.co";
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50Zmdsd2ZyaGxqamt6ZWNpZnVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1OTEyNTYsImV4cCI6MjA4ODE2NzI1Nn0.xVC4IFBD72prT7KS-jiHlRQixVrR81QUVX2av_jU7uM";
+
+const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+// Password Visibility Toggle
+function togglePassword(id) {
+    const input = document.getElementById(id);
+    const icon = document.getElementById(id + '-icon');
+    if (input.type === "password") {
+        input.type = "text";
+        icon.setAttribute('data-lucide', 'eye-off');
+    } else {
+        input.type = "password";
+        icon.setAttribute('data-lucide', 'eye');
+    }
+    lucide.createIcons(); // Refresh icons
+}
+
 async function handleJoinNow(event) {
-    event.preventDefault(); 
+    event.preventDefault();
     const btn = document.getElementById('submitBtn');
     
-    // Get values
     const fullName = document.getElementById('fullName').value;
     const rollNo = document.getElementById('rollNo').value;
     const email = document.getElementById('email').value;
+    const nickname = document.getElementById('nickname').value;
     const password = document.getElementById('password').value;
+    const confPass = document.getElementById('confPass').value;
 
-    // 1. Start the "Loading" state
-    btn.innerText = "⏳ Processing Request...";
+    if (password !== confPass) {
+        alert("Passwords do not match!");
+        return;
+    }
+
+    btn.innerText = "⏳ Processing...";
     btn.disabled = true;
 
     try {
-        // STEP A: Create the Auth Account
+        // STEP 1: Auth Sign Up
         const { data: authData, error: authError } = await _supabase.auth.signUp({
             email: email,
             password: password
@@ -21,35 +45,31 @@ async function handleJoinNow(event) {
 
         if (authError) throw authError;
 
-        // STEP B: Save to your 'students' table
-        const { error: dbError } = await _supabase
-            .from('students')
-            .insert([
-                { 
-                    id: authData.user.id, 
-                    full_name: fullName, 
-                    roll_no: rollNo, 
-                    email: email,
-                    is_approved: false 
-                }
-            ]);
+        if (authData.user) {
+            // STEP 2: Insert into customized 'students' table
+            const { error: dbError } = await _supabase
+                .from('students')
+                .insert([
+                    { 
+                        id: authData.user.id, // Links to Auth
+                        full_name: fullName, 
+                        roll_no: rollNo, 
+                        nickname: nickname,
+                        email: email,
+                        is_approved: false 
+                    }
+                ]);
 
-        if (dbError) throw dbError;
+            if (dbError) throw dbError;
+        }
 
-        // 2. Success State - Update the UI
-        btn.innerText = "✅ Request Submitted!";
-        btn.style.backgroundColor = "#06b6d4"; // Cyan color for success
-        
-        alert("Success! Request submitted to Admin. Now check your email to verify!");
-        
-        // Optional: Send them to a thank you page after 3 seconds
-        // setTimeout(() => { window.location.href = 'thankyou.html'; }, 3000);
+        btn.innerText = "✅ Success!";
+        alert("Registration successful! Check your email to verify your account.");
 
     } catch (err) {
-        // 3. Error State - Reset the button
         console.error("Signup Error:", err.message);
         btn.innerText = "Try Again";
         btn.disabled = false;
-        alert("Registration Failed: " + err.message);
+        alert("Error: " + err.message);
     }
 }
