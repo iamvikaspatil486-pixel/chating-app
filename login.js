@@ -1,110 +1,94 @@
-// STEP NAVIGATION (for forgot password)
-function showForgot() {
-    document.getElementById("loginStep").classList.remove("active");
-    document.getElementById("forgotStep").classList.add("active");
-}
-function backToLogin() {
-    document.getElementById("forgotStep").classList.remove("active");
-    document.getElementById("loginStep").classList.add("active");
+// --- 1. SHARED UI HELPERS ---
+function showStep(stepId) {
+    document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+    document.getElementById(stepId).classList.add('active');
 }
 
-// PASSWORD TOGGLE
-function togglePassword(id) {
+function togglePass(id) {
     const input = document.getElementById(id);
-    const icon = document.getElementById(id + "-icon");
-    if (input.type === "password") {
-        input.type = "text";
-        icon.setAttribute("data-lucide", "eye-off");
-    } else {
-        input.type = "password";
-        icon.setAttribute("data-lucide", "eye");
-    }
+    const icon = document.getElementById(id + '-icon');
+    input.type = input.type === "password" ? "text" : "password";
+    icon.setAttribute('data-lucide', input.type === "password" ? 'eye' : 'eye-off');
     lucide.createIcons();
 }
 
-// LOGIN FUNCTION
-async function handleLogin(event) {
-    event.preventDefault();
+// --- 2. LOGIN & ROLL NO CHECK ---
+async function checkUser() {
+    const roll = document.getElementById('loginRollNo').value.trim().toUpperCase();
+    const btn = document.getElementById('nextBtn');
+    if(!roll) return alert("Please enter Roll No.");
+    
+    btn.innerText = "🔍 Checking...";
+    // Using _supabase from your config file
+    const { data, error } = await _supabase.from('students').select('full_name').eq('roll_no', roll).single();
 
-    const emailOrRoll = document.getElementById("identity").value;
-    const password = document.getElementById("password").value;
-    const btn = document.getElementById("loginBtn");
-    btn.innerText = "Processing...";
-    btn.disabled = true;
+    if (error || !data) {
+        alert("Roll No. Not Registered!");
+        btn.innerText = "Next";
+        return;
+    }
+    showStep('loginStep2');
+}
 
-    try {
-        // GET USER FROM CUSTOM TABLE
-        let { data: student, error } = await db
-            .from("students")
-            .select("*")
-            .or(`roll_no.eq.${emailOrRoll},email.eq.${emailOrRoll}`)
-            .maybeSingle();
-        if (error) throw error;
-        if (!student) {
-            alert("Account not found");
-            btn.innerText = "Login";
-            btn.disabled = false;
-            return;
-        }
+async function handleLogin(e) {
+    const roll = document.getElementById('loginRollNo').value.toUpperCase();
+    const pass = document.getElementById('loginPassword').value;
+    const { data: userRow } = await _supabase.from('students').select('email, is_approved').eq('roll_no', roll).single();
 
-        if (!student.is_approved) {
-            alert("Your account is not approved yet");
-            btn.innerText = "Login";
-            btn.disabled = false;
-            return;
-        }
+    if(!userRow.is_approved) return alert("Account pending admin approval!");
 
-        // LOGIN USING AUTH
-        const { data, error: authError } = await db.auth.signInWithPassword({
-            email: student.email,
-            password: password
-        });
-        if (authError) throw authError;
+    const { error } = await _supabase.auth.signInWithPassword({ email: userRow.email, password: pass });
+    if (error) return alert("Invalid Password");
+    window.location.href = "home.html";
+}
 
-        btn.innerText = "Success!";
-        alert("Login Successful!");
-        // redirect to home page (once created)
-        // window.location.href = "home.html";
-    } catch (err) {
-        alert("Login failed: " + err.message);
-        btn.innerText = "Login";
-        btn.disabled = false;
+// --- 3. OTP FORGOT PASSWORD FLOW ---
+async function sendOtp() {
+    const email = document.getElementById('resetEmail').value.trim();
+    const btn = document.getElementById('sendOtpBtn');
+    if(!email) return alert("Enter your verified email");
+
+    btn.innerText = "Sending OTP...";
+    // Sends OTP ONLY if the email is verified/exists in Auth
+    const { error } = await _supabase.auth.signInWithOtp({ email: email });
+
+    if (error) {
+        alert("Error: " + error.message);
+        btn.innerText = "Send OTP";
+    } else {
+        alert("OTP sent to " + email + ". Check your inbox/spam.");
+        showStep('otpStep');
     }
 }
 
-// FORGOT PASSWORD
-async function sendReset() {
-    const email = document.getElementById("resetEmail").value;
-    const btn = document.getElementById("resetBtn");
-    btn.innerText = "Sending...";
-    btn.disabled = true;
+async function verifyOtp() {
+    const email = document.getElementById('resetEmail').value;
+    const token = document.getElementById('otpCode').value;
+    const btn = document.getElementById('verifyOtpBtn');
 
-    try {
-        // Check if email exists in approved students
-        const { data: student, error } = await db
-            .from("students")
-            .select("*")
-            .eq("email", email)
-            .maybeSingle();
-        if (error) throw error;
-        if (!student || !student.is_approved) {
-            alert("Email not verified / not approved");
-            btn.innerText = "Send Verification";
-            btn.disabled = false;
-            return;
-        }
+    btn.innerText = "Verifying...";
+    const { error } = await _supabase.auth.verifyOtp({
+        email: email,
+        token: token,
+        type: 'magiclink'
+    });
 
-        // Send password reset
-        const { data, error: resetError } = await db.auth.resetPasswordForEmail(email, {
-            redirectTo: window.location.origin + "/login.html"
-        });
-        if (resetError) throw resetError;
-
-        alert("Password reset email sent. Check your inbox.");
-        btn.innerText = "Sent";
-    } catch (err) {
-        alert("Error: " + err.message);
-        btn.innerText = "Send Verification";
-        btn.disabled = false;
+    if (error) {
+        alert("Invalid or Expired OTP");
+        btn.innerText = "Verify OTP";
+    } else {
+        alert("OTP Verified! Set your new password.");
+        showStep('newPassStep');
     }
+}
+
+async function updatePassword() {
+    const newPass = document.getElementById('finalNewPass').value;
+    if(newPass.length < 6) return alert("Password too short!");
+
+    const { error } = await _supabase.auth.updateUser({ password: newPass });
+    if (error) return alert(error.message);
+    
+    alert("Password Updated! Logging you in...");
+    window.location.href = "home.html";
 }
