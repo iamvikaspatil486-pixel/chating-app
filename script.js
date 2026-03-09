@@ -3,7 +3,7 @@ const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 
 const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-// Password Visibility Toggle
+// 1. Password Visibility Toggle
 function togglePassword(id) {
     const input = document.getElementById(id);
     const icon = document.getElementById(id + '-icon');
@@ -14,13 +14,17 @@ function togglePassword(id) {
         input.type = "password";
         icon.setAttribute('data-lucide', 'eye');
     }
-    lucide.createIcons(); // Refresh icons
+    lucide.createIcons(); // Re-render Lucide icons
 }
 
+// 2. Main Registration Function
 async function handleJoinNow(event) {
-    event.preventDefault();
+    // CRITICAL: Stops the page from refreshing/reverting to Step 1
+    event.preventDefault(); 
+    
     const btn = document.getElementById('submitBtn');
     
+    // Collect Form Data
     const fullName = document.getElementById('fullName').value;
     const rollNo = document.getElementById('rollNo').value;
     const email = document.getElementById('email').value;
@@ -33,11 +37,12 @@ async function handleJoinNow(event) {
         return;
     }
 
-    btn.innerText = "⏳ Processing...";
+    // Loading State
+    btn.innerText = "⏳ Requesting Access...";
     btn.disabled = true;
 
     try {
-        // STEP 1: Auth Sign Up
+        // STEP A: Create the Auth Account
         const { data: authData, error: authError } = await _supabase.auth.signUp({
             email: email,
             password: password
@@ -45,13 +50,13 @@ async function handleJoinNow(event) {
 
         if (authError) throw authError;
 
+        // STEP B: Save to 'students' table if Auth succeeded
         if (authData.user) {
-            // STEP 2: Insert into customized 'students' table
             const { error: dbError } = await _supabase
                 .from('students')
                 .insert([
                     { 
-                        id: authData.user.id, // Links to Auth
+                        id: authData.user.id, 
                         full_name: fullName, 
                         roll_no: rollNo, 
                         nickname: nickname,
@@ -61,15 +66,17 @@ async function handleJoinNow(event) {
                 ]);
 
             if (dbError) throw dbError;
-        }
 
-        btn.innerText = "✅ Success!";
-        alert("Registration successful! Check your email to verify your account.");
+            // Success UI
+            btn.innerText = "✅ Request Sent";
+            btn.classList.add('bg-green-600');
+            alert("Success! Request submitted to Admin. Check your email (and Spam folder) to verify!");
+        }
 
     } catch (err) {
         console.error("Signup Error:", err.message);
         btn.innerText = "Try Again";
         btn.disabled = false;
-        alert("Error: " + err.message);
+        alert("Registration Failed: " + err.message);
     }
 }
