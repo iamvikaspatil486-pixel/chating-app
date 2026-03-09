@@ -1,22 +1,16 @@
 // STEP NAVIGATION
 function nextStep(){
-const step1=document.getElementById("step1");
-const step2=document.getElementById("step2");
-
-step1.classList.remove("active");
-step2.classList.add("active");
+document.getElementById("step1").classList.remove("active");
+document.getElementById("step2").classList.add("active");
 }
 
 function prevStep(){
-const step2=document.getElementById("step2");
-const step1=document.getElementById("step1");
-
-step2.classList.remove("active");
-step1.classList.add("active");
+document.getElementById("step2").classList.remove("active");
+document.getElementById("step1").classList.add("active");
 }
 
 
-// PASSWORD TOGGLE
+// PASSWORD VISIBILITY
 function togglePassword(id){
 
 const input=document.getElementById(id);
@@ -59,11 +53,10 @@ return;
 btn.innerText="Processing...";
 btn.disabled=true;
 
-
 try{
 
-// CHECK IF ROLL NUMBER ALREADY EXISTS
-const {data:existing}=await supabase
+// CHECK ROLL NUMBER UNIQUE
+const {data:existing}=await db
 .from("students")
 .select("roll_no")
 .eq("roll_no",rollNo)
@@ -77,9 +70,8 @@ return;
 }
 
 
-
 // CREATE AUTH USER
-const {data,error}=await supabase.auth.signUp({
+const {data,error}=await db.auth.signUp({
 email:email,
 password:password
 });
@@ -87,9 +79,8 @@ password:password
 if(error) throw error;
 
 
-
-// INSERT STUDENT RECORD
-const {error:dbError}=await supabase
+// INSERT INTO STUDENTS TABLE
+const {error:dbError}=await db
 .from("students")
 .insert([{
 id:data.user.id,
@@ -109,7 +100,6 @@ btn.innerText="Request Sent";
 alert("Request sent successfully. Please verify your email.");
 
 document.getElementById("registrationForm").reset();
-
 
 }catch(err){
 
