@@ -54,16 +54,20 @@ btn.disabled = true;
 try{
 
 // Create Supabase Auth user
-const { data, error } = await _supabase.auth.signUp({
+const { data, error } = await supabase.auth.signUp({
 email: email,
-password: password
+password: password,
+options:{
+emailRedirectTo: window.location.origin + "/app.html"
+}
 });
 
-if(error) throw error;
-
+if(error){
+throw error;
+}
 
 // Save student data
-await _supabase
+const { error: dbError } = await supabase
 .from("students")
 .insert([
 {
@@ -76,9 +80,13 @@ is_approved: false
 }
 ]);
 
+if(dbError){
+throw dbError;
+}
+
 btn.innerText = "Request Sent";
 
-alert("Success! Please check your email to verify.");
+alert("Success! Check your email to verify your account.");
 
 }catch(err){
 
