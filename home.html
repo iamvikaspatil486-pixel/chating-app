@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>STUDENTS HARATE - Home</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+<style>
+html, body { height: 100%; overflow:hidden; }
+body { touch-action: manipulation; overscroll-behavior: none; }
+</style>
+</head>
+
+<body class="bg-slate-900 text-white font-sans h-screen flex flex-col">
+
+<!-- HEADER -->
+<header class="flex items-center justify-center py-4 bg-slate-800/50 border-b border-slate-700 shadow-lg">
+  <h1 class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">
+    STUDENTS HARATE
+  </h1>
+</header>
+
+<!-- POSTS CONTAINER -->
+<main class="flex-1 overflow-y-auto px-4 py-2 space-y-4" id="postsContainer">
+  <!-- Example post card -->
+  <div class="bg-slate-800 rounded-2xl p-4 shadow-md border border-slate-700">
+    <div class="flex items-center justify-between mb-2">
+      <span class="font-bold text-cyan-400">John Doe</span>
+      <span class="text-xs text-slate-400">2h ago</span>
+    </div>
+    <p class="text-slate-200 mb-3">This is a sample post by a student.</p>
+    <div class="flex gap-4">
+      <button class="flex items-center gap-2 py-2 px-4 bg-slate-700 rounded-xl hover:bg-slate-600 transition-all text-sm font-semibold">
+        <i data-lucide="message-square" class="w-4 h-4"></i> Comment
+      </button>
+      <button class="flex items-center gap-2 py-2 px-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl hover:from-cyan-500 hover:to-blue-500 transition-all text-sm font-semibold">
+        <i data-lucide="share-2" class="w-4 h-4"></i> Share
+      </button>
+    </div>
+  </div>
+</main>
+
+<!-- BOTTOM NAV -->
+<nav class="flex justify-between items-center px-6 py-3 bg-slate-800/70 border-t border-slate-700 shadow-inner">
+  <button onclick="goToAnonChat()" class="flex items-center gap-2 bg-cyan-600 rounded-2xl px-4 py-2 hover:bg-cyan-500 transition-all font-bold text-sm">
+    <i data-lucide="message-circle" class="w-5 h-5"></i> Live Anonymous Chat
+  </button>
+  <button onclick="refreshPosts()" class="flex items-center gap-2 bg-slate-700 rounded-2xl px-4 py-2 hover:bg-slate-600 transition-all font-bold text-sm">
+    <i data-lucide="refresh-cw" class="w-5 h-5"></i> Refresh
+  </button>
+</nav>
+
+<script>
+lucide.createIcons();
+
+// Example function to navigate to anonymous chat
+function goToAnonChat() {
+  window.location.href = "anon_chat.html";
+}
+
+// Example function to refresh posts
+function refreshPosts() {
+  alert("Posts refreshed! (Add Supabase fetch here)");
+}
+
+// Placeholder: Load posts dynamically from Supabase
+const postsContainer = document.getElementById("postsContainer");
+
+// Example: fetch posts from Supabase table
+async function loadPosts() {
+  const { data: posts, error } = await supabase
+    .from('posts')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if(error) {
+    console.log(error);
+    return;
+  }
+
+  postsContainer.innerHTML = '';
+  posts.forEach(post => {
+    const card = document.createElement('div');
+    card.className = 'bg-slate-800 rounded-2xl p-4 shadow-md border border-slate-700';
+    card.innerHTML = `
+      <div class="flex items-center justify-between mb-2">
+        <span class="font-bold text-cyan-400">${post.student_name}</span>
+        <span class="text-xs text-slate-400">${new Date(post.created_at).toLocaleTimeString()}</span>
+      </div>
+      <p class="text-slate-200 mb-3">${post.message}</p>
+      <div class="flex gap-4">
+        <button class="flex items-center gap-2 py-2 px-4 bg-slate-700 rounded-xl hover:bg-slate-600 transition-all text-sm font-semibold">
+          <i data-lucide="message-square" class="w-4 h-4"></i> Comment
+        </button>
+        <button class="flex items-center gap-2 py-2 px-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl hover:from-cyan-500 hover:to-blue-500 transition-all text-sm font-semibold">
+          <i data-lucide="share-2" class="w-4 h-4"></i> Share
+        </button>
+      </div>
+    `;
+    postsContainer.appendChild(card);
+  });
+}
+
+loadPosts();
+</script>
+</body>
+</html>
