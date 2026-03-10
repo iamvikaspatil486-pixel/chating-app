@@ -28,7 +28,6 @@ lucide.createIcons();
 }
 
 
-
 // REGISTRATION
 async function handleJoinNow(event){
 
@@ -43,12 +42,10 @@ const email=document.getElementById("email").value;
 const password=document.getElementById("password").value;
 const confPass=document.getElementById("confPass").value;
 
-
 if(password!==confPass){
 alert("Passwords do not match");
 return;
 }
-
 
 btn.innerText="Processing...";
 btn.disabled=true;
@@ -70,10 +67,13 @@ return;
 }
 
 
-// CREATE AUTH USER
+// CREATE AUTH USER + EMAIL VERIFICATION
 const {data,error}=await db.auth.signUp({
 email:email,
-password:password
+password:password,
+options:{
+emailRedirectTo:"https://iamvikaspatil486-pixel.github.io/chating-app/verified.html"
+}
 });
 
 if(error) throw error;
@@ -90,7 +90,6 @@ nickname:nickname,
 email:email,
 is_approved:false
 }]);
-
 
 if(dbError) throw dbError;
 
