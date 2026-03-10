@@ -1,17 +1,20 @@
-// Navigation between steps
+// STEP NAVIGATION
 function showStep(stepId){
+
 document.querySelectorAll(".step").forEach(step=>{
 step.classList.remove("active");
 });
+
 document.getElementById(stepId).classList.add("active");
+
 }
 
 
-// Toggle password visibility
+// PASSWORD VISIBILITY
 function togglePass(id){
 
-const input = document.getElementById(id);
-const icon = document.getElementById(id+"-icon");
+const input=document.getElementById(id);
+const icon=document.getElementById(id+"-icon");
 
 if(input.type==="password"){
 input.type="text";
@@ -26,17 +29,17 @@ lucide.createIcons();
 }
 
 
-// STEP 1 – Check Roll Number
+// STEP 1 – CHECK ROLL NUMBER
 async function checkUser(){
 
-const roll = document.getElementById("loginRollNo").value.trim().toUpperCase();
+const roll=document.getElementById("loginRollNo").value.trim().toUpperCase();
 
 if(!roll){
 alert("Please enter Roll Number");
 return;
 }
 
-const {data,error} = await db
+const {data,error}=await db
 .from("students")
 .select("full_name")
 .eq("roll_no",roll)
@@ -52,18 +55,18 @@ showStep("loginStep2");
 }
 
 
-// STEP 2 – Login
+// STEP 2 – LOGIN
 async function handleLogin(){
 
-const roll = document.getElementById("loginRollNo").value.trim().toUpperCase();
-const pass = document.getElementById("loginPassword").value;
+const roll=document.getElementById("loginRollNo").value.trim().toUpperCase();
+const pass=document.getElementById("loginPassword").value;
 
 if(!pass){
 alert("Enter password");
 return;
 }
 
-const {data:student,error} = await db
+const {data:student,error}=await db
 .from("students")
 .select("email,is_approved")
 .eq("roll_no",roll)
@@ -74,7 +77,7 @@ alert("Roll number not registered");
 return;
 }
 
-const {error:loginError} = await db.auth.signInWithPassword({
+const {error:loginError}=await db.auth.signInWithPassword({
 email:student.email,
 password:pass
 });
@@ -95,71 +98,37 @@ window.location.href="home.html";
 }
 
 
-// Forgot password
-async function sendOtp(){
+// FORGOT PASSWORD – SEND RESET LINK
+async function sendResetLink(){
 
-const email=document.getElementById("resetEmail").value;
+const email=document.getElementById("resetEmail").value.trim();
 
 if(!email){
 alert("Enter email");
 return;
 }
 
-const {error}=await db.auth.signInWithOtp({
-email:email,
-options:{shouldCreateUser:false}
-});
+// check email exists
+const {data:student,error}=await db
+.from("students")
+.select("email")
+.eq("email",email)
+.single();
 
-if(error){
-alert(error.message);
-}else{
-alert("OTP sent to email");
-showStep("otpStep");
-}
-
-}
-
-
-// Verify OTP
-async function verifyOtp(){
-
-const email=document.getElementById("resetEmail").value;
-const token=document.getElementById("otpCode").value;
-
-const {error}=await db.auth.verifyOtp({
-email:email,
-token:token,
-type:"email"
-});
-
-if(error){
-alert("Invalid OTP");
-}else{
-showStep("newPassStep");
-}
-
-}
-
-
-// Update password
-async function updatePassword(){
-
-const newPass=document.getElementById("finalNewPass").value;
-
-if(newPass.length<6){
-alert("Password must be 6 characters");
+if(error || !student){
+alert("Email not registered");
 return;
 }
 
-const {error}=await db.auth.updateUser({
-password:newPass
+// send reset link
+const {error:resetError}=await db.auth.resetPasswordForEmail(email,{
+redirectTo:"https://iamvikaspatil486-pixel.github.io/chating-app/reset_password.html"
 });
 
-if(error){
-alert(error.message);
+if(resetError){
+alert(resetError.message);
 }else{
-alert("Password updated");
-window.location.href="home.html";
+alert("Password reset link sent to your email");
 }
 
 }
