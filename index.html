@@ -1,40 +1,243 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>STUDENTS HARATE</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body {
-            touch-action: pan-x pan-y;
-            overscroll-behavior: none;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login | Students Harate</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+
+<style>
+.step{display:none;}
+.step.active{display:block;}
+</style>
+
 </head>
-<body class="bg-slate-900 text-white font-sans flex flex-col h-screen overflow-hidden">
 
-    <main class="flex-grow flex flex-col items-center justify-center px-6 text-center">
-        <div class="mb-8">
-            <h1 class="text-4xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-2">
-                STUDENTS HARATE
-            </h1>
-            <p class="text-slate-400 text-lg">Where college conversations happen.</p>
-        </div>
+<body class="bg-slate-900 text-white min-h-screen flex items-center justify-center px-6">
 
-        <div class="w-full max-w-xs space-y-4">
-            <button onclick="location.href='login'" class="w-full py-4 bg-blue-600 hover:bg-blue-500 rounded-2xl font-bold text-lg transition-all active:scale-95 shadow-lg shadow-blue-500/20">
-                Login
-            </button>
-            <button onclick="location.href='register'" class="w-full py-4 bg-slate-800 border border-slate-700 hover:bg-slate-700 rounded-2xl font-bold text-lg transition-all active:scale-95">
-                Join Now
-            </button>
-        </div>
-    </main>
+<div class="w-full max-w-md bg-slate-800/50 p-8 rounded-3xl border border-slate-700 shadow-2xl">
 
-    <footer class="pb-10 text-slate-500 text-sm">
-        &copy; 2026 Students Harate
-    </footer>
+<h2 class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-8 text-center">
+Login
+</h2>
+
+<!-- STEP 1 -->
+<div id="loginStep1" class="step active space-y-4">
+
+<input
+type="text"
+id="loginRollNo"
+placeholder="Enter Roll No."
+class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 outline-none focus:border-cyan-500">
+
+<button onclick="checkUser()" class="w-full py-4 bg-slate-700 rounded-2xl font-bold hover:bg-slate-600">
+Next
+</button>
+
+</div>
+
+
+<!-- STEP 2 -->
+<div id="loginStep2" class="step space-y-4">
+
+<div class="relative">
+
+<input
+type="password"
+id="loginPassword"
+placeholder="Password"
+class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 outline-none focus:border-cyan-500">
+
+<button onclick="togglePass('loginPassword')" class="absolute right-4 top-3.5 text-slate-500">
+<i id="loginPassword-icon" data-lucide="eye"></i>
+</button>
+
+</div>
+
+<button onclick="handleLogin()" class="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-2xl font-bold">
+Login
+</button>
+
+<div class="flex justify-between px-2">
+
+<button onclick="showStep('loginStep1')" class="text-xs text-slate-500 uppercase font-bold">
+Back
+</button>
+
+<button onclick="showStep('forgotStep')" class="text-xs text-cyan-500 uppercase font-bold">
+Forgot Password?
+</button>
+
+</div>
+
+</div>
+
+
+<!-- FORGOT PASSWORD -->
+<div id="forgotStep" class="step space-y-4">
+
+<p class="text-slate-400 text-sm text-center">
+Enter your verified email.
+</p>
+
+<input
+type="email"
+id="resetEmail"
+placeholder="your@email.com"
+class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 outline-none focus:border-cyan-500">
+
+<button onclick="sendResetLink()" class="w-full py-4 bg-slate-700 rounded-2xl font-bold text-cyan-400">
+Send Reset Link
+</button>
+
+<button onclick="showStep('loginStep2')" class="w-full text-center text-xs text-slate-500 uppercase font-bold">
+Cancel
+</button>
+
+</div>
+
+</div>
+
+
+<script>
+
+// Navigation
+function showStep(stepId){
+document.querySelectorAll(".step").forEach(step=>{
+step.classList.remove("active");
+});
+document.getElementById(stepId).classList.add("active");
+}
+
+
+// Toggle password
+function togglePass(id){
+
+const input=document.getElementById(id);
+const icon=document.getElementById(id+"-icon");
+
+if(input.type==="password"){
+input.type="text";
+icon.setAttribute("data-lucide","eye-off");
+}else{
+input.type="password";
+icon.setAttribute("data-lucide","eye");
+}
+
+lucide.createIcons();
+
+}
+
+
+// STEP 1 – Check Roll
+async function checkUser(){
+
+const roll=document.getElementById("loginRollNo").value.trim().toUpperCase();
+
+if(!roll){
+alert("Enter roll number");
+return;
+}
+
+const {data,error}=await db
+.from("students")
+.select("full_name")
+.eq("roll_no",roll)
+.single();
+
+if(error || !data){
+alert("Roll number not registered");
+return;
+}
+
+showStep("loginStep2");
+
+}
+
+
+// STEP 2 – Login
+async function handleLogin(){
+
+const roll=document.getElementById("loginRollNo").value.trim().toUpperCase();
+const pass=document.getElementById("loginPassword").value;
+
+if(!pass){
+alert("Enter password");
+return;
+}
+
+const {data:student,error}=await db
+.from("students")
+.select("email,is_approved")
+.eq("roll_no",roll)
+.single();
+
+if(error || !student){
+alert("Roll number not registered");
+return;
+}
+
+const {error:loginError}=await db.auth.signInWithPassword({
+email:student.email,
+password:pass
+});
+
+if(loginError){
+alert("Wrong password");
+return;
+}
+
+if(!student.is_approved){
+alert("Waiting for admin approval");
+await db.auth.signOut();
+return;
+}
+
+window.location.href="home.html";
+
+}
+
+
+// Forgot password → send reset link
+async function sendResetLink(){
+
+const email=document.getElementById("resetEmail").value.trim();
+
+if(!email){
+alert("Enter email");
+return;
+}
+
+const {data:student,error}=await db
+.from("students")
+.select("email")
+.eq("email",email)
+.single();
+
+if(error || !student){
+alert("Email not registered");
+return;
+}
+
+const {error:resetError}=await db.auth.resetPasswordForEmail(email,{
+redirectTo:"https://iamvikaspatil486-pixel.github.io/chating-app/reset_password.html"
+});
+
+if(resetError){
+alert(resetError.message);
+}else{
+alert("Password reset link sent to your email");
+}
+
+}
+
+lucide.createIcons();
+
+</script>
 
 </body>
 </html>
