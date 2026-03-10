@@ -15,7 +15,7 @@ document.getElementById(stepId).classList.add("active");
 // next button
 function checkUser() {
 
-const roll = document.getElementById("loginRollNo").value;
+const roll = document.getElementById("roll_no.").value;
 
 if(!roll){
 alert("Please enter roll number");
