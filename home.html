@@ -72,27 +72,25 @@
         </button>
 
     </nav>
+<script>
+    // Initialize icons
+    lucide.createIcons();
 
-    <script>
-        lucide.createIcons();
+    // The Security Guard: Check session on page load
+    window.onload = async () => {
+        // We use 'db' because that is what you defined in supabase.js
+        const { data: { session }, error } = await db.auth.getSession();
 
-// home.js logic
-async function protectHomePage() {
-    const { data: { session } } = await _supabase.auth.getSession();
+        if (error || !session) {
+            console.log("No session found, redirecting to login...");
+            window.location.href = "login.html";
+        } else {
+            console.log("Logged in as:", session.user.email);
+            // You are successfully logged in! 
+            // Now the home page stays open.
+        }
+    };
+</script>
 
-    // If no session exists, send them back to login
-    if (!session) {
-        window.location.href = "login.html";
-        return;
-    }
-
-    // Optional: Fetch the user's nickname to show on the UI
-    console.log("Welcome student:", session.user.email);
-}
-
-protectHomePage();
-
-        checkSession();
-    </script>
 </body>
 </html>
