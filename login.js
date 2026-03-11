@@ -124,7 +124,8 @@ redirectTo:"https://students-harate.vercel.app/reset_password.html"
 });
 
 if(resetError){
-alert(resetError.message);
+alert(resetError.message); 
+console.log(resetError);
 }else{
 alert("Password reset link sent to your email");
 }
