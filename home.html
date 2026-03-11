@@ -76,17 +76,6 @@
     <script>
         lucide.createIcons();
 
-        // Check if user is logged in
-        async function checkSession() {
-            const { data: { session } } = await _supabase.auth.getSession();
-            if (!session) {
-                window.location.href = 'login.html';
-            }
-        }
-        checkSession();
-    </script>
-</body>
-</html>
 // home.js logic
 async function protectHomePage() {
     const { data: { session } } = await _supabase.auth.getSession();
@@ -102,3 +91,8 @@ async function protectHomePage() {
 }
 
 protectHomePage();
+
+        checkSession();
+    </script>
+</body>
+</html>
