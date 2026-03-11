@@ -122,7 +122,7 @@ return;
 
 // send reset link
 const {error:resetError}=await db.auth.resetPasswordForEmail(email,{
-redirectTo:"https://iamvikaspatil486-pixel.github.io/chating-app/reset_password.html"
+redirectTo:"https://students-harate.vercel.app/reset_password.html"
 });
 
 if(resetError){
