@@ -108,7 +108,6 @@ alert("Enter email");
 return;
 }
 
-// check email exists
 const {data:student,error}=await db
 .from("students")
 .select("email")
@@ -120,7 +119,6 @@ alert("Email not registered");
 return;
 }
 
-// send reset link
 const {error:resetError}=await db.auth.resetPasswordForEmail(email,{
 redirectTo:"https://students-harate.vercel.app/reset_password.html"
 });
