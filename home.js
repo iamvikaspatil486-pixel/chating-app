@@ -1,7 +1,7 @@
 const feed = document.getElementById("feed")
 const noPosts = document.getElementById("noPosts")
 
-// Wait until DOM is loaded before running
+// Wait until DOM is loaded
 document.addEventListener("DOMContentLoaded", () => {
     if (!window.db) {
         console.error("Supabase client (db) not initialized yet!")
@@ -32,14 +32,22 @@ async function loadPosts() {
     noPosts.style.display = "none"
 
     for (const post of posts) {
-        // GET IMAGES
+        // GET ALL IMAGES
         const { data: images } = await db
-            .from("post_images")
+            .from("post_image")
             .select("*")
             .eq("post_id", post.id)
             .order("position")
 
-        const imageUrl = images?.[0]?.image_url || ""
+        // CREATE IMAGE HTML
+        let imagesHtml = ""
+        if (images && images.length > 0) {
+            imagesHtml = `<div class="flex gap-2 overflow-x-auto p-3">`
+            for (const img of images) {
+                imagesHtml += `<img src="${img.image_url}" onclick="openImage('${img.image_url}')" class="w-36 h-36 object-cover rounded-lg flex-shrink-0">`
+            }
+            imagesHtml += `</div>`
+        }
 
         // GET LIKE COUNT
         const { data: likes } = await db
@@ -68,7 +76,7 @@ async function loadPosts() {
             </div>
         </div>
 
-        <img src="${imageUrl}" onclick="openImage('${imageUrl}')" class="w-full aspect-square object-cover">
+        ${imagesHtml}
 
         <div class="p-3 text-sm text-slate-200">
             ${post.caption || ""}
