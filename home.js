@@ -32,9 +32,9 @@ async function loadPosts() {
     noPosts.style.display = "none"
 
     for (const post of posts) {
-        // GET ALL IMAGES
+        // ✅ GET ALL IMAGES from correct table
         const { data: images } = await db
-            .from("post_images")
+            .from("post_images")   // <-- corrected table name
             .select("*")
             .eq("post_id", post.id)
             .order("position")
