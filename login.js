@@ -77,7 +77,7 @@ alert("Roll number not registered");
 return;
 }
 
-const {error:loginError}=await db.auth.signInWithPassword({
+const {data, error:loginError}=await db.auth.signInWithPassword({
 email:student.email,
 password:pass
 });
@@ -93,7 +93,12 @@ await db.auth.signOut();
 return;
 }
 
+// wait for session to be saved
+const { data: sessionData } = await db.auth.getSession();
+
+if(sessionData.session){
 window.location.href="home.html";
+}
 
 }
 
