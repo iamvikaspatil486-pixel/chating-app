@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<title>Comments</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+
+</head>
+
+<body class="bg-slate-900 text-white font-sans">
+
+<!-- HEADER -->
+<header class="p-4 border-b border-slate-700 flex items-center">
+
+<button onclick="history.back()" class="mr-4">
+⬅
+</button>
+
+<h1 class="text-lg font-bold">
+Comments
+</h1>
+
+</header>
+
+
+<!-- COMMENTS -->
+<main id="commentsList"
+class="p-4 space-y-4 pb-24">
+
+</main>
+
+
+<!-- COMMENT INPUT -->
+<div class="fixed bottom-0 left-0 right-0 bg-slate-800 p-3 flex gap-2">
+
+<input
+id="commentInput"
+placeholder="Write comment..."
+class="flex-1 bg-slate-700 p-2 rounded-lg text-sm">
+
+<button onclick="openGifSearch()">
+GIF
+</button>
+
+<button onclick="sendComment()"
+class="text-cyan-400 font-bold">
+
+Send
+
+</button>
+
+</div>
+
+
+<!-- GIF PANEL -->
+<div id="gifPanel"
+class="hidden fixed bottom-16 left-0 right-0 bg-slate-900 p-3 h-64 overflow-y-scroll">
+
+<input
+id="gifSearch"
+placeholder="Search GIF..."
+class="w-full mb-2 p-2 bg-slate-700 rounded">
+
+<div id="gifResults"
+class="grid grid-cols-3 gap-2"></div>
+
+</div>
+
+
+<script src="comments.js"></script>
+
+</body>
+</html>
