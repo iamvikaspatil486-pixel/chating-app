@@ -1,37 +1,88 @@
-<!DOCTYPE html>  <html lang="en">  
-<head>  
-<meta charset="UTF-8">  
-<meta name="viewport" content="width=device-width, initial-scale=1.0">  
-<title>Students Harate</title>  <script src="https://cdn.tailwindcss.com"></script>  <script src="https://unpkg.com/lucide@latest"></script>  </head>  <body class="bg-slate-900 text-white font-sans">  <!-- HEADER -->  <header class="sticky top-0 bg-slate-900 border-b border-slate-800 p-4 text-center">  
-<h1 class="text-xl font-bold text-cyan-400">STUDENTS HARATE</h1>  
-<p class="text-xs text-slate-400">NOTICE</p>  
-</header>  <!-- FEED -->  <main class="max-w-md mx-auto p-4 space-y-6 pb-24">  <!-- POST CARD -->  <div class="bg-slate-800 rounded-2xl overflow-hidden">  <!-- USER INFO -->  <div class="flex items-center gap-3 p-3">  <div class="w-10 h-10 rounded-full bg-cyan-500 flex items-center justify-center font-bold">  
-V  
-</div>  <div>  
-<p id="nickname" class="text-sm font-bold text-cyan-400">@nickname</p>  
-<p id="originalName" class="text-xs text-slate-400">Original Name</p>  
-</div>  </div>  <!-- POST IMAGE -->  <div class="bg-slate-700 aspect-square flex items-center justify-center">  <i data-lucide="image" class="w-12 h-12 text-slate-500"></i>
+<!DOCTYPE html>
+<html lang="en">
+<head>
 
-</div>  <!-- CAPTION -->  <div class="p-3 text-sm text-slate-200">  
-<p>Caption of the post</p>  
-</div>  <!-- ACTIONS -->  <div class="flex justify-between items-center p-3 border-t border-slate-700">  <div class="flex gap-4">  <button class="flex items-center gap-1 text-slate-400 hover:text-red-400">  
-<i data-lucide="heart"></i>  
-<span class="text-xs">Like</span>  
-</button>  <button class="flex items-center gap-1 text-slate-400 hover:text-blue-400">  
-<i data-lucide="message-circle"></i>  
-<span class="text-xs">Comment</span>  
-</button>  </div>  <button class="text-slate-400">  
-<i data-lucide="bookmark"></i>  
-</button>  </div>  </div>  <!-- NO POSTS MESSAGE -->  <div id="noPosts" class="text-center text-slate-500 text-sm">  
-No posts yet  
-</div>  </main>  <!-- BOTTOM NAV -->  <nav class="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 flex justify-around p-4">  <button onclick="window.location.href='create.html'" class="text-cyan-400">  
-<i data-lucide="plus"></i>  
-</button>  <button>  
-<i data-lucide="home"></i>  
-</button>  <button onclick="window.location.href='chat.html'" class="relative">  
-<i data-lucide="message-square"></i>  <!-- notification dot -->  <span class="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+<meta charset="UTF-8">
 
-</button>  </nav>  <script>  
-lucide.createIcons()  
-</script>  </body>  
+<!-- disable zoom -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<title>Students Harate</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<!-- Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+
+<!-- Auth protection -->
+<script src="auth.js"></script>
+
+<!-- Home logic -->
+<script src="home.js" defer></script>
+
+</head>
+
+<body class="bg-slate-900 text-white font-sans overflow-x-hidden">
+
+<!-- HEADER -->
+<header class="sticky top-0 bg-slate-900 border-b border-slate-800 p-4 text-center">
+
+<h1 class="text-xl font-bold text-cyan-400">
+STUDENTS HARATE
+</h1>
+
+<p class="text-xs text-slate-400">
+NOTICE
+</p>
+
+</header>
+
+
+<!-- FEED -->
+<main id="feed" class="max-w-md mx-auto p-4 space-y-6 pb-24">
+
+<!-- posts will load here -->
+
+<!-- NO POSTS MESSAGE -->
+<div id="noPosts" class="text-center text-slate-500 text-sm">
+No posts yet
+</div>
+
+</main>
+
+
+<!-- BOTTOM NAV -->
+<nav class="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 flex justify-around p-4">
+
+<!-- CREATE POST -->
+<button onclick="window.location.href='create.html'" class="text-cyan-400">
+<i data-lucide="plus"></i>
+</button>
+
+<!-- HOME -->
+<button onclick="window.location.href='home.html'">
+<i data-lucide="home"></i>
+</button>
+
+<!-- CHAT -->
+<button onclick="window.location.href='chat.html'" class="relative">
+
+<i data-lucide="message-square"></i>
+
+<span class="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+
+</button>
+
+</nav>
+
+
+<script>
+
+lucide.createIcons()
+
+</script>
+
+</body>
 </html>
