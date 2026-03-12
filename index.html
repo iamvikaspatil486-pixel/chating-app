@@ -16,6 +16,10 @@
 
 <script src="https://cdn.tailwindcss.com"></script>
 
+<!-- Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+
 </head>
 
 <body class="bg-slate-900 text-white flex items-center justify-center min-h-screen px-6 overflow-hidden">
@@ -51,6 +55,19 @@ Join Now
 </div>
 
 <script>
+
+// redirect if already logged in
+async function checkLoggedUser(){
+
+const { data } = await db.auth.getSession();
+
+if(data.session){
+window.location.href = "home.html";
+}
+
+}
+
+window.addEventListener("load", checkLoggedUser);
 
 function openLogin(){
 window.location.href="login.html";
