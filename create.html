@@ -69,7 +69,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const files = imagesInput.files;
 
         if (!files.length) { alert("Select at least one image"); return; }
-
         if (!window.db) { alert("Database not initialized"); return; }
 
         // GET LOGGED-IN USER
@@ -81,18 +80,26 @@ document.addEventListener("DOMContentLoaded", () => {
         const { data: post, error } = await db.from("posts").insert({ user_id: user.id, caption }).select().single();
         if (error) { alert("Post creation failed"); console.log(error); return; }
 
-        // UPLOAD IMAGES
+        // UPLOAD IMAGES & INSERT INTO post_images
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
-            const fileName = Date.now() + "_" + file.name;
+            const fileName = `${post.id}_${Date.now()}_${file.name}`; // unique filename
 
+            // Upload to storage
             const { error: uploadError } = await db.storage.from("post-images").upload(fileName, file);
-            if (uploadError) { console.log(uploadError); continue; }
+            if (uploadError) { console.log("Upload error:", uploadError); continue; }
 
+            // Get public URL
             const { data } = db.storage.from("post-images").getPublicUrl(fileName);
             const imageUrl = data.publicUrl;
 
-            await db.from("post_image").insert({ post_id: post.id, image_url: imageUrl, position: i });
+            // INSERT INTO post_images table
+            const { error: insertError } = await db.from("post_images").insert({
+                post_id: post.id,
+                image_url: imageUrl,
+                position: i
+            });
+            if (insertError) console.log("Insert post_image failed:", insertError);
         }
 
         alert("Post created successfully!");
