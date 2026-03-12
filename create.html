@@ -1,21 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
 <title>Create Post | Students Harate</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
-
-<!-- Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase.js"></script>
 <script src="auth.js"></script>
-
 </head>
+
 <body class="bg-slate-900 text-white font-sans overflow-x-hidden">
 
 <!-- HEADER -->
@@ -57,11 +53,11 @@
 lucide.createIcons();
 
 // IMAGE PREVIEW
-document.getElementById("images").addEventListener("change", function(){
+document.getElementById("images").addEventListener("change", function() {
     const preview = document.getElementById("preview");
     preview.innerHTML = "";
     const files = this.files;
-    for(let i=0;i<files.length;i++){
+    for (let i = 0; i < files.length; i++) {
         const img = document.createElement("img");
         img.src = URL.createObjectURL(files[i]);
         img.className = "w-24 h-24 object-cover rounded-lg";
@@ -69,32 +65,28 @@ document.getElementById("images").addEventListener("change", function(){
     }
 });
 
-// CREATE POST FUNCTION
-async function createPost(){
+// CREATE POST
+async function createPost() {
     const caption = document.getElementById("caption").value;
     const files = document.getElementById("images").files;
 
-    if(files.length === 0){
-        alert("Select at least one image");
-        return;
-    }
+    if (!files.length) { alert("Select at least one image"); return; }
 
-    // GET LOGGED USER
+    // Get logged-in user
     const { data: { session } } = await db.auth.getSession();
-    if(!session){ alert("Please login first"); return; }
+    if (!session) { alert("Please login first"); return; }
     const user = session.user;
 
     // CREATE POST
-    const { data: post, error } = await db
-        .from("posts")
-        .insert({ user_id: user.id, caption: caption })
+    const { data: post, error } = await db.from("posts")
+        .insert({ user_id: user.id, caption })
         .select()
         .single();
 
-    if(error){ alert("Post creation failed"); console.log(error); return; }
+    if (error) { alert("Post creation failed"); console.log(error); return; }
 
-    // UPLOAD IMAGES AND INSERT INTO post_image
-    for(let i=0;i<files.length;i++){
+    // UPLOAD IMAGES
+    for (let i = 0; i < files.length; i++) {
         const file = files[i];
         const fileName = Date.now() + "_" + file.name;
 
@@ -103,13 +95,13 @@ async function createPost(){
             .from("post-images")
             .upload(fileName, file);
 
-        if(uploadError){ alert("Image upload failed"); console.log(uploadError); continue; }
+        if (uploadError) { alert("Image upload failed"); console.log(uploadError); continue; }
 
         // Get public URL
         const { data } = supabase.storage.from("post-images").getPublicUrl(fileName);
         const imageUrl = data.publicUrl;
 
-        // Insert into post_image table
+        // INSERT INTO post_image
         await db.from("post_image").insert({
             post_id: post.id,
             image_url: imageUrl,
@@ -117,7 +109,7 @@ async function createPost(){
         });
     }
 
-    alert("Post created successfully");
+    alert("Post created successfully!");
     window.location.href = "home.html";
 }
 </script>
