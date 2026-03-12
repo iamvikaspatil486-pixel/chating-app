@@ -33,23 +33,29 @@ Post Content
 <i data-lucide="home" class="w-6 h-6"></i>  
 </button>  <button onclick="window.location.href='chat.html'" class="p-3 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl text-white shadow-lg shadow-cyan-500/20">  
 <i data-lucide="message-square" class="w-6 h-6"></i>  
-</button>  </nav>  <script>  
-  
-lucide.createIcons();  
-  
-// Check if user is logged in  
-async function checkSession() {  
-  
-const { data: { session } } = await db.auth.getSession();  
-  
-if (!session) {  
-window.location.href = "login.html";  
-}  
-  
-}  
-  
-// run when page loads  
-window.onload = checkSession;  
-  
-</script>  </body>  
+</button>  </nav> 
+<script>
+lucide.createIcons();
+
+async function checkSession() {
+
+const { data } = await db.auth.getSession();
+
+if (!data.session) {
+window.location.href = "login.html";
+}
+
+}
+
+// Wait for auth system to load
+db.auth.onAuthStateChange((event, session) => {
+
+if (!session) {
+window.location.href = "login.html";
+}
+
+});
+
+checkSession();
+</script></body>  
 </html>
