@@ -4,7 +4,7 @@
 
 <meta charset="UTF-8">
 
-<!-- disable zoom -->
+<!-- Disable zoom -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
 <title>Create Post | Students Harate</title>
@@ -23,11 +23,9 @@
 
 <!-- HEADER -->
 <header class="sticky top-0 bg-slate-900 border-b border-slate-800 p-4 text-center">
-
 <h1 class="text-xl font-bold text-cyan-400">
 ADD POST
 </h1>
-
 </header>
 
 
@@ -51,7 +49,7 @@ class="w-full mt-2 p-3 bg-slate-800 rounded-xl">
 </div>
 
 
-<!-- PREVIEW -->
+<!-- IMAGE PREVIEW -->
 <div id="preview" class="flex gap-2 overflow-x-auto"></div>
 
 
@@ -74,6 +72,7 @@ class="w-full mt-2 p-3 bg-slate-800 rounded-xl">
 
 <!-- POST BUTTON -->
 <button
+type="button"
 onclick="createPost()"
 class="w-full py-3 bg-cyan-500 rounded-xl font-bold text-slate-900">
 
@@ -104,31 +103,30 @@ Post
 
 <script>
 
-lucide.createIcons()
+lucide.createIcons();
 
 
-// preview selected images
-document.getElementById("images").addEventListener("change",function(){
+// IMAGE PREVIEW
+document.getElementById("images").addEventListener("change", function(){
 
-const preview=document.getElementById("preview")
+const preview = document.getElementById("preview");
+preview.innerHTML = "";
 
-preview.innerHTML=""
-
-const files=this.files
+const files = this.files;
 
 for(let i=0;i<files.length;i++){
 
-const img=document.createElement("img")
+const img = document.createElement("img");
 
-img.src=URL.createObjectURL(files[i])
+img.src = URL.createObjectURL(files[i]);
 
-img.className="w-24 h-24 object-cover rounded-lg"
+img.className = "w-24 h-24 object-cover rounded-lg";
 
-preview.appendChild(img)
+preview.appendChild(img);
 
 }
 
-})
+});
 
 
 
@@ -136,93 +134,90 @@ preview.appendChild(img)
 // CREATE POST
 async function createPost(){
 
-const caption=document.getElementById("caption").value
+const caption = document.getElementById("caption").value;
+const files = document.getElementById("images").files;
 
-const files=document.getElementById("images").files
-
-if(files.length===0){
-
-alert("Select at least one image")
-
-return
-
+if(files.length === 0){
+alert("Select at least one image");
+return;
 }
 
 
-// get logged user
-const {data:{session}}=await db.auth.getSession()
+// GET LOGGED USER
+const { data:{session}, error:sessionError } = await db.auth.getSession();
 
-const user=session.user
+if(!session){
+alert("Please login first");
+return;
+}
+
+const user = session.user;
 
 
-
-// create post record
-const {data:post,error}=await db
+// CREATE POST RECORD
+const { data:post, error } = await db
 .from("posts")
 .insert({
-user_id:user.id,
-caption:caption
+user_id: user.id,
+caption: caption
 })
 .select()
-.single()
+.single();
 
 if(error){
-
-alert("Post creation failed")
-
-return
-
+alert("Post creation failed");
+console.log(error);
+return;
 }
 
 
-
-// upload images
+// UPLOAD IMAGES
 for(let i=0;i<files.length;i++){
 
-const file=files[i]
+const file = files[i];
 
-const fileName=Date.now()+"_"+file.name
+const fileName = Date.now() + "_" + file.name;
 
 
-const {error:uploadError}=await db
+// UPLOAD TO STORAGE
+const { error:uploadError } = await db
 .storage
 .from("post-images")
-.upload(fileName,file)
-
+.upload(fileName, file);
 
 if(uploadError){
-
-alert("Image upload failed")
-
-continue
-
+alert("Image upload failed");
+console.log(uploadError);
+continue;
 }
 
 
-// get public url
-const imageUrl=db
+// GET PUBLIC URL
+const { data } = db
 .storage
 .from("post-images")
-.getPublicUrl(fileName)
-.data.publicUrl
+.getPublicUrl(fileName);
+
+const imageUrl = data.publicUrl;
 
 
-// save image record
+// SAVE IMAGE RECORD
 await db
 .from("post_images")
 .insert({
 
-post_id:post.id,
-image_url:imageUrl,
-position:i
+post_id: post.id,
+image_url: imageUrl,
+position: i
 
-})
+});
 
 }
 
 
-// redirect
-window.location.href="home.html"
+alert("Post created successfully");
+
+window.location.href = "home.html";
 
 }
 
