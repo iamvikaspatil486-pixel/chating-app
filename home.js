@@ -1,22 +1,33 @@
 const feed = document.getElementById("feed")
+const noPosts = document.getElementById("noPosts")
 
-loadPosts()
+document.addEventListener("DOMContentLoaded", () => {
+    loadPosts()
+})
 
-// LOAD POSTS
 async function loadPosts() {
+    console.log("Loading posts...")
 
-    const { data: posts } = await db
+    const { data: posts, error } = await db
         .from("posts")
         .select("*")
         .order("created_at", { ascending: false })
 
-    if (!posts || posts.length === 0) return
+    if (error) {
+        console.error("Error fetching posts:", error)
+        noPosts.innerText = "Error loading posts"
+        return
+    }
 
-    document.getElementById("noPosts").style.display = "none"
+    if (!posts || posts.length === 0) {
+        noPosts.style.display = "block"
+        return
+    }
+
+    noPosts.style.display = "none"
+    console.log("Posts fetched:", posts)
 
     for (const post of posts) {
-
-        // GET IMAGES
         const { data: images } = await db
             .from("post_images")
             .select("*")
@@ -25,7 +36,6 @@ async function loadPosts() {
 
         const imageUrl = images?.[0]?.image_url || ""
 
-        // GET LIKE COUNT
         const { data: likes } = await db
             .from("likes")
             .select("*")
@@ -33,7 +43,6 @@ async function loadPosts() {
 
         const likeCount = likes.length
 
-        // USER DISPLAY
         const nickname = post.nickname || post.full_name
         const fullName = post.full_name || ""
         const letter = nickname.charAt(0).toUpperCase()
@@ -78,74 +87,4 @@ async function loadPosts() {
     }
 
     lucide.createIcons()
-}
-
-
-// LIKE / DISLIKE
-async function likePost(postId) {
-    const { data: { session } } = await db.auth.getSession()
-    if (!session) {
-        alert("Login required")
-        return
-    }
-
-    const user = session.user
-
-    const { data: existing } = await db
-        .from("likes")
-        .select("*")
-        .eq("post_id", postId)
-        .eq("user_id", user.id)
-        .single()
-
-    if (existing) {
-        // DISLIKE
-        await db.from("likes").delete().eq("post_id", postId).eq("user_id", user.id)
-    } else {
-        // LIKE
-        await db.from("likes").insert({ post_id: postId, user_id: user.id })
-    }
-
-    updateLikes(postId)
-}
-
-
-// UPDATE LIKE COUNT
-async function updateLikes(postId) {
-    const { data } = await db.from("likes").select("*").eq("post_id", postId)
-    document.getElementById("likes-" + postId).innerText = data.length
-}
-
-
-// DELETE POST
-async function deletePost(postId, ownerId) {
-    const { data: { session } } = await db.auth.getSession()
-    const user = session.user
-
-    if (user.id !== ownerId) {
-        alert("You have not right to delete this post")
-        return
-    }
-
-    await db.from("posts").delete().eq("id", postId)
-    location.reload()
-}
-
-
-// OPEN COMMENTS PAGE
-function openComments(postId) {
-    window.location.href = "comments.html?post=" + postId
-}
-
-
-// OPEN IMAGE FULLSCREEN
-function openImage(url) {
-    const win = window.open()
-    win.document.write(`
-    <style>
-    body { margin:0; background:black; display:flex; align-items:center; justify-content:center; height:100vh; }
-    img { max-width:100%; max-height:100%; }
-    </style>
-    <img src="${url}">
-    `)
 }
