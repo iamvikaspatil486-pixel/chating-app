@@ -56,9 +56,9 @@ card.innerHTML = `
 
 ${letter}
 
+<div id="feed" class="p-4 space-y-4">
+  <!-- Posts will be inserted here by JS -->
 </div>
-
-<div>
 
 <p class="text-sm font-bold text-cyan-400">
 
