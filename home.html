@@ -1,17 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
 <meta charset="UTF-8">
-
 <meta name="viewport"
-content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Students Harate</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase.js"></script>
 
@@ -21,62 +17,43 @@ content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable
 
 <!-- HEADER -->
 <header class="sticky top-0 bg-slate-900 border-b border-slate-800 p-4 flex items-center">
+    <button onclick="window.location.href='notice.html'" class="text-cyan-400 font-bold mr-4">
+        Notice
+    </button>
 
-<button onclick="window.location.href='notice.html'"
-class="text-cyan-400 font-bold mr-4">
-
-Notice
-
-</button>
-
-<div class="text-center w-full">
-<h1 class="text-xl font-bold text-cyan-400">
-STUDENTS HARATE
-</h1>
-</div>
-
+    <div class="text-center w-full">
+        <h1 class="text-xl font-bold text-cyan-400">
+            STUDENTS HARATE
+        </h1>
+    </div>
 </header>
 
-
 <!-- FEED -->
-<main id="feed"
-class="max-w-md mx-auto p-4 space-y-6 pb-24">
-
-<div id="noPosts"
-class="text-center text-slate-500 text-sm">
-
-No posts yet
-
-</div>
-
+<main id="feed" class="max-w-md mx-auto p-4 space-y-6 pb-24">
+    <!-- No posts message -->
+    <div id="noPosts" class="text-center text-slate-500 text-sm">
+        No posts yet
+    </div>
 </main>
-
 
 <!-- BOTTOM NAV -->
 <nav class="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 flex justify-around items-center p-3">
+    <button>
+        <i data-lucide="home"></i>
+    </button>
 
-<button>
-<i data-lucide="home"></i>
-</button>
+    <button onclick="window.location.href='create.html'" class="bg-cyan-500 p-3 rounded-full text-slate-900">
+        <i data-lucide="plus"></i>
+    </button>
 
-<button onclick="window.location.href='create.html'"
-class="bg-cyan-500 p-3 rounded-full text-slate-900">
-
-<i data-lucide="plus"></i>
-
-</button>
-
-<button onclick="window.location.href='chat.html'">
-<i data-lucide="message-square"></i>
-</button>
-
+    <button onclick="window.location.href='chat.html'">
+        <i data-lucide="message-square"></i>
+    </button>
 </nav>
 
-
 <script src="home.js"></script>
-
 <script>
-lucide.createIcons()
+    lucide.createIcons()
 </script>
 
 </body>
