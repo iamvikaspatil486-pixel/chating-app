@@ -7,14 +7,14 @@ window.location.href="login.html";
 return;
 }
 
-// optional: get logged user
+// logged user info
 const user = data.session.user;
 console.log("Logged user:", user.email);
 
 }
 
-// run when page loads
-document.addEventListener("DOMContentLoaded", requireAuth);
+// run after page fully loads
+window.addEventListener("load", requireAuth);
 
 
 // logout function
