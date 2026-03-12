@@ -34,7 +34,7 @@ async function loadPosts() {
     for (const post of posts) {
         // GET ALL IMAGES
         const { data: images } = await db
-            .from("post_image")
+            .from("post_images")
             .select("*")
             .eq("post_id", post.id)
             .order("position")
