@@ -4,8 +4,8 @@
 
 <meta charset="UTF-8">
 
-<!-- disable zoom -->
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
 <title>Students Harate</title>
 
@@ -16,72 +16,64 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase.js"></script>
 
-<!-- Auth protection -->
-<script src="auth.js"></script>
-
-<!-- Home logic -->
-<script src="home.js" defer></script>
-
 </head>
 
 <body class="bg-slate-900 text-white font-sans overflow-x-hidden">
 
 <!-- HEADER -->
 <header class="sticky top-0 bg-slate-900 border-b border-slate-800 p-4 text-center">
-
-<h1 class="text-xl font-bold text-cyan-400">
-STUDENTS HARATE
-</h1>
-
-<p class="text-xs text-slate-400">
-NOTICE
-</p>
-
+<h1 class="text-xl font-bold text-cyan-400">STUDENTS HARATE</h1>
+<p class="text-xs text-slate-400">NOTICE</p>
 </header>
 
 
 <!-- FEED -->
-<main id="feed" class="max-w-md mx-auto p-4 space-y-6 pb-24">
+<main id="feed"
+class="max-w-md mx-auto p-4 space-y-6 pb-24">
 
-<!-- posts will load here -->
+<div id="noPosts"
+class="text-center text-slate-500 text-sm">
 
-<!-- NO POSTS MESSAGE -->
-<div id="noPosts" class="text-center text-slate-500 text-sm">
 No posts yet
+
 </div>
 
 </main>
 
 
 <!-- BOTTOM NAV -->
-<nav class="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 flex justify-around p-4">
+<nav class="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 flex justify-around items-center p-3">
 
-<!-- CREATE POST -->
-<button onclick="window.location.href='create.html'" class="text-cyan-400">
-<i data-lucide="plus"></i>
+<!-- NOTICE -->
+<button onclick="window.location.href='notice.html'">
+<i data-lucide="megaphone"></i>
 </button>
 
 <!-- HOME -->
-<button onclick="window.location.href='home.html'">
+<button>
 <i data-lucide="home"></i>
 </button>
 
+<!-- ADD POST -->
+<button onclick="window.location.href='create.html'"
+class="bg-cyan-500 p-3 rounded-full text-slate-900">
+
+<i data-lucide="plus"></i>
+
+</button>
+
 <!-- CHAT -->
-<button onclick="window.location.href='chat.html'" class="relative">
-
+<button onclick="window.location.href='chat.html'">
 <i data-lucide="message-square"></i>
-
-<span class="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-
 </button>
 
 </nav>
 
 
+<script src="home.js"></script>
+
 <script>
-
 lucide.createIcons()
-
 </script>
 
 </body>
