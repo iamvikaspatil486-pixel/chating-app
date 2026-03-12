@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+
+<!-- disable zoom -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<title>Create Post | Students Harate</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<!-- Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+<script src="auth.js"></script>
+
+</head>
+
+<body class="bg-slate-900 text-white font-sans overflow-x-hidden">
+
+<!-- HEADER -->
+<header class="sticky top-0 bg-slate-900 border-b border-slate-800 p-4 text-center">
+
+<h1 class="text-xl font-bold text-cyan-400">
+ADD POST
+</h1>
+
+</header>
+
+
+<!-- MAIN -->
+<main class="max-w-md mx-auto p-4 space-y-6 pb-24">
+
+<!-- IMAGE UPLOAD -->
+<div>
+
+<label class="text-sm text-slate-400">
+Upload Images
+</label>
+
+<input
+type="file"
+id="images"
+multiple
+accept="image/*"
+class="w-full mt-2 p-3 bg-slate-800 rounded-xl">
+
+</div>
+
+
+<!-- PREVIEW -->
+<div id="preview" class="flex gap-2 overflow-x-auto"></div>
+
+
+<!-- CAPTION -->
+<div>
+
+<label class="text-sm text-slate-400">
+Caption
+</label>
+
+<textarea
+id="caption"
+rows="3"
+placeholder="Write something..."
+class="w-full mt-2 p-3 bg-slate-800 rounded-xl">
+</textarea>
+
+</div>
+
+
+<!-- POST BUTTON -->
+<button
+onclick="createPost()"
+class="w-full py-3 bg-cyan-500 rounded-xl font-bold text-slate-900">
+
+Post
+
+</button>
+
+</main>
+
+
+<!-- BOTTOM NAV -->
+<nav class="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 flex justify-around p-4">
+
+<button onclick="window.location.href='home.html'">
+<i data-lucide="home"></i>
+</button>
+
+<button class="text-cyan-400">
+<i data-lucide="plus"></i>
+</button>
+
+<button onclick="window.location.href='chat.html'">
+<i data-lucide="message-square"></i>
+</button>
+
+</nav>
+
+
+<script>
+
+lucide.createIcons()
+
+
+// preview selected images
+document.getElementById("images").addEventListener("change",function(){
+
+const preview=document.getElementById("preview")
+
+preview.innerHTML=""
+
+const files=this.files
+
+for(let i=0;i<files.length;i++){
+
+const img=document.createElement("img")
+
+img.src=URL.createObjectURL(files[i])
+
+img.className="w-24 h-24 object-cover rounded-lg"
+
+preview.appendChild(img)
+
+}
+
+})
+
+
+
+
+// CREATE POST
+async function createPost(){
+
+const caption=document.getElementById("caption").value
+
+const files=document.getElementById("images").files
+
+if(files.length===0){
+
+alert("Select at least one image")
+
+return
+
+}
+
+
+// get logged user
+const {data:{session}}=await db.auth.getSession()
+
+const user=session.user
+
+
+
+// create post record
+const {data:post,error}=await db
+.from("posts")
+.insert({
+user_id:user.id,
+caption:caption
+})
+.select()
+.single()
+
+if(error){
+
+alert("Post creation failed")
+
+return
+
+}
+
+
+
+// upload images
+for(let i=0;i<files.length;i++){
+
+const file=files[i]
+
+const fileName=Date.now()+"_"+file.name
+
+
+const {error:uploadError}=await db
+.storage
+.from("post-images")
+.upload(fileName,file)
+
+
+if(uploadError){
+
+alert("Image upload failed")
+
+continue
+
+}
+
+
+// get public url
+const imageUrl=db
+.storage
+.from("post-images")
+.getPublicUrl(fileName)
+.data.publicUrl
+
+
+// save image record
+await db
+.from("post_images")
+.insert({
+
+post_id:post.id,
+image_url:imageUrl,
+position:i
+
+})
+
+}
+
+
+// redirect
+window.location.href="home.html"
+
+}
+
+</script>
+
+</body>
+</html>
