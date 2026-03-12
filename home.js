@@ -11,9 +11,7 @@ const { data:posts } = await db
 .select("*")
 .order("created_at",{ascending:false})
 
-
 if(!posts || posts.length === 0) return
-
 
 document.getElementById("noPosts").style.display="none"
 
@@ -27,8 +25,7 @@ const { data:images } = await db
 .eq("post_id",post.id)
 .order("position")
 
-
-const imageUrl = images[0]?.image_url || ""
+const imageUrl = images?.[0]?.image_url || ""
 
 
 // GET LIKE COUNT
@@ -37,8 +34,13 @@ const { data:likes } = await db
 .select("*")
 .eq("post_id",post.id)
 
-
 const likeCount = likes.length
+
+
+// USER DISPLAY
+const nickname = post.nickname || post.full_name
+const fullName = post.full_name || ""
+const letter = nickname.charAt(0).toUpperCase()
 
 
 const card = document.createElement("div")
@@ -51,11 +53,25 @@ card.innerHTML = `
 <div class="flex items-center gap-3 p-3">
 
 <div class="w-10 h-10 rounded-full bg-cyan-500 flex items-center justify-center font-bold">
-U
+
+${letter}
+
 </div>
 
 <div>
-<p class="text-sm font-bold text-cyan-400">@user</p>
+
+<p class="text-sm font-bold text-cyan-400">
+
+@${nickname}
+
+</p>
+
+<p class="text-xs text-slate-400">
+
+${fullName}
+
+</p>
+
 </div>
 
 </div>
@@ -82,7 +98,11 @@ class="text-slate-400 hover:text-red-400">
 
 </button>
 
-<span id="likes-${post.id}" class="text-xs">${likeCount}</span>
+<span id="likes-${post.id}" class="text-xs">
+
+${likeCount}
+
+</span>
 
 
 <button onclick="openComments('${post.id}')"
@@ -94,15 +114,21 @@ class="text-slate-400 hover:text-blue-400">
 
 </div>
 
+
+<button onclick="deletePost('${post.id}','${post.user_id}')"
+class="text-red-400">
+
+<i data-lucide="trash-2"></i>
+
+</button>
+
 </div>
 
 `
 
-
 feed.appendChild(card)
 
 }
-
 
 lucide.createIcons()
 
@@ -110,30 +136,47 @@ lucide.createIcons()
 
 
 
-// LIKE POST
+// LIKE / DISLIKE
 async function likePost(postId){
 
 const {data:{session}} = await db.auth.getSession()
 
 if(!session){
-
 alert("Login required")
 return
-
 }
 
 const user=session.user
 
 
+const {data:existing} = await db
+.from("likes")
+.select("*")
+.eq("post_id",postId)
+.eq("user_id",user.id)
+.single()
+
+
+if(existing){
+
+// DISLIKE
+await db
+.from("likes")
+.delete()
+.eq("post_id",postId)
+.eq("user_id",user.id)
+
+}else{
+
+// LIKE
 await db
 .from("likes")
 .insert({
-
 post_id:postId,
 user_id:user.id
-
 })
 
+}
 
 updateLikes(postId)
 
@@ -149,14 +192,38 @@ const { data } = await db
 .select("*")
 .eq("post_id",postId)
 
-
 document.getElementById("likes-"+postId).innerText=data.length
 
 }
 
 
 
-// OPEN COMMENTS
+// DELETE POST
+async function deletePost(postId,ownerId){
+
+const {data:{session}} = await db.auth.getSession()
+
+const user=session.user
+
+if(user.id !== ownerId){
+
+alert("You have not right to delete this post")
+return
+
+}
+
+await db
+.from("posts")
+.delete()
+.eq("id",postId)
+
+location.reload()
+
+}
+
+
+
+// OPEN COMMENTS PAGE
 function openComments(postId){
 
 window.location.href="comments.html?post="+postId
@@ -173,7 +240,6 @@ const win = window.open()
 win.document.write(`
 
 <style>
-
 body{
 margin:0;
 background:black;
@@ -187,7 +253,6 @@ img{
 max-width:100%;
 max-height:100%;
 }
-
 </style>
 
 <img src="${url}">
