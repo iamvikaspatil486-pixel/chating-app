@@ -28,13 +28,11 @@ ADD POST
 </h1>
 </header>
 
-
 <!-- MAIN -->
 <main class="max-w-md mx-auto p-4 space-y-6 pb-24">
 
 <!-- IMAGE UPLOAD -->
 <div>
-
 <label class="text-sm text-slate-400">
 Upload Images
 </label>
@@ -45,17 +43,13 @@ id="images"
 multiple
 accept="image/*"
 class="w-full mt-2 p-3 bg-slate-800 rounded-xl">
-
 </div>
-
 
 <!-- IMAGE PREVIEW -->
 <div id="preview" class="flex gap-2 overflow-x-auto"></div>
 
-
 <!-- CAPTION -->
 <div>
-
 <label class="text-sm text-slate-400">
 Caption
 </label>
@@ -66,26 +60,20 @@ rows="3"
 placeholder="Write something..."
 class="w-full mt-2 p-3 bg-slate-800 rounded-xl">
 </textarea>
-
 </div>
-
 
 <!-- POST BUTTON -->
 <button
 type="button"
 onclick="createPost()"
 class="w-full py-3 bg-cyan-500 rounded-xl font-bold text-slate-900">
-
 Post
-
 </button>
 
 </main>
 
-
 <!-- BOTTOM NAV -->
 <nav class="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 flex justify-around p-4">
-
 <button onclick="window.location.href='home.html'">
 <i data-lucide="home"></i>
 </button>
@@ -97,130 +85,78 @@ Post
 <button onclick="window.location.href='chat.html'">
 <i data-lucide="message-square"></i>
 </button>
-
 </nav>
 
-
 <script>
-
 lucide.createIcons();
-
 
 // IMAGE PREVIEW
 document.getElementById("images").addEventListener("change", function(){
-
-const preview = document.getElementById("preview");
-preview.innerHTML = "";
-
-const files = this.files;
-
-for(let i=0;i<files.length;i++){
-
-const img = document.createElement("img");
-
-img.src = URL.createObjectURL(files[i]);
-
-img.className = "w-24 h-24 object-cover rounded-lg";
-
-preview.appendChild(img);
-
-}
-
+    const preview = document.getElementById("preview");
+    preview.innerHTML = "";
+    const files = this.files;
+    for(let i=0;i<files.length;i++){
+        const img = document.createElement("img");
+        img.src = URL.createObjectURL(files[i]);
+        img.className = "w-24 h-24 object-cover rounded-lg";
+        preview.appendChild(img);
+    }
 });
-
-
-
 
 // CREATE POST
 async function createPost(){
+    const caption = document.getElementById("caption").value;
+    const files = document.getElementById("images").files;
 
-const caption = document.getElementById("caption").value;
-const files = document.getElementById("images").files;
+    if(files.length === 0){
+        alert("Select at least one image");
+        return;
+    }
 
-if(files.length === 0){
-alert("Select at least one image");
-return;
+    // GET LOGGED USER
+    const { data:{session} } = await db.auth.getSession();
+    if(!session){ alert("Please login first"); return; }
+    const user = session.user;
+
+    // CREATE POST RECORD
+    const { data: post, error } = await db
+        .from("posts")
+        .insert({ user_id: user.id, caption: caption })
+        .select()
+        .single();
+
+    if(error){ alert("Post creation failed"); console.log(error); return; }
+
+    // UPLOAD IMAGES
+    for(let i=0;i<files.length;i++){
+        const file = files[i];
+        const fileName = Date.now() + "_" + file.name;
+
+        // UPLOAD TO STORAGE (supabase, not db)
+        const { error: uploadError } = await supabase.storage
+            .from("post-images")
+            .upload(fileName, file);
+
+        if(uploadError){ alert("Image upload failed"); console.log(uploadError); continue; }
+
+        // GET PUBLIC URL
+        const { data } = supabase.storage
+            .from("post-images")
+            .getPublicUrl(fileName);
+
+        const imageUrl = data.publicUrl;
+
+        // SAVE IMAGE RECORD IN post_images
+        await db.from("post_images").insert({
+            post_id: post.id,
+            image_url: imageUrl,
+            position: i
+        });
+    }
+
+    alert("Post created successfully");
+    window.location.href = "home.html";
 }
-
-
-// GET LOGGED USER
-const { data:{session}, error:sessionError } = await db.auth.getSession();
-
-if(!session){
-alert("Please login first");
-return;
-}
-
-const user = session.user;
-
-
-// CREATE POST RECORD
-const { data:post, error } = await db
-.from("posts")
-.insert({
-user_id: user.id,
-caption: caption
-})
-.select()
-.single();
-
-if(error){
-alert("Post creation failed");
-console.log(error);
-return;
-}
-
-
-// UPLOAD IMAGES
-for(let i=0;i<files.length;i++){
-
-const file = files[i];
-
-const fileName = Date.now() + "_" + file.name;
-
-
-// UPLOAD TO STORAGE
-const { error:uploadError } = await db
-.storage
-.from("post-images")
-.upload(fileName, file);
-
-if(uploadError){
-alert("Image upload failed");
-console.log(uploadError);
-continue;
-}
-
-
-// GET PUBLIC URL
-const { data } = db
-.storage
-.from("post-images")
-.getPublicUrl(fileName);
-
-const imageUrl = data.publicUrl;
-
-
-// SAVE IMAGE RECORD
-await db
-.from("post_images")
-.insert({
-
-post_id: post.id,
-image_url: imageUrl,
-position: i
-
-});
-
-}
-
-
-alert("Post created successfully");
-
-window.location.href = "home.html";
-
-}
-
 </script>
 
 </body>
