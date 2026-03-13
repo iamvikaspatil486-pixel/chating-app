@@ -8,112 +8,260 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <script src="supabase.js"></script>
 <script src="auth.js"></script>
 
 </head>
+
 <body class="bg-slate-900 text-white font-sans overflow-x-hidden">
 
 <header class="sticky top-0 bg-slate-900 border-b border-slate-800 p-4 text-center">
 <h1 class="text-xl font-bold text-cyan-400">ADD POST</h1>
 </header>
 
+
 <main class="max-w-md mx-auto p-4 space-y-6 pb-24">
 
 <div>
 <label class="text-sm text-slate-400">Upload Images</label>
-<input type="file" id="images" multiple accept="image/*" class="w-full mt-2 p-3 bg-slate-800 rounded-xl">
+
+<input 
+type="file" 
+id="images" 
+multiple 
+accept="image/*"
+class="w-full mt-2 p-3 bg-slate-800 rounded-xl">
+
 </div>
+
 
 <div id="preview" class="flex gap-2 overflow-x-auto"></div>
 
+
 <div>
+
 <label class="text-sm text-slate-400">Caption</label>
-<textarea id="caption" rows="3" placeholder="Write something..." class="w-full mt-2 p-3 bg-slate-800 rounded-xl"></textarea>
+
+<textarea 
+id="caption" 
+rows="3"
+placeholder="Write something..."
+class="w-full mt-2 p-3 bg-slate-800 rounded-xl"></textarea>
+
 </div>
 
-<button id="postBtn" type="button" class="w-full py-3 bg-cyan-500 rounded-xl font-bold text-slate-900">Post</button>
+
+<button 
+id="postBtn"
+type="button"
+class="w-full py-3 bg-cyan-500 rounded-xl font-bold text-slate-900">
+
+Post
+
+</button>
 
 </main>
 
+
+
 <nav class="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 flex justify-around p-4">
-<button onclick="window.location.href='home.html'"><i data-lucide="home"></i></button>
-<button class="text-cyan-400"><i data-lucide="plus"></i></button>
-<button onclick="window.location.href='chat.html'"><i data-lucide="message-square"></i></button>
+
+<button onclick="window.location.href='home.html'">
+<i data-lucide="home"></i>
+</button>
+
+<button class="text-cyan-400">
+<i data-lucide="plus"></i>
+</button>
+
+<button onclick="window.location.href='chat.html'">
+<i data-lucide="message-square"></i>
+</button>
+
 </nav>
 
+
+
 <script>
-lucide.createIcons();
+
+lucide.createIcons()
 
 document.addEventListener("DOMContentLoaded", () => {
 
-    const imagesInput = document.getElementById("images");
-    const preview = document.getElementById("preview");
-    const postBtn = document.getElementById("postBtn");
+const imagesInput = document.getElementById("images")
+const preview = document.getElementById("preview")
+const postBtn = document.getElementById("postBtn")
 
-    // IMAGE PREVIEW
-    imagesInput.addEventListener("change", function() {
-        preview.innerHTML = "";
-        const files = this.files;
-        for (let i = 0; i < files.length; i++) {
-            const img = document.createElement("img");
-            img.src = URL.createObjectURL(files[i]);
-            img.className = "w-24 h-24 object-cover rounded-lg";
-            preview.appendChild(img);
-        }
-    });
 
-    // POST BUTTON CLICK
-    postBtn.addEventListener("click", async () => {
-        const caption = document.getElementById("caption").value;
-        const files = imagesInput.files;
+// IMAGE PREVIEW
+imagesInput.addEventListener("change", function(){
 
-        if (!files.length) { alert("Select at least one image"); return; }
-        if (!window.db) { alert("Database not initialized"); return; }
+preview.innerHTML=""
 
-        // GET LOGGED-IN USER
-        const { data: { session } } = await db.auth.getSession();
-        if (!session) { alert("Please login first"); return; }
-        const user = session.user;
+const files=this.files
 
-        // GET USER METADATA (nickname & full_name)
-        const nickname = user.user_metadata?.nickname || "";
-        const full_name = user.user_metadata?.full_name || "";
+for(let i=0;i<files.length;i++){
 
-        // CREATE POST
-        const { data: post, error } = await db.from("posts").insert({
-            user_id: user.id,
-            caption: caption,
-            nickname: nickname,
-            full_name: full_name
-        }).select().single();
+const img=document.createElement("img")
 
-        if (error) { alert("Post creation failed"); console.log(error); return; }
+img.src=URL.createObjectURL(files[i])
 
-        // UPLOAD IMAGES & INSERT INTO post_images
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i];
-            const fileName = `${post.id}_${Date.now()}_${file.name}`;
+img.className="w-24 h-24 object-cover rounded-lg"
 
-            const { error: uploadError } = await db.storage.from("post-images").upload(fileName, file);
-            if (uploadError) { console.log("Upload error:", uploadError); continue; }
+preview.appendChild(img)
 
-            const { data } = db.storage.from("post-images").getPublicUrl(fileName);
-            const imageUrl = data.publicUrl;
+}
 
-            const { error: insertError } = await db.from("post_images").insert({
-                post_id: post.id,
-                image_url: imageUrl,
-                position: i
-            });
+})
 
-            if (insertError) console.log("Insert post_image failed:", insertError);
-        }
 
-        alert("Post created successfully!");
-        window.location.href = "home.html";
-    });
-});
+
+
+// POST BUTTON CLICK
+postBtn.addEventListener("click", async () => {
+
+const caption=document.getElementById("caption").value.trim()
+const files=imagesInput.files
+
+if(!files.length){
+alert("Select at least one image")
+return
+}
+
+if(!caption){
+alert("Caption required")
+return
+}
+
+if(!window.db){
+alert("Database not initialized")
+return
+}
+
+
+// GET USER
+const { data:{ session } } = await db.auth.getSession()
+
+if(!session){
+alert("Please login first")
+return
+}
+
+const user=session.user
+
+
+
+// GET USER NAME
+let nickname=user.user_metadata?.nickname
+let full_name=user.user_metadata?.full_name
+
+
+// FALLBACKS
+if(!nickname){
+
+// use email name
+nickname=user.email.split("@")[0]
+
+}
+
+if(!full_name){
+
+full_name=nickname
+
+}
+
+
+
+// CREATE POST
+const { data:post, error } = await db
+.from("posts")
+.insert({
+user_id:user.id,
+caption:caption,
+nickname:nickname,
+full_name:full_name
+})
+.select()
+.single()
+
+
+if(error){
+
+console.log(error)
+
+alert("Post creation failed")
+
+return
+
+}
+
+
+
+// UPLOAD IMAGES
+for(let i=0;i<files.length;i++){
+
+const file=files[i]
+
+const fileName=`${post.id}_${Date.now()}_${file.name}`
+
+
+const { error:uploadError } =
+await db.storage
+.from("post-images")
+.upload(fileName,file)
+
+
+if(uploadError){
+
+console.log("Upload error:",uploadError)
+
+continue
+
+}
+
+
+
+const { data } =
+db.storage
+.from("post-images")
+.getPublicUrl(fileName)
+
+
+const imageUrl=data.publicUrl
+
+
+
+const { error:insertError } =
+await db.from("post_images").insert({
+
+post_id:post.id,
+
+image_url:imageUrl,
+
+position:i
+
+})
+
+
+if(insertError){
+
+console.log("Insert post_image failed:",insertError)
+
+}
+
+}
+
+
+
+alert("Post created successfully!")
+
+window.location.href="home.html"
+
+})
+
+})
+
 </script>
 
 </body>
