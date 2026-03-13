@@ -76,29 +76,37 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!session) { alert("Please login first"); return; }
         const user = session.user;
 
+        // GET USER METADATA (nickname & full_name)
+        const nickname = user.user_metadata?.nickname || "";
+        const full_name = user.user_metadata?.full_name || "";
+
         // CREATE POST
-        const { data: post, error } = await db.from("posts").insert({ user_id: user.id, caption }).select().single();
+        const { data: post, error } = await db.from("posts").insert({
+            user_id: user.id,
+            caption: caption,
+            nickname: nickname,
+            full_name: full_name
+        }).select().single();
+
         if (error) { alert("Post creation failed"); console.log(error); return; }
 
         // UPLOAD IMAGES & INSERT INTO post_images
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
-            const fileName = `${post.id}_${Date.now()}_${file.name}`; // unique filename
+            const fileName = `${post.id}_${Date.now()}_${file.name}`;
 
-            // Upload to storage
             const { error: uploadError } = await db.storage.from("post-images").upload(fileName, file);
             if (uploadError) { console.log("Upload error:", uploadError); continue; }
 
-            // Get public URL
             const { data } = db.storage.from("post-images").getPublicUrl(fileName);
             const imageUrl = data.publicUrl;
 
-            // INSERT INTO post_images table
             const { error: insertError } = await db.from("post_images").insert({
                 post_id: post.id,
                 image_url: imageUrl,
                 position: i
             });
+
             if (insertError) console.log("Insert post_image failed:", insertError);
         }
 
