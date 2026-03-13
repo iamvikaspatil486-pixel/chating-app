@@ -32,7 +32,6 @@ id="images"
 multiple 
 accept="image/*"
 class="w-full mt-2 p-3 bg-slate-800 rounded-xl">
-
 </div>
 
 
@@ -40,7 +39,6 @@ class="w-full mt-2 p-3 bg-slate-800 rounded-xl">
 
 
 <div>
-
 <label class="text-sm text-slate-400">Caption</label>
 
 <textarea 
@@ -48,7 +46,6 @@ id="caption"
 rows="3"
 placeholder="Write something..."
 class="w-full mt-2 p-3 bg-slate-800 rounded-xl"></textarea>
-
 </div>
 
 
@@ -56,9 +53,7 @@ class="w-full mt-2 p-3 bg-slate-800 rounded-xl"></textarea>
 id="postBtn"
 type="button"
 class="w-full py-3 bg-cyan-500 rounded-xl font-bold text-slate-900">
-
 Post
-
 </button>
 
 </main>
@@ -152,24 +147,27 @@ const user=session.user
 
 
 
-// GET USER NAME
-let nickname=user.user_metadata?.nickname
-let full_name=user.user_metadata?.full_name
+// GET USER NAME FROM STUDENTS TABLE
+const { data: student, error: studentError } =
+await db
+.from("students")
+.select("nickname, full_name")
+.eq("id", user.id)
+.single()
 
 
-// FALLBACKS
-if(!nickname){
+if(studentError){
 
-// use email name
-nickname=user.email.split("@")[0]
+console.log("Student fetch error:", studentError)
+
+alert("Could not fetch user profile")
+
+return
 
 }
 
-if(!full_name){
-
-full_name=nickname
-
-}
+const nickname = student.nickname
+const full_name = student.full_name
 
 
 
