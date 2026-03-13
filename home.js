@@ -72,14 +72,27 @@ async function loadPosts() {
         const likeCount = likes ? likes.length : 0
 
 
+        // GET COMMENTS COUNT
+        const { data: comments } = await db
+            .from("comments")
+            .select("*")
+            .eq("post_id", post.id)
+
+        const commentCount = comments ? comments.length : 0
+
+
         // USER DISPLAY
-        const nickname = post.nickname || "user"
+        const nickname = post.nickname || ""
         const fullName = post.full_name || ""
-        const letter = nickname.charAt(0).toUpperCase()
+
+        const displayName = nickname || fullName || "user"
+        const letter = displayName.charAt(0).toUpperCase()
 
 
         const card = document.createElement("div")
-        card.className = "bg-slate-800 rounded-2xl overflow-hidden shadow"
+
+        // divider line between posts
+        card.className = "bg-slate-800 rounded-2xl overflow-hidden shadow border border-slate-700 mb-4"
 
 
         card.innerHTML = `
@@ -91,7 +104,7 @@ async function loadPosts() {
             </div>
 
             <div>
-                <p class="text-sm font-bold text-cyan-400">@${nickname}</p>
+                <p class="text-sm font-bold text-cyan-400">${displayName}</p>
                 <p class="text-xs text-slate-400">${fullName}</p>
             </div>
 
@@ -108,18 +121,20 @@ async function loadPosts() {
             <div class="flex gap-4 items-center">
 
                 <button onclick="likePost('${post.id}')"
-                class="text-slate-400 hover:text-red-400">
+                class="text-slate-400 hover:text-red-400 flex items-center gap-1">
 
                 <i data-lucide="heart" class="w-5 h-5"></i>
 
-                </button>
-
                 <span id="likes-${post.id}" class="text-xs">${likeCount}</span>
 
+                </button>
+
                 <button onclick="openComments('${post.id}')"
-                class="text-slate-400 hover:text-blue-400">
+                class="text-slate-400 hover:text-blue-400 flex items-center gap-1">
 
                 <i data-lucide="message-circle" class="w-5 h-5"></i>
+
+                <span class="text-xs">${commentCount}</span>
 
                 </button>
 
@@ -208,7 +223,10 @@ async function deletePost(postId, ownerId) {
 
     const { data: { session } } = await db.auth.getSession()
 
-    if (!session) return
+    if (!session) {
+        alert("Login required")
+        return
+    }
 
     const user = session.user
 
@@ -217,10 +235,16 @@ async function deletePost(postId, ownerId) {
         return
     }
 
+    const confirmDelete = confirm("Are you sure you want to delete this post?")
+
+    if (!confirmDelete) return
+
+    await db.from("post_images").delete().eq("post_id", postId)
+
     await db
-    .from("posts")
-    .delete()
-    .eq("id", postId)
+        .from("posts")
+        .delete()
+        .eq("id", postId)
 
     location.reload()
 }
