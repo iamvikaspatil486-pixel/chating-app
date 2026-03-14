@@ -1,57 +1,48 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport"
+content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 
-<head>
+<title>AGASTYANS</title><script src="https://cdn.tailwindcss.com"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase.js"></script><style>
 
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+html,body{
+height:100%;
+touch-action:manipulation;
+overflow:hidden;
+}
 
-<title>AGASTYANS</title>
+</style></head><body id="chatBody"
+class="bg-slate-900 text-white flex flex-col h-screen"><!-- HEADER --><header class="flex items-center justify-between p-3 border-b border-slate-700"><button onclick="history.back()" class="text-sm">
+BACK
+</button><h1 class="font-bold text-cyan-400">
+AGASTYANS
+</h1><button onclick="logout()" class="text-red-400 text-sm">
+LOGOUT
+</button></header><!-- CHAT AREA --><div id="chatBox"
+class="flex-1 overflow-y-auto p-3 space-y-3"></div><!-- TYPING INDICATOR --><div id="typing"
+class="text-xs text-slate-400 px-3 hidden">Someone is typing...
 
-<link rel="stylesheet" href="agastyans.css">
+</div><!-- INPUT AREA --><div class="border-t border-slate-700 p-2 flex gap-2"><input
+id="msg"
+placeholder="Anonymous message..."
+class="flex-1 bg-slate-800 rounded p-2 text-sm">
 
-</head>
+<button onclick="openGif()">GIF</button>
 
-<body>
+<button onclick="sendMsg()"
+class="text-cyan-400 font-bold">
+Send
+</button>
 
-<div class="chat-container">
+</div><!-- WALLPAPER BUTTON --><button
+onclick="toggleWallpaper()"
+class="fixed bottom-20 right-4 bg-cyan-500 p-2 rounded">
 
-<!-- HEADER -->
+🖼
 
-<div class="header">
+</button><div id="wallpaperPanel"
+class="hidden fixed bottom-32 right-4 bg-slate-800 p-3 rounded space-y-2"><button onclick="setWallpaper('dark')">Dark</button>
+<button onclick="setWallpaper('space')">Space</button>
+<button onclick="setWallpaper('ocean')">Ocean</button>
+<button onclick="setWallpaper('forest')">Forest</button>
 
-<button class="backBtn" onclick="goBack()">⬅</button>
-
-<h2>AGASTYANS</h2>
-
-<button class="logoutBtn" onclick="logout()">Logout</button>
-
-</div>
-
-
-<!-- CHAT -->
-
-<div id="chatBox" class="chat-box"></div>
-
-
-<!-- INPUT -->
-
-<div class="input-area">
-
-<input id="msgInput" placeholder="Send anonymous message...">
-
-<button onclick="sendMessage()">Send</button>
-
-<button onclick="sendGIF()">GIF</button>
-
-<button onclick="createPoll()">Poll</button>
-
-</div>
-
-</div>
-
-<script src="agastyans.js"></script>
-
-</body>
-
+</div><script src="chat.js"></script></body>
 </html>
