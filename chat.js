@@ -1,3 +1,8 @@
+const supabaseUrl = "https://ntfglwfrhljjkzecifuh.supabase.co";
+const supabaseKey = "YOUR_ANON_KEY";
+
+window.db = window.supabase.createClient(supabaseUrl, supabaseKey);
+
 const chatBox = document.getElementById("chatBox")
 const msgInput = document.getElementById("msg")
 
@@ -5,7 +10,6 @@ let username = null
 let replyTo = null
 
 // PAGE LOAD
-
 window.addEventListener("DOMContentLoaded", () => {
 
 document.getElementById("chatBody").style.backgroundImage = "url('chatw.png')"
@@ -15,26 +19,35 @@ document.getElementById("usernameModal").style.display = "flex"
 
 msgInput.disabled = true
 
+const savedUser = sessionStorage.getItem("chatUsername")
+
+if(savedUser){
+
+username = savedUser
+msgInput.disabled = false
+document.getElementById("usernameModal").style.display="none"
+loadMessages()
+
+}
+
 })
 
 // SELECT USERNAME
-
 function setUsername(name){
 
 username = name
 
-sessionStorage.setItem("chatUsername", name)
+sessionStorage.setItem("chatUsername",name)
 
-document.getElementById("usernameModal").style.display = "none"
+document.getElementById("usernameModal").style.display="none"
 
-msgInput.disabled = false
+msgInput.disabled=false
 
 loadMessages()
 
 }
 
 // CUSTOM USERNAME
-
 function setCustomUsername(){
 
 const name = document
@@ -42,11 +55,8 @@ const name = document
 .value.trim()
 
 if(!name){
-
 alert("Enter username")
-
 return
-
 }
 
 setUsername(name)
@@ -54,7 +64,6 @@ setUsername(name)
 }
 
 // LOAD MESSAGES
-
 async function loadMessages(){
 
 if(!username) return
@@ -65,31 +74,25 @@ const {data,error} = await db
 .order("created_at")
 
 if(error){
-
 console.log(error)
-
 return
-
 }
 
-chatBox.innerHTML = ""
+chatBox.innerHTML=""
 
-data.forEach(m => {
+data.forEach(m=>{
 
-const div = document.createElement("div")
+const div=document.createElement("div")
 
-div.className = "bg-slate-800 p-2 rounded max-w-xs"
+div.className="bg-slate-800 p-2 rounded max-w-xs"
 
 let replyHTML=""
 
 if(m.reply_to){
-
-replyHTML =
-'<p class="text-xs text-gray-400">Replying...</p>'
-
+replyHTML='<p class="text-xs text-gray-400">Replying...</p>'
 }
 
-div.innerHTML = `
+div.innerHTML=`
 
 <p class="text-xs text-cyan-400">${m.username}</p>${replyHTML}
 
@@ -102,21 +105,19 @@ ${m.message}
 
 </div>`
 
-// SWIPE TO REPLY
-
-let startX = 0
+let startX=0
 
 div.addEventListener("touchstart",e=>{
-startX = e.touches[0].clientX
+startX=e.touches[0].clientX
 })
 
 div.addEventListener("touchend",e=>{
 
-let endX = e.changedTouches[0].clientX
+let endX=e.changedTouches[0].clientX
 
-if(endX-startX > 80){
+if(endX-startX>80){
 
-replyTo = m.id
+replyTo=m.id
 
 alert("Reply mode activated")
 
@@ -128,78 +129,69 @@ chatBox.appendChild(div)
 
 })
 
-chatBox.scrollTop = chatBox.scrollHeight
+chatBox.scrollTop=chatBox.scrollHeight
 
 }
 
 // SEND MESSAGE
-
 async function sendMsg(){
 
 if(!username){
-
 alert("Select username first")
-
 return
-
 }
 
-const text = msgInput.value.trim()
+const text=msgInput.value.trim()
 
 if(!text) return
 
 await db.from("chat_messages").insert({
 
-username: username,
-
-message: "<p>${text}</p>",
-
-reply_to: replyTo
+username:username,
+message:"<p>${text}</p>",
+reply_to:replyTo
 
 })
 
-msgInput.value = ""
-
-replyTo = null
+msgInput.value=""
+replyTo=null
 
 loadMessages()
 
 }
 
 // SEND IMAGE / VIDEO
-
 function sendMedia(){
 
-const input = document.createElement("input")
+const input=document.createElement("input")
 
-input.type = "file"
+input.type="file"
+input.accept="image/,video/"
 
-input.accept = "image/,video/"
+input.onchange=async()=>{
 
-input.onchange = async () => {
+const file=input.files[0]
 
-const file = input.files[0]
+const reader=new FileReader()
 
-const reader = new FileReader()
-
-reader.onload = async function(){
+reader.onload=async function(){
 
 let content=""
 
 if(file.type.startsWith("video")){
 
-content = "<video controls class="w-48 rounded"> <source src="${reader.result}"> </video>"
+content="<video controls class="w-48 rounded"> <source src="${reader.result}"> </video>"
 
 }else{
 
-content = "<img src="${reader.result}" class="w-40 rounded">"
+content="<img src="${reader.result}" class="w-40 rounded">"
 
 }
 
 await db.from("chat_messages").insert({
 
-username: username,
-message: content
+username:username,
+message:content
 
 })
 
@@ -216,28 +208,26 @@ input.click()
 }
 
 // VOICE MESSAGE
-
 async function recordVoice(){
 
-const stream = await navigator.mediaDevices.getUserMedia({audio:true})
+const stream=await navigator.mediaDevices.getUserMedia({audio:true})
 
-const recorder = new MediaRecorder(stream)
+const recorder=new MediaRecorder(stream)
 
 let chunks=[]
 
-recorder.ondataavailable = e => chunks.push(e.data)
+recorder.ondataavailable=e=>chunks.push(e.data)
 
-recorder.onstop = async ()=>{
+recorder.onstop=async()=>{
 
-const blob = new Blob(chunks,{type:"audio/webm"})
+const blob=new Blob(chunks,{type:"audio/webm"})
 
-const url = URL.createObjectURL(blob)
+const url=URL.createObjectURL(blob)
 
 await db.from("chat_messages").insert({
 
-username: username,
-
-message: "<audio controls src="${url}"></audio>"
+username:username,
+message:"<audio controls src="${url}"></audio>"
 
 })
 
@@ -251,28 +241,26 @@ setTimeout(()=>recorder.stop(),5000)
 
 }
 
-// WALLPAPER FROM GALLERY
-
+// WALLPAPER
 function selectWallpaper(){
 
-const input = document.createElement("input")
+const input=document.createElement("input")
 
-input.type = "file"
+input.type="file"
+input.accept="image/*"
 
-input.accept = "image/*"
+input.onchange=()=>{
 
-input.onchange = ()=>{
+const file=input.files[0]
 
-const file = input.files[0]
+const reader=new FileReader()
 
-const reader = new FileReader()
+reader.onload=function(){
 
-reader.onload = function(){
-
-document.getElementById("chatBody").style.backgroundImage =
+document.getElementById("chatBody").style.backgroundImage=
 "url(${reader.result})"
 
-document.getElementById("chatBody").style.backgroundSize = "cover"
+document.getElementById("chatBody").style.backgroundSize="cover"
 
 }
 
@@ -285,7 +273,6 @@ input.click()
 }
 
 // REACTION
-
 async function react(id,emoji){
 
 await db.from("reactions").insert({
@@ -298,17 +285,15 @@ emoji:emoji
 }
 
 // AUTO REFRESH
-
 setInterval(loadMessages,3000)
 
 // LOGOUT
-
 async function logout(){
 
 sessionStorage.removeItem("chatUsername")
 
 await db.auth.signOut()
 
-location.href = "login.html"
+location.href="login.html"
 
 }
