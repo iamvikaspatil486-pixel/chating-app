@@ -32,7 +32,7 @@ loadMessages()
 })
 
 
-// SELECT USERNAME
+// SET USERNAME
 
 function setUsername(name){
 
@@ -43,6 +43,10 @@ sessionStorage.setItem("chatUsername",name)
 document.getElementById("usernameModal").style.display="none"
 
 msgInput.disabled=false
+
+setTimeout(()=>{
+msgInput.focus()
+},300)
 
 loadMessages()
 
@@ -99,11 +103,8 @@ const div=document.createElement("div")
 div.className="bg-slate-800 p-2 rounded max-w-xs"
 
 div.innerHTML=`
-
 <p class="text-xs text-cyan-400">${m.username}</p>
-
 ${m.message}
-
 `
 
 chatBox.appendChild(div)
@@ -122,7 +123,6 @@ async function sendMsg(){
 if(!username){
 
 alert("Select username first")
-
 return
 
 }
@@ -155,6 +155,10 @@ setInterval(loadMessages,2000)
 function logout(){
 
 sessionStorage.removeItem("chatUsername")
+
+if(typeof signOut === "function"){
+signOut()
+}
 
 location.reload()
 
