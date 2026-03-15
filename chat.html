@@ -1,99 +1,198 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0, final-scale=1.0, user-scalable = no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>AGASTYANS Chat</title>
-
-<link rel="stylesheet" href="chat.css">
+<title>Agastyans Chat</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <script src="supabase.js"></script>
 <script src="auth.js"></script>
 
+<style>
+
+body{
+margin:0;
+font-family:sans-serif;
+background:url("chatw.png") center/cover no-repeat fixed;
+height:100vh;
+display:flex;
+flex-direction:column;
+}
+
+/* HEADER */
+
+header{
+position:fixed;
+top:0;
+left:0;
+right:0;
+height:60px;
+background:white;
+border-bottom:1px solid #ccc;
+display:flex;
+align-items:center;
+justify-content:space-between;
+padding:0 10px;
+z-index:10;
+}
+
+header h2{
+margin:0;
+font-size:20px;
+}
+
+/* CHAT AREA */
+
+.messages{
+margin-top:60px;
+margin-bottom:70px;
+overflow-y:auto;
+flex:1;
+padding:10px;
+}
+
+/* CHAT BUBBLES */
+
+.message{
+background:white;
+padding:10px;
+border-radius:20px;
+margin:10px;
+max-width:70%;
+}
+
+.me{
+background:#d6ffd6;
+margin-left:auto;
+}
+
+/* INPUT BAR */
+
+.inputBar{
+position:fixed;
+bottom:0;
+left:0;
+right:0;
+height:60px;
+background:white;
+border-top:1px solid #ccc;
+display:flex;
+align-items:center;
+padding:5px;
+gap:5px;
+}
+
+.inputBar input{
+flex:1;
+border:none;
+background:#eee;
+border-radius:20px;
+padding:10px;
+}
+
+/* ICON BUTTONS */
+
+.iconBtn{
+font-size:20px;
+background:none;
+border:none;
+}
+
+</style>
 </head>
+
 
 <body>
 
-<!-- USERNAME POPUP -->
-
-<div id="usernamePopup" class="popup">
-
-<div class="popup-box">
-
-<h3>Select Username</h3>
-
-<select id="usernameSelect">
-
-<option value="">none</option>
-<option>f_the_mf</option>
-<option>princess</option>
-<option>ghostmode</option>
-<option>chaoskid</option>
-<option>nightowl</option>
-
-</select>
-
-<input id="customUsername" placeholder="Create your own username">
-
-<button onclick="saveUsername()">Enter Chat</button>
-
-</div>
-</div>
-
-
-<div class="chat-container">
-
-<header class="topbar">
-
-<button onclick="history.back()">BACK</button>
+<header>
+<button onclick="history.back()">Back</button>
 
 <h2>AGASTYANS</h2>
 
-<button id="logout">LOGOUT</button>
-
+<button id="logoutBtn">Logout</button>
 </header>
 
 
 <div id="messages" class="messages"></div>
 
 
-<div id="typingIndicator" class="typing hidden">
-Someone is typing...
-</div>
+<div class="inputBar">
 
+<button class="iconBtn">🎤</button>
+<button class="iconBtn">📷</button>
+<button class="iconBtn">🎥</button>
 
-<div id="replyBox" class="reply hidden">
-
-<span id="replyText"></span>
-
-<button onclick="cancelReply()">x</button>
-
-</div>
-
-
-<footer class="inputBar">
-
-<input id="messageInput" placeholder="Message...">
-
-<button id="gifBtn">GIF</button>
-
-<button id="voiceBtn">🎤</button>
+<input id="msgInput" placeholder="Message">
 
 <button id="sendBtn">➤</button>
 
-</footer>
-
 </div>
 
 
-<button class="pollBtn">📊</button>
+<script>
+
+const messagesDiv = document.getElementById("messages")
+const input = document.getElementById("msgInput")
+
+document.getElementById("sendBtn").onclick = sendMessage
 
 
-<script src="chat.js"></script>
+async function sendMessage(){
+
+const text = input.value
+if(!text) return
+
+const {data:{user}} = await db.auth.getUser()
+
+await db.from("messages").insert({
+text:text,
+user_id:user.id
+})
+
+input.value=""
+
+loadMessages()
+
+}
+
+
+async function loadMessages(){
+
+const {data} = await db
+.from("messages")
+.select("*")
+.order("created_at")
+
+messagesDiv.innerHTML=""
+
+data.forEach(m=>{
+
+const div = document.createElement("div")
+div.className="message"
+
+div.innerText=m.text
+
+messagesDiv.appendChild(div)
+
+})
+
+}
+
+
+loadMessages()
+
+
+document.getElementById("logoutBtn").onclick = async()=>{
+
+await db.auth.signOut()
+
+location.href="login.html"
+
+}
+
+</script>
 
 </body>
 </html>
