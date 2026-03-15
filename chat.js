@@ -1,17 +1,20 @@
 const chatBox = document.getElementById("chatBox")
 
-let username = "Anonymous"
+let username = null
 let replyTo = null
 
-// DEFAULT WALLPAPER
-window.onload = () => {
+// PAGE LOAD
+
+window.addEventListener("load", () => {
 
 document.getElementById("chatBody").style.background =
 "url('chatw.png')"
 
-document.getElementById("chatBody").style.backgroundSize = "cover"
+document.getElementById("chatBody").style.backgroundSize="cover"
 
-}
+document.getElementById("usernameModal").style.display="flex"
+
+})
 
 // USERNAME SELECT
 
@@ -19,7 +22,7 @@ function setUsername(name){
 
 username = name
 
-document.getElementById("usernameModal").style.display = "none"
+document.getElementById("usernameModal").style.display="none"
 
 loadMessages()
 
@@ -52,6 +55,8 @@ loadMessages()
 
 async function loadMessages(){
 
+if(!username) return
+
 const { data, error } = await db
 .from("chat_messages")
 .select("*")
@@ -65,40 +70,36 @@ return
 
 }
 
-chatBox.innerHTML = ""
+chatBox.innerHTML=""
 
 data.forEach(m => {
 
 const div = document.createElement("div")
 
-div.className = "bg-slate-800 p-2 rounded max-w-xs"
+div.className="bg-slate-800 p-2 rounded max-w-xs"
 
-let replyHTML = ""
+let replyHTML=""
 
 if(m.reply_to){
 
 replyHTML =
-'<p class="text-xs text-gray-400">Replying to message</p>'
+'<p class="text-xs text-gray-400">Replying...</p>'
 
 }
 
-div.innerHTML = `
+div.innerHTML=`
 
 <p class="text-xs text-cyan-400">${m.username}</p>${replyHTML}
 
 ${m.message}
 
 <div class="flex gap-2 mt-1 text-sm"><span onclick="react('${m.id}','❤️')">❤️</span>
-
 <span onclick="react('${m.id}','😂')">😂</span>
-
 <span onclick="react('${m.id}','🔥')">🔥</span>
-
 <span onclick="react('${m.id}','👍')">👍</span>
 
-</div>`
-
-// SWIPE REPLY
+</div>
+`// SWIPE REPLY
 
 let startX = 0
 
@@ -134,7 +135,16 @@ chatBox.scrollTop = chatBox.scrollHeight
 
 async function sendMsg(){
 
-const text = document.getElementById("msg").value
+if(!username){
+
+alert("Select username first")
+
+return
+
+}
+
+const text =
+document.getElementById("msg").value.trim()
 
 if(!text) return
 
@@ -150,7 +160,7 @@ reply_to: replyTo
 
 replyTo = null
 
-document.getElementById("msg").value = ""
+document.getElementById("msg").value=""
 
 loadMessages()
 
@@ -162,50 +172,50 @@ async function react(id,emoji){
 
 await db.from("reactions").insert({
 
-message_id: id,
+message_id:id,
 
-emoji: emoji
+emoji:emoji
 
 })
 
 }
 
-// SEND MEDIA (IMAGE / VIDEO)
+// SEND MEDIA
 
 function sendMedia(){
 
-const input = document.createElement("input")
+const input=document.createElement("input")
 
-input.type = "file"
+input.type="file"
 
-input.accept = "image/,video/"
+input.accept="image/,video/"
 
-input.onchange = async () => {
+input.onchange=async()=>{
 
-const file = input.files[0]
+const file=input.files[0]
 
-const reader = new FileReader()
+const reader=new FileReader()
 
-reader.onload = async function(){
+reader.onload=async function(){
 
-let content = ""
+let content=""
 
 if(file.type.startsWith("video")){
 
-content = "<video controls class="w-48 rounded"> <source src="${reader.result}"> </video>"
+content="<video controls class="w-48 rounded"> <source src="${reader.result}"> </video>"
 
 }else{
 
-content =
+content=
 "<img src="${reader.result}" class="w-40 rounded">"
 
 }
 
 await db.from("chat_messages").insert({
 
-username: username,
+username:username,
 
-message: content
+message:content
 
 })
 
@@ -228,9 +238,10 @@ async function recordVoice(){
 const stream =
 await navigator.mediaDevices.getUserMedia({audio:true})
 
-const recorder = new MediaRecorder(stream)
+const recorder =
+new MediaRecorder(stream)
 
-let chunks = []
+let chunks=[]
 
 recorder.ondataavailable =
 e => chunks.push(e.data)
@@ -245,7 +256,7 @@ URL.createObjectURL(blob)
 
 await db.from("chat_messages").insert({
 
-username: username,
+username:username,
 
 message:
 "<audio controls src="${url}"></audio>"
@@ -262,28 +273,28 @@ setTimeout(()=>recorder.stop(),5000)
 
 }
 
-// SELECT WALLPAPER FROM GALLERY
+// SELECT WALLPAPER
 
 function selectWallpaper(){
 
-const input = document.createElement("input")
+const input=document.createElement("input")
 
-input.type = "file"
+input.type="file"
 
-input.accept = "image/*"
+input.accept="image/*"
 
-input.onchange = () => {
+input.onchange=()=>{
 
-const file = input.files[0]
+const file=input.files[0]
 
-const reader = new FileReader()
+const reader=new FileReader()
 
-reader.onload = function(){
+reader.onload=function(){
 
 document.getElementById("chatBody").style.background =
 "url(${reader.result})"
 
-document.getElementById("chatBody").style.backgroundSize = "cover"
+document.getElementById("chatBody").style.backgroundSize="cover"
 
 }
 
@@ -307,7 +318,7 @@ document
 
 document
 .getElementById("gifSearch")
-.addEventListener("input", searchGif)
+.addEventListener("input",searchGif)
 
 async function searchGif(){
 
@@ -327,17 +338,17 @@ const data = await res.json()
 const box =
 document.getElementById("gifResults")
 
-box.innerHTML = ""
+box.innerHTML=""
 
-data.data.slice(0,9).forEach(g => {
+data.data.slice(0,9).forEach(g=>{
 
-const img = document.createElement("img")
+const img=document.createElement("img")
 
-img.src = g.images.fixed_height.url
+img.src=g.images.fixed_height.url
 
-img.className = "rounded"
+img.className="rounded"
 
-img.onclick = () => sendGif(img.src)
+img.onclick=()=>sendGif(img.src)
 
 box.appendChild(img)
 
@@ -351,48 +362,13 @@ async function sendGif(url){
 
 await db.from("chat_messages").insert({
 
-username: username,
+username:username,
 
-message:
-"<img src="${url}" class="w-40 rounded">"
-
-})
-
-loadMessages()
-
-}
-
-// CREATE POLL
-
-async function createPoll(){
-
-const question = prompt("Poll Question")
-
-const opt1 = prompt("Option 1")
-
-const opt2 = prompt("Option 2")
-
-await db.from("chat_messages").insert({
-
-username: username,
-
-message: `
-
-<p class="font-bold">${question}</p><button onclick="vote('${opt1}')" class="bg-slate-700 p-1 rounded m-1">
-${opt1}
-</button><button onclick="vote('${opt2}')" class="bg-slate-700 p-1 rounded m-1">
-${opt2}
-</button>`
+message:"<img src="${url}" class="w-40 rounded">"
 
 })
 
 loadMessages()
-
-}
-
-function vote(option){
-
-alert("You voted: " + option)
 
 }
 
@@ -402,10 +378,10 @@ async function logout(){
 
 await db.auth.signOut()
 
-location.href = "login.html"
+location.href="login.html"
 
 }
 
-// AUTO REFRESH CHAT
+// AUTO REFRESH
 
 setInterval(loadMessages,3000)
