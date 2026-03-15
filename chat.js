@@ -1,165 +1,163 @@
-const chatBox = document.getElementById("chatBox")
-const msgInput = document.getElementById("msg")
+const messagesDiv = document.getElementById("messages")
+const input = document.getElementById("messageInput")
 
-let username = null
-
-
-// PAGE LOAD
-
-window.addEventListener("DOMContentLoaded",()=>{
-
-// SET DEFAULT WALLPAPER
-
-document.getElementById("chatBody").style.backgroundImage="url('chatw.png')"
-document.getElementById("chatBody").style.backgroundSize="cover"
-
-msgInput.disabled=true
-
-const savedUser=sessionStorage.getItem("chatUsername")
-
-if(savedUser){
-
-username=savedUser
-
-msgInput.disabled=false
-
-document.getElementById("usernameModal").style.display="none"
-
-loadMessages()
-
-}
-
-})
+let username = localStorage.getItem("chatUsername")
+let replyTo = null
 
 
-// SET USERNAME
-
-function setUsername(name){
-
-username=name
-
-sessionStorage.setItem("chatUsername",name)
-
-document.getElementById("usernameModal").style.display="none"
-
-msgInput.disabled=false
-
-setTimeout(()=>{
-msgInput.focus()
-},300)
-
-loadMessages()
-
-}
-
-
-// CUSTOM USERNAME
-
-function setCustomUsername(){
-
-const name=document.getElementById("customUsername").value.trim()
-
-if(!name){
-
-alert("Enter username")
-
-return
-
-}
-
-setUsername(name)
-
-}
-
-
-// LOAD MESSAGES
-
-async function loadMessages(){
-
-if(!username) return
-
-const {data,error}=await db
-
-.from("chat_messages")
-
-.select("*")
-
-.order("created_at")
-
-if(error){
-
-console.log(error)
-
-return
-
-}
-
-chatBox.innerHTML=""
-
-data.forEach(m=>{
-
-const div=document.createElement("div")
-
-div.className="bg-slate-800 p-2 rounded max-w-xs"
-
-div.innerHTML=`
-<p class="text-xs text-cyan-400">${m.username}</p>
-${m.message}
-`
-
-chatBox.appendChild(div)
-
-})
-
-chatBox.scrollTop=chatBox.scrollHeight
-
-}
-
-
-// SEND MESSAGE
-
-async function sendMsg(){
+window.onload=()=>{
 
 if(!username){
 
-alert("Select username first")
-return
+document.getElementById("usernamePopup").style.display="flex"
 
 }
 
-const text=msgInput.value.trim()
+subscribeMessages()
+
+}
+
+
+
+function saveUsername(){
+
+let select=document.getElementById("usernameSelect").value
+let custom=document.getElementById("customUsername").value
+
+username=custom||select||"anon"
+
+localStorage.setItem("chatUsername",username)
+
+document.getElementById("usernamePopup").style.display="none"
+
+}
+
+
+
+document.getElementById("sendBtn").onclick=sendMessage
+
+
+
+async function sendMessage(){
+
+let text=input.value
 
 if(!text) return
 
-await db.from("chat_messages").insert({
+await db.from("messages").insert({
 
+text:text,
 username:username,
-message:`<p>${text}</p>`
+reply_to:replyTo
 
 })
 
-msgInput.value=""
-
-loadMessages()
+input.value=""
+replyTo=null
 
 }
 
 
-// AUTO REFRESH CHAT
 
-setInterval(loadMessages,2000)
+function renderMessage(m){
+
+let div=document.createElement("div")
+
+div.className="message"
+
+div.innerHTML=
+
+"<b>"+m.username+"</b><br>"+m.text+
+"<div class='reactions'>❤️ 😂 🔥 👍</div>"
 
 
-// LOGOUT
 
-function logout(){
+let startX
 
-sessionStorage.removeItem("chatUsername")
+div.addEventListener("touchstart",e=>{
 
-if(typeof signOut === "function"){
-signOut()
+startX=e.touches[0].clientX
+
+})
+
+div.addEventListener("touchend",e=>{
+
+let endX=e.changedTouches[0].clientX
+
+if(endX-startX>80){
+
+replyTo=m.text
+
+document.getElementById("replyText").innerText="Reply: "+m.text
+
+document.getElementById("replyBox").classList.remove("hidden")
+
 }
 
-location.reload()
+})
+
+
+
+messagesDiv.appendChild(div)
+
+messagesDiv.scrollTop=messagesDiv.scrollHeight
+
+}
+
+
+
+function cancelReply(){
+
+replyTo=null
+
+document.getElementById("replyBox").classList.add("hidden")
+
+}
+
+
+
+function subscribeMessages(){
+
+db.channel("chat")
+
+.on(
+
+"postgres_changes",
+
+{event:"INSERT",schema:"public",table:"messages"},
+
+payload=>{
+
+renderMessage(payload.new)
+
+}
+
+)
+
+.subscribe()
+
+}
+
+
+
+input.addEventListener("input",()=>{
+
+document.getElementById("typingIndicator").classList.remove("hidden")
+
+setTimeout(()=>{
+
+document.getElementById("typingIndicator").classList.add("hidden")
+
+},1500)
+
+})
+
+
+
+document.getElementById("logout").onclick=async()=>{
+
+await db.auth.signOut()
+
+location.href="login.html"
 
 }
