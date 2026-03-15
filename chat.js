@@ -11,32 +11,50 @@ const sendBtn = document.getElementById("sendBtn")
 let username = null
 let user = null
 
-// get logged user
+// get logged in user
 async function initUser(){
-    const { data } = await db.auth.getUser()
+
+    const { data, error } = await db.auth.getUser()
+
+    if(error || !data.user){
+        alert("Login required")
+        window.location.href = "login.html"
+        return
+    }
+
     user = data.user
 }
 
 initUser()
 
-// select predefined username
-options.forEach(opt=>{
-    opt.addEventListener("click", ()=>{
+// username option click
+options.forEach(opt => {
+
+    opt.addEventListener("click", () => {
+
         username = opt.innerText
-        options.forEach(o=>o.style.background="#334155")
+
+        options.forEach(o=>{
+            o.style.background="#334155"
+        })
+
         opt.style.background="#6366f1"
+
     })
+
 })
 
-// start chat button
-startBtn.onclick = ()=>{
+// start chat
+startBtn.addEventListener("click", () => {
 
-    if(customInput.value.trim() !== ""){
-        username = customInput.value.trim()
+    const customName = customInput.value.trim()
+
+    if(customName !== ""){
+        username = customName
     }
 
     if(!username){
-        alert("Select username")
+        alert("Please select username")
         return
     }
 
@@ -45,21 +63,24 @@ startBtn.onclick = ()=>{
     popup.style.display = "none"
 
     loadMessages()
-}
+
+})
+
 
 // load messages
 async function loadMessages(){
 
-    const { data: messages } = await db
+    const { data } = await db
     .from("chat_messages")
     .select("*")
-    .order("created_at", {ascending:true})
+    .order("created_at",{ascending:true})
 
     chatContainer.innerHTML = ""
 
-    messages.forEach(renderMessage)
+    data.forEach(renderMessage)
 
 }
+
 
 // render message
 function renderMessage(msg){
@@ -67,16 +88,17 @@ function renderMessage(msg){
     const div = document.createElement("div")
     div.className = "message"
 
-    div.innerHTML =
-    "<b>"+msg.username+"</b><br>"+msg.message
+    div.innerHTML = "<b>"+msg.username+"</b><br>"+msg.message
 
     chatContainer.appendChild(div)
 
     chatContainer.scrollTop = chatContainer.scrollHeight
+
 }
 
+
 // send message
-sendBtn.onclick = async ()=>{
+sendBtn.addEventListener("click", async ()=>{
 
     const text = msgInput.value.trim()
 
@@ -88,20 +110,21 @@ sendBtn.onclick = async ()=>{
         message: text
     })
 
-    msgInput.value = ""
-}
+    msgInput.value=""
 
-// realtime new messages
+})
+
+
+// realtime messages
 db.channel("chat-room")
 .on(
 "postgres_changes",
 {
-event: "INSERT",
-schema: "public",
-table: "chat_messages"
+event:"INSERT",
+schema:"public",
+table:"chat_messages"
 },
 (payload)=>{
     renderMessage(payload.new)
-}
-)
+})
 .subscribe()
