@@ -1,130 +1,154 @@
-<!DOCTYPE html>
-<html lang="en">
-
+<!DOCTYPE html><html lang="en">
 <head>
-
 <meta charset="UTF-8">
-<meta name="viewport"
-content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>AGASTYANS Chat</title><!-- Connect existing project scripts --><script src="supabase.js"></script><script src="auth.js"></script><script src="chat.js"></script><style>
+:root{
+  /* Use same colors as registration page */
+  --bg:#0f172a;
+  --card:#1e293b;
+  --primary:#6366f1;
+  --text:#ffffff;
+}
 
-<title>AGASTYANS Chat</title>
+body{
+  margin:0;
+  font-family:sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  overflow:hidden;
+}
 
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://unpkg.com/lucide@latest"></script>
+/* HEADER */
+header{
+  position:fixed;
+  top:0;
+  left:0;
+  right:0;
+  height:60px;
+  background:var(--card);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:bold;
+  font-size:18px;
+  z-index:10;
+}
 
-</head>
+/* CHAT AREA */
+#chatContainer{
+  position:absolute;
+  top:60px;
+  bottom:70px;
+  left:0;
+  right:0;
+  overflow-y:auto;
+  padding:10px;
+}
 
+.message{
+  background:var(--card);
+  padding:10px;
+  border-radius:10px;
+  margin-bottom:8px;
+  max-width:80%;
+}
 
-<body class="h-screen flex flex-col bg-cover bg-center"
-style="background-image:url('chat.png')">
+/* INPUT BAR */
+#inputBar{
+  position:fixed;
+  bottom:0;
+  left:0;
+  right:0;
+  height:70px;
+  background:var(--card);
+  display:flex;
+  align-items:center;
+  padding:10px;
+  gap:10px;
+}
 
+#messageInput{
+  flex:1;
+  border:none;
+  padding:10px;
+  border-radius:8px;
+}
 
-<!-- HEADER -->
+#sendBtn{
+  background:var(--primary);
+  border:none;
+  color:white;
+  padding:10px 16px;
+  border-radius:8px;
+}
 
-<header class="fixed top-0 left-0 right-0 bg-slate-900 text-white
-flex items-center justify-between px-4 h-14 border-b border-slate-700">
+/* USERNAME POPUP */
+#usernamePopup{
+  position:fixed;
+  top:0;
+  left:0;
+  right:0;
+  bottom:0;
+  background:rgba(0,0,0,0.8);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:20;
+}
 
-<button id="backBtn"
-class="text-sm font-semibold">
-Back
-</button>
+.popupCard{
+  background:var(--card);
+  padding:20px;
+  border-radius:12px;
+  width:90%;
+  max-width:400px;
+}
 
-<h1 class="font-bold text-lg tracking-wide">
+.usernameOption{
+  background:#334155;
+  padding:10px;
+  border-radius:8px;
+  margin:6px 0;
+  text-align:center;
+  cursor:pointer;
+}
+
+#customUsername{
+  width:100%;
+  padding:10px;
+  margin-top:10px;
+  border-radius:8px;
+  border:none;
+}
+
+#startChat{
+  width:100%;
+  margin-top:10px;
+  padding:10px;
+  border:none;
+  border-radius:8px;
+  background:var(--primary);
+  color:white;
+}
+</style></head><body><header>
 AGASTYANS
-</h1>
+</header><div id="chatContainer"></div><div id="inputBar">
+<input id="messageInput" placeholder="Message...">
+<button id="sendBtn">Send</button>
+</div><!-- USERNAME SELECTION POPUP --><div id="usernamePopup">
+  <div class="popupCard"><h3>Select your username</h3>
 
-<button id="logoutBtn"
-class="text-red-400 text-sm font-semibold">
-Logout
-</button>
+<div class="usernameOption">none</div>
+<div class="usernameOption">destroyer</div>
+<div class="usernameOption">f_ the_mfs</div>
+<div class="usernameOption">princess</div>
+<div class="usernameOption">lady don</div>
 
-</header>
+<input id="customUsername" placeholder="Create your own username">
 
+<button id="startChat">Start Chat</button>
 
-
-<!-- CHAT AREA -->
-
-<main id="chatArea"
-class="flex-1 overflow-y-auto pt-16 pb-24 px-3 space-y-3">
-
-<!-- messages will load here -->
-
-</main>
-
-
-
-<!-- REPLY PREVIEW -->
-
-<div id="replyPreview"
-class="hidden fixed bottom-20 left-0 right-0
-bg-slate-800 text-white px-4 py-2 text-sm">
-
-Replying...
-
-</div>
-
-
-
-<!-- MESSAGE BAR -->
-
-<footer
-class="fixed bottom-0 left-0 right-0
-bg-slate-900 border-t border-slate-700
-flex items-center gap-2 px-2 h-16">
-
-
-<!-- VOICE BUTTON -->
-
-<button id="voiceBtn"
-class="p-2 text-white">
-<i data-lucide="mic"></i>
-</button>
-
-
-<!-- PHOTO / VIDEO BUTTON -->
-
-<button id="mediaBtn"
-class="p-2 text-white">
-<i data-lucide="image"></i>
-</button>
-
-
-<!-- MESSAGE INPUT -->
-
-<input
-id="msgInput"
-class="flex-1 bg-slate-800 text-white rounded-full px-4 py-2 outline-none text-sm"
-placeholder="Message...">
-
-
-<!-- SEND BUTTON -->
-
-<button id="sendBtn"
-class="bg-blue-500 text-white px-4 py-2 rounded-full text-sm">
-Send
-</button>
-
-</footer>
-
-
-
-<!-- POLL BUTTON -->
-
-<button id="pollBtn"
-class="fixed bottom-24 right-4 w-14 h-14
-bg-red-500 text-white rounded-full
-flex items-center justify-center shadow-lg">
-
-<i data-lucide="bar-chart"></i>
-
-</button>
-
-
-
-<script>
-lucide.createIcons()
-</script>
-
-
-</body>
+  </div>
+</div></body>
 </html>
