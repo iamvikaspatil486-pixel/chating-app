@@ -2,32 +2,30 @@
 <html lang="en">
 
 <head>
+
 <meta charset="UTF-8">
 
-<meta name="viewport"
-content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>AGASTYANS</title>
+
 <script src="https://cdn.tailwindcss.com"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<script src="supabase.js"></script>
-
-<script src="chat.js"></script>
-
 <style>
+
 html,body{
 height:100%;
-overflow:hidden;
 touch-action:manipulation;
 }
+
 </style>
 
 </head>
 
 <body id="chatBody"
-class="bg-slate-900 text-white flex flex-col h-screen">
+class="bg-slate-900 text-white flex flex-col min-h-screen">
 
 <!-- USERNAME MODAL -->
 
@@ -36,23 +34,19 @@ class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-5
 
 <div class="bg-slate-800 p-5 rounded-lg text-center w-72">
 
-<h2 class="text-lg mb-3">Select Temporary Username</h2>
+<h2 class="text-lg mb-3">Select Username</h2>
 
 <div class="space-y-2">
-
-<button onclick="setUsername('King_of_Roaster')" class="w-full bg-slate-700 p-2 rounded">King_of_Roaster</button>
-
-<button onclick="setUsername('Princess')" class="w-full bg-slate-700 p-2 rounded">Princess</button>
 
 <button onclick="setUsername('Ghost')" class="w-full bg-slate-700 p-2 rounded">Ghost</button>
 
 <button onclick="setUsername('Shadow')" class="w-full bg-slate-700 p-2 rounded">Shadow</button>
 
-<button onclick="setUsername('F_the_MFs')" class="w-full bg-slate-700 p-2 rounded">F_the_MFs</button>
+<button onclick="setUsername('Princess')" class="w-full bg-slate-700 p-2 rounded">Princess</button>
+
+<button onclick="setUsername('King_of_Roaster')" class="w-full bg-slate-700 p-2 rounded">King_of_Roaster</button>
 
 </div>
-
-<!-- CUSTOM USERNAME -->
 
 <div class="pt-3 mt-3 border-t border-slate-600">
 
@@ -93,7 +87,7 @@ Use Custom Username
 class="flex-1 overflow-y-auto p-3 space-y-3">
 </div>
 
-<!-- MESSAGE INPUT -->
+<!-- INPUT AREA -->
 
 <div class="border-t border-slate-700 p-2 flex gap-2">
 
@@ -103,10 +97,14 @@ placeholder="Message..."
 class="flex-1 bg-slate-800 rounded p-2 text-sm"
 disabled>
 
-<button onclick="sendMsg()">Send</button>
+<button onclick="sendMsg()" class="bg-cyan-500 px-3 rounded">
+Send
+</button>
 
 </div>
 
+<script src="supabase.js"></script>
+<script src="auth.js"></script>
 <script src="chat.js"></script>
 
 </body>
