@@ -1,110 +1,98 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
 
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0, final-scale=1.0, user scalable = no">
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AGASTYANS Chat</title>
 
-<title>AGASTYANS</title>
-
-<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="chat.css">
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<style>
-
-html,body{
-height:100%;
-touch-action:manipulation;
-}
-
-</style>
+<script src="supabase.js"></script>
+<script src="auth.js"></script>
 
 </head>
 
-<body id="chatBody"
-class="bg-slate-900 text-white flex flex-col min-h-screen">
+<body>
 
-<!-- USERNAME MODAL -->
+<!-- USERNAME POPUP -->
 
-<div id="usernameModal"
-class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50">
+<div id="usernamePopup" class="popup">
 
-<div class="bg-slate-800 p-5 rounded-lg text-center w-72">
+<div class="popup-box">
 
-<h2 class="text-lg mb-3">Select Username</h2>
+<h3>Select Username</h3>
 
-<div class="space-y-2">
+<select id="usernameSelect">
 
-<button onclick="setUsername('Ghost')" class="w-full bg-slate-700 p-2 rounded">Ghost</button>
+<option value="">none</option>
+<option>f_the_mf</option>
+<option>princess</option>
+<option>ghostmode</option>
+<option>chaoskid</option>
+<option>nightowl</option>
 
-<button onclick="setUsername('Shadow')" class="w-full bg-slate-700 p-2 rounded">Shadow</button>
+</select>
 
-<button onclick="setUsername('Princess')" class="w-full bg-slate-700 p-2 rounded">Princess</button>
+<input id="customUsername" placeholder="Create your own username">
 
-<button onclick="setUsername('King_of_Roaster')" class="w-full bg-slate-700 p-2 rounded">King_of_Roaster</button>
-
-</div>
-
-<div class="pt-3 mt-3 border-t border-slate-600">
-
-<input
-id="customUsername"
-placeholder="Create your own username"
-class="w-full bg-slate-700 p-2 rounded text-sm mb-2">
-
-<button
-onclick="setCustomUsername()"
-class="w-full bg-cyan-500 p-2 rounded">
-
-Use Custom Username
-
-</button>
+<button onclick="saveUsername()">Enter Chat</button>
 
 </div>
-
 </div>
 
-</div>
 
-<!-- HEADER -->
+<div class="chat-container">
 
-<header class="flex items-center justify-between p-3 border-b border-slate-700">
+<header class="topbar">
 
 <button onclick="history.back()">BACK</button>
 
-<h1 class="font-bold text-cyan-400">AGASTYANS</h1>
+<h2>AGASTYANS</h2>
 
-<button onclick="logout()" class="text-red-400">LOGOUT</button>
+<button id="logout">LOGOUT</button>
 
 </header>
 
-<!-- CHAT AREA -->
 
-<div id="chatBox"
-class="flex-1 overflow-y-auto p-3 space-y-3">
+<div id="messages" class="messages"></div>
+
+
+<div id="typingIndicator" class="typing hidden">
+Someone is typing...
 </div>
 
-<!-- INPUT AREA -->
 
-<div class="border-t border-slate-700 p-2 flex gap-2">
+<div id="replyBox" class="reply hidden">
 
-<input
-id="msg"
-placeholder="Message..."
-class="flex-1 bg-slate-800 rounded p-2 text-sm"
-disabled>
+<span id="replyText"></span>
 
-<button onclick="sendMsg()" class="bg-cyan-500 px-3 rounded">
-Send
-</button>
+<button onclick="cancelReply()">x</button>
 
 </div>
 
-<script src="supabase.js"></script>
-<script src="auth.js"></script>
+
+<footer class="inputBar">
+
+<input id="messageInput" placeholder="Message...">
+
+<button id="gifBtn">GIF</button>
+
+<button id="voiceBtn">🎤</button>
+
+<button id="sendBtn">➤</button>
+
+</footer>
+
+</div>
+
+
+<button class="pollBtn">📊</button>
+
+
 <script src="chat.js"></script>
 
 </body>
