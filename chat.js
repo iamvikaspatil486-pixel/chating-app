@@ -1,163 +1,107 @@
-const messagesDiv = document.getElementById("messages")
-const input = document.getElementById("messageInput")
+// elements
+const popup = document.getElementById("usernamePopup")
+const options = document.querySelectorAll(".usernameOption")
+const customInput = document.getElementById("customUsername")
+const startBtn = document.getElementById("startChat")
 
-let username = localStorage.getItem("chatUsername")
-let replyTo = null
+const chatContainer = document.getElementById("chatContainer")
+const msgInput = document.getElementById("messageInput")
+const sendBtn = document.getElementById("sendBtn")
 
+let username = null
+let user = null
 
-window.onload=()=>{
-
-if(!username){
-
-document.getElementById("usernamePopup").style.display="flex"
-
+// get logged user
+async function initUser(){
+    const { data } = await db.auth.getUser()
+    user = data.user
 }
 
-subscribeMessages()
+initUser()
 
-}
-
-
-
-function saveUsername(){
-
-let select=document.getElementById("usernameSelect").value
-let custom=document.getElementById("customUsername").value
-
-username=custom||select||"anon"
-
-localStorage.setItem("chatUsername",username)
-
-document.getElementById("usernamePopup").style.display="none"
-
-}
-
-
-
-document.getElementById("sendBtn").onclick=sendMessage
-
-
-
-async function sendMessage(){
-
-let text=input.value
-
-if(!text) return
-
-await db.from("messages").insert({
-
-text:text,
-username:username,
-reply_to:replyTo
-
+// select predefined username
+options.forEach(opt=>{
+    opt.addEventListener("click", ()=>{
+        username = opt.innerText
+        options.forEach(o=>o.style.background="#334155")
+        opt.style.background="#6366f1"
+    })
 })
 
-input.value=""
-replyTo=null
+// start chat button
+startBtn.onclick = ()=>{
+
+    if(customInput.value.trim() !== ""){
+        username = customInput.value.trim()
+    }
+
+    if(!username){
+        alert("Select username")
+        return
+    }
+
+    localStorage.setItem("chat_username", username)
+
+    popup.style.display = "none"
+
+    loadMessages()
+}
+
+// load messages
+async function loadMessages(){
+
+    const { data: messages } = await db
+    .from("chat_messages")
+    .select("*")
+    .order("created_at", {ascending:true})
+
+    chatContainer.innerHTML = ""
+
+    messages.forEach(renderMessage)
 
 }
 
+// render message
+function renderMessage(msg){
 
+    const div = document.createElement("div")
+    div.className = "message"
 
-function renderMessage(m){
+    div.innerHTML =
+    "<b>"+msg.username+"</b><br>"+msg.message
 
-let div=document.createElement("div")
+    chatContainer.appendChild(div)
 
-div.className="message"
-
-div.innerHTML=
-
-"<b>"+m.username+"</b><br>"+m.text+
-"<div class='reactions'>❤️ 😂 🔥 👍</div>"
-
-
-
-let startX
-
-div.addEventListener("touchstart",e=>{
-
-startX=e.touches[0].clientX
-
-})
-
-div.addEventListener("touchend",e=>{
-
-let endX=e.changedTouches[0].clientX
-
-if(endX-startX>80){
-
-replyTo=m.text
-
-document.getElementById("replyText").innerText="Reply: "+m.text
-
-document.getElementById("replyBox").classList.remove("hidden")
-
+    chatContainer.scrollTop = chatContainer.scrollHeight
 }
 
-})
+// send message
+sendBtn.onclick = async ()=>{
 
+    const text = msgInput.value.trim()
 
+    if(text === "") return
 
-messagesDiv.appendChild(div)
+    await db.from("chat_messages").insert({
+        user_id: user.id,
+        username: username,
+        message: text
+    })
 
-messagesDiv.scrollTop=messagesDiv.scrollHeight
-
+    msgInput.value = ""
 }
 
-
-
-function cancelReply(){
-
-replyTo=null
-
-document.getElementById("replyBox").classList.add("hidden")
-
-}
-
-
-
-function subscribeMessages(){
-
-db.channel("chat")
-
+// realtime new messages
+db.channel("chat-room")
 .on(
-
 "postgres_changes",
-
-{event:"INSERT",schema:"public",table:"messages"},
-
-payload=>{
-
-renderMessage(payload.new)
-
+{
+event: "INSERT",
+schema: "public",
+table: "chat_messages"
+},
+(payload)=>{
+    renderMessage(payload.new)
 }
-
 )
-
 .subscribe()
-
-}
-
-
-
-input.addEventListener("input",()=>{
-
-document.getElementById("typingIndicator").classList.remove("hidden")
-
-setTimeout(()=>{
-
-document.getElementById("typingIndicator").classList.add("hidden")
-
-},1500)
-
-})
-
-
-
-document.getElementById("logout").onclick=async()=>{
-
-await db.auth.signOut()
-
-location.href="login.html"
-
-}
