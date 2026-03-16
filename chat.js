@@ -16,6 +16,12 @@ let myUsername = sessionStorage.getItem("temp_user") || "";
 let myUserId = sessionStorage.getItem("temp_id") || crypto.randomUUID();
 
 
+// ---------------- SUGGESTION CLICK ----------------
+function fillName(name) {
+    document.getElementById("username-input").value = name;
+}
+
+
 // ---------------- PAGE LOAD ----------------
 window.addEventListener("DOMContentLoaded", () => {
 
@@ -36,6 +42,7 @@ function showChat() {
 
     initRealtime();
     loadRecentMessages();
+
 }
 
 
@@ -51,7 +58,6 @@ joinBtn.addEventListener("click", async () => {
 
     const tenHoursAgo = new Date(Date.now() - 10 * 60 * 60 * 1000).toISOString();
 
-    // check if username used recently
     const { data: existingUser, error } = await supabase
         .from("chat_messages")
         .select("username")
@@ -60,17 +66,16 @@ joinBtn.addEventListener("click", async () => {
         .limit(1);
 
     if (error) {
-        console.error(error);
-        errorMsg.innerText = "Server error. Try again.";
+        console.log(error);
+        errorMsg.innerText = "Server error.";
         return;
     }
 
     if (existingUser && existingUser.length > 0) {
-        errorMsg.innerText = "That name is already vibing here. Try another!";
+        errorMsg.innerText = "Username already taken.";
         return;
     }
 
-    // save user
     myUsername = inputName;
 
     sessionStorage.setItem("temp_user", myUsername);
@@ -93,7 +98,7 @@ async function loadRecentMessages() {
         .order("created_at", { ascending: true });
 
     if (error) {
-        console.error(error);
+        console.log(error);
         return;
     }
 
@@ -147,7 +152,7 @@ async function sendMessage() {
         ]);
 
     if (error) {
-        console.error(error);
+        console.log(error);
         return;
     }
 
@@ -180,10 +185,7 @@ function renderMessage(msg) {
 
     msgContainer.appendChild(div);
 
-    msgContainer.scrollTo({
-        top: msgContainer.scrollHeight,
-        behavior: "smooth"
-    });
+    msgContainer.scrollTop = msgContainer.scrollHeight;
 
 }
 
