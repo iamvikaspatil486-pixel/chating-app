@@ -371,3 +371,24 @@ msgInput.addEventListener("keypress",(e)=>{
     sendMessage();
   }
 });
+// ANDROID KEYBOARD FIX
+
+const inputBar = document.querySelector(".input-area")
+const msgInput = document.getElementById("msg-input")
+
+msgInput.addEventListener("focus", () => {
+
+setTimeout(() => {
+document.getElementById("messages-container")
+.scrollIntoView({ behavior:"smooth", block:"end" })
+},300)
+
+})
+
+msgInput.addEventListener("blur", () => {
+
+setTimeout(() => {
+window.scrollTo(0,0)
+},200)
+
+})
