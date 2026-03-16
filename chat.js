@@ -1,3 +1,5 @@
+document.addEventListener("DOMContentLoaded", async () => {
+
 // elements
 const popup = document.getElementById("usernamePopup")
 const options = document.querySelectorAll(".usernameOption")
@@ -8,24 +10,25 @@ const chatContainer = document.getElementById("chatContainer")
 const msgInput = document.getElementById("messageInput")
 const sendBtn = document.getElementById("sendBtn")
 
-let username = null
+let username = localStorage.getItem("chat_username")
 let user = null
 
 // get logged in user
-async function initUser(){
+const { data, error } = await db.auth.getUser()
 
-    const { data, error } = await db.auth.getUser()
-
-    if(error || !data.user){
-        alert("Login required")
-        window.location.href = "login.html"
-        return
-    }
-
-    user = data.user
+if(error || !data.user){
+    alert("Login required")
+    window.location.href = "login.html"
+    return
 }
 
-initUser()
+user = data.user
+
+// if username already saved skip popup
+if(username){
+    popup.style.display = "none"
+    loadMessages()
+}
 
 // username option click
 options.forEach(opt => {
@@ -35,10 +38,10 @@ options.forEach(opt => {
         username = opt.innerText
 
         options.forEach(o=>{
-            o.style.background="#334155"
+            o.style.background = "#334155"
         })
 
-        opt.style.background="#6366f1"
+        opt.style.background = "#6366f1"
 
     })
 
@@ -54,7 +57,7 @@ startBtn.addEventListener("click", () => {
     }
 
     if(!username){
-        alert("Please select username")
+        alert("Select or create username")
         return
     }
 
@@ -65,7 +68,6 @@ startBtn.addEventListener("click", () => {
     loadMessages()
 
 })
-
 
 // load messages
 async function loadMessages(){
@@ -81,21 +83,20 @@ async function loadMessages(){
 
 }
 
-
 // render message
 function renderMessage(msg){
 
     const div = document.createElement("div")
     div.className = "message"
 
-    div.innerHTML = "<b>"+msg.username+"</b><br>"+msg.message
+    div.innerHTML =
+    "<b>"+msg.username+"</b><br>"+msg.message
 
     chatContainer.appendChild(div)
 
     chatContainer.scrollTop = chatContainer.scrollHeight
 
 }
-
 
 // send message
 sendBtn.addEventListener("click", async ()=>{
@@ -110,10 +111,16 @@ sendBtn.addEventListener("click", async ()=>{
         message: text
     })
 
-    msgInput.value=""
+    msgInput.value = ""
 
 })
 
+// send message with enter
+msgInput.addEventListener("keypress",(e)=>{
+    if(e.key === "Enter"){
+        sendBtn.click()
+    }
+})
 
 // realtime messages
 db.channel("chat-room")
@@ -128,3 +135,5 @@ table:"chat_messages"
     renderMessage(payload.new)
 })
 .subscribe()
+
+})
