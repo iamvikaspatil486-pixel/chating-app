@@ -1,3 +1,6 @@
+window.onerror = function(message, source, lineno, colno, error) {
+  alert("Error: " + message + " at line " + lineno);
+};
 // ---------------- ELEMENTS ----------------
 const msgContainer = document.getElementById("messages-container");
 const msgInput = document.getElementById("msg-input");
