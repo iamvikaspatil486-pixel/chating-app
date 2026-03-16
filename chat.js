@@ -58,7 +58,7 @@ joinBtn.addEventListener("click", async () => {
 
     const tenHoursAgo = new Date(Date.now() - 10 * 60 * 60 * 1000).toISOString();
 
-    const { data: existingUser, error } = await supabase
+    const { data: existingUser, error } = await db
         .from("chat_messages")
         .select("username")
         .eq("username", inputName)
@@ -91,7 +91,7 @@ async function loadRecentMessages() {
 
     const tenHoursAgo = new Date(Date.now() - 10 * 60 * 60 * 1000).toISOString();
 
-    const { data, error } = await supabase
+    const { data, error } = await db
         .from("chat_messages")
         .select("*")
         .gt("created_at", tenHoursAgo)
@@ -114,7 +114,7 @@ async function loadRecentMessages() {
 // ---------------- REALTIME ----------------
 function initRealtime() {
 
-    supabase
+    db
         .channel("student_lounge")
         .on(
             "postgres_changes",
@@ -139,7 +139,7 @@ async function sendMessage() {
 
     if (!text) return;
 
-    const { error } = await supabase
+    const { error } = await db
         .from("chat_messages")
         .insert([
             {
