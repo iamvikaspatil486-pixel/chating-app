@@ -1,21 +1,39 @@
-// Assumes 'supabase' is initialized in supabase.js
+// --- DATABASE SYNC ---
 const msgContainer = document.getElementById('messages-container');
 const msgInput = document.getElementById('msg-input');
 const loginScreen = document.getElementById('login-screen');
 const chatScreen = document.getElementById('chat-screen');
 const errorMsg = document.getElementById('error-msg');
 
-let myUsername = "";
-let myUserId = crypto.randomUUID(); // Generate a temporary unique ID for the session
+let myUsername = sessionStorage.getItem('temp_user') || "";
+let myUserId = sessionStorage.getItem('temp_id') || crypto.randomUUID();
 
-// 1. Join Chat & Check Uniqueness
+// Auto-login if username exists in session
+window.onload = () => {
+    if (myUsername) {
+        showChat();
+    }
+};
+
+function showChat() {
+    document.getElementById('display-name').innerText = `@${myUsername}`;
+    loginScreen.classList.add('hidden'); // This hides the login box
+    chatScreen.classList.remove('hidden'); // This shows the chat box
+    initRealtime();
+    loadRecentMessages();
+}
+
+// 1. Join Chat Logic
 document.getElementById('join-btn').onclick = async () => {
     const inputName = document.getElementById('username-input').value.trim();
-    if (!inputName) return;
+    if (!inputName) {
+        errorMsg.innerText = "Please enter a username!";
+        return;
+    }
 
     const tenHoursAgo = new Date(Date.now() - 10 * 60 * 60 * 1000).toISOString();
 
-    // Check uniqueness against your 'username' column
+    // Check if name is taken in the 'chat_messages' table
     const { data: existingUser } = await supabase
         .from('chat_messages') 
         .select('username')
@@ -24,50 +42,43 @@ document.getElementById('join-btn').onclick = async () => {
         .limit(1);
 
     if (existingUser && existingUser.length > 0) {
-        errorMsg.innerText = "Username already active! Try another.";
+        errorMsg.innerText = "That name is already vibing here. Try another!";
         return;
     }
 
+    // Set Identity
     myUsername = inputName;
-    document.getElementById('display-name').innerText = `@${myUsername}`;
-    loginScreen.classList.add('hidden');
-    chatScreen.classList.remove('hidden');
-
-    initRealtime();
-    loadRecentMessages();
+    sessionStorage.setItem('temp_user', myUsername);
+    sessionStorage.setItem('temp_id', myUserId);
+    
+    showChat();
 };
 
-// 2. Load Messages using your 'message' column
+// 2. Load Messages (10h filter)
 async function loadRecentMessages() {
     const tenHoursAgo = new Date(Date.now() - 10 * 60 * 60 * 1000).toISOString();
     
-    const { data, error } = await supabase
+    const { data } = await supabase
         .from('chat_messages')
         .select('*')
         .gt('created_at', tenHoursAgo)
         .order('created_at', { ascending: true });
 
-    if (data) {
-        msgContainer.innerHTML = '';
-        data.forEach(msg => renderMessage(msg));
-    }
+    msgContainer.innerHTML = '';
+    if (data) data.forEach(msg => renderMessage(msg));
 }
 
-// 3. Realtime Subscription
+// 3. Realtime Listener
 function initRealtime() {
     supabase
-        .channel('student-lounge')
-        .on('postgres_changes', { 
-            event: 'INSERT', 
-            schema: 'public', 
-            table: 'chat_messages' 
-        }, payload => {
+        .channel('student_lounge')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, payload => {
             renderMessage(payload.new);
         })
         .subscribe();
 }
 
-// 4. Send Message using your exact columns
+// 4. Send Message (Your Schema)
 async function sendMessage() {
     const text = msgInput.value.trim();
     if (!text) return;
@@ -75,38 +86,36 @@ async function sendMessage() {
     const { error } = await supabase.from('chat_messages').insert([
         { 
             username: myUsername, 
-            message: text,        // Your column name
-            user_id: myUserId,    // Your column name
-            media_url: null,      // Placeholder for GIFs/Stickers
-            reply_to: null        // Placeholder for replies
+            message: text,        // Your column
+            user_id: myUserId,    // Your column
+            media_url: null,
+            reply_to: null
         }
     ]);
 
-    if (!error) {
-        msgInput.value = '';
-    }
+    if (!error) msgInput.value = '';
 }
 
-// 5. Render Message (Supports Text & Media)
+// 5. UI Rendering
 function renderMessage(msg) {
     const div = document.createElement('div');
     const isMe = msg.username === myUsername;
     div.className = `msg-bubble ${isMe ? 'me' : ''}`;
     
-    // Check if it's a media/GIF or text
-    let contentHTML = msg.media_url 
+    // Support for text or media
+    let content = msg.media_url 
         ? `<img src="${msg.media_url}" class="chat-media">` 
         : `<span class="text">${msg.message}</span>`;
 
     div.innerHTML = `
         <span class="user-label">${isMe ? 'You' : msg.username}</span>
-        ${contentHTML}
+        ${content}
     `;
     
     msgContainer.appendChild(div);
-    msgContainer.scrollTop = msgContainer.scrollHeight;
+    msgContainer.scrollTo({ top: msgContainer.scrollHeight, behavior: 'smooth' });
 }
 
-// Listeners
+// Event Listeners
 document.getElementById('send-btn').onclick = sendMessage;
 msgInput.onkeypress = (e) => { if (e.key === 'Enter') sendMessage(); };
