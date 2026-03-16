@@ -1,3 +1,4 @@
+console.log("chat.js loaded") 
 document.addEventListener("DOMContentLoaded", async () => {
 
 // elements
