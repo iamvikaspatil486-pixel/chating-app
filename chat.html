@@ -47,7 +47,8 @@ caffeine_demon
 type="text"
 id="username-input"
 placeholder="Enter username..."
-maxlength="15" required>
+maxlength="15"
+required>
 
 <button id="join-btn" type="button">
 Enter Chat
@@ -60,11 +61,9 @@ Enter Chat
 </div>
 
 
-
 <!-- CHAT SCREEN -->
 
 <div id="chat-screen" class="hidden">
-
 
 <!-- HEADER -->
 
@@ -77,6 +76,7 @@ Enter Chat
 <div class="title-area">
 
 <h1>AGASTYANS</h1>
+
 <div id="display-name"></div>
 
 <div id="online-count">
@@ -92,11 +92,9 @@ Logout
 </header>
 
 
-
 <!-- MESSAGES -->
 
 <div id="messages-container"></div>
-
 
 
 <!-- TYPING INDICATOR -->
@@ -104,17 +102,41 @@ Logout
 <div id="typing-indicator"></div>
 
 
-
 <!-- INPUT AREA -->
 
 <div class="input-area">
 
+<!-- VOICE ICON -->
+
 <button id="voice-btn" class="icon-btn">
-🎙
+
+<svg width="22" height="22" viewBox="0 0 24 24"
+fill="none" stroke="white" stroke-width="2"
+stroke-linecap="round" stroke-linejoin="round">
+
+<rect x="9" y="2" width="6" height="12" rx="3"></rect>
+<path d="M5 10v2a7 7 0 0 0 14 0v-2"></path>
+<line x1="12" y1="19" x2="12" y2="22"></line>
+
+</svg>
+
 </button>
 
+
+<!-- IMAGE ICON -->
+
 <button id="image-btn" class="icon-btn">
-🖼
+
+<svg width="22" height="22" viewBox="0 0 24 24"
+fill="none" stroke="white" stroke-width="2"
+stroke-linecap="round" stroke-linejoin="round">
+
+<rect x="3" y="3" width="18" height="18" rx="2"></rect>
+<circle cx="8.5" cy="8.5" r="1.5"></circle>
+<path d="M21 15l-5-5L5 21"></path>
+
+</svg>
+
 </button>
 
 <input
@@ -123,18 +145,32 @@ id="image-input"
 accept="image/*"
 hidden>
 
+
+<!-- MESSAGE INPUT -->
+
 <input
 type="text"
 id="msg-input"
 placeholder="Type a message..."
 autocomplete="off">
 
+
+<!-- SEND BUTTON -->
+
 <button id="send-btn" type="button">
-➤
+
+<svg width="22" height="22" viewBox="0 0 24 24"
+fill="none" stroke="#00f2fe" stroke-width="2"
+stroke-linecap="round" stroke-linejoin="round">
+
+<line x1="22" y1="2" x2="11" y2="13"></line>
+<polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+
+</svg>
+
 </button>
 
 </div>
-
 
 
 <!-- FLOATING POLL BUTTON -->
@@ -142,7 +178,6 @@ autocomplete="off">
 <button id="poll-btn" class="poll-floating">
 Poll
 </button>
-
 
 
 <!-- POLL CREATOR -->
@@ -194,18 +229,13 @@ Cancel
 
 </div>
 
-
-
 </div>
 
 </div>
-
 
 
 <script src="supabase.js"></script>
-
 <script src="auth.js"></script>
-
 <script src="chat.js"></script>
 
 </body>
