@@ -418,3 +418,46 @@ window.scrollTo(0,0)
 },200)
 
 })
+const panel = document.getElementById("dev-panel");
+const consoleBox = document.getElementById("dev-console");
+
+let tapCount = 0;
+
+document.body.addEventListener("click", () => {
+tapCount++;
+
+if(tapCount === 3){
+panel.style.display =
+panel.style.display === "flex" ? "none" : "flex";
+
+panel.style.display = "flex";
+tapCount = 0;
+}
+
+setTimeout(()=> tapCount = 0, 1000);
+});
+
+window.onerror = function(msg,src,line){
+consoleBox.innerHTML += "<div>ERROR: "+msg+" (line "+line+")</div>";
+};
+
+const oldLog = console.log;
+
+console.log = function(msg){
+consoleBox.innerHTML += "<div>"+msg+"</div>";
+oldLog(msg);
+};
+
+document.getElementById("dev-run").onclick = () => {
+
+const code = document.getElementById("dev-input").value;
+
+try{
+const result = eval(code);
+consoleBox.innerHTML += "<div>> "+result+"</div>";
+}
+catch(e){
+consoleBox.innerHTML += "<div>JS ERROR</div>";
+}
+
+};
