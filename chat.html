@@ -1,49 +1,211 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Student Lounge</title>
-    <link rel="stylesheet" href="chat.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<title>Student Lounge</title>
+
+<link rel="stylesheet" href="chat.css">
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 </head>
+
 <body>
-    <div id="app">
-        <div id="login-screen" class="overlay">
-            <div class="glass-card">
-                <h2>Set Your Vibe</h2>
-                <div class="suggestions">
-                    <span class="badge" onclick="fillName('peace_destroyer')">peace_destroyer</span>
-                    <span class="badge" onclick="fillName('academic_weapon')">academic_weapon</span>
-                    <span class="badge" onclick="fillName('caffeine_demon')">caffeine_demon</span>
-                </div>
-                <input type="text" id="username-input" placeholder="Enter username..." maxlength="15">
-                <button id="join-btn" type="button">Enter Chat</button>
-                <p id="error-msg"></p>
-            </div>
-        </div>
 
-        <div id="chat-screen" class="hidden">
-            <header>
-                <div class="user-info">
-                    <span id="display-name"></span>
-                    <span class="status-dot"></span>
-                </div>
-                <div class="timer-info">Auto-delete: 10h</div>
-            </header>
-            
-            <div id="messages-container"></div>
+<div id="app">
 
-            <div class="input-area">
-                <button id="gif-btn">GIF</button>
-                <input type="text" id="msg-input" placeholder="Type a message..." autocomplete="off">
-                <button id="send-btn" type="button">🚀</button>
-            </div>
-        </div>
-    </div>
+<!-- LOGIN SCREEN -->
 
-    <script src="supabase.js"></script>
-    <script src="auth.js"></script>
-    <script src="chat.js"></script>
+<div id="login-screen" class="overlay">
+
+<div class="glass-card">
+
+<h2>Set Your Vibe</h2>
+
+<div class="suggestions">
+
+<span class="badge" onclick="fillName('peace_destroyer')">
+peace_destroyer
+</span>
+
+<span class="badge" onclick="fillName('academic_weapon')">
+academic_weapon
+</span>
+
+<span class="badge" onclick="fillName('caffeine_demon')">
+caffeine_demon
+</span>
+
+</div>
+
+<input
+type="text"
+id="username-input"
+placeholder="Enter username..."
+maxlength="15">
+
+<button id="join-btn" type="button">
+Enter Chat
+</button>
+
+<p id="error-msg"></p>
+
+</div>
+
+</div>
+
+
+
+<!-- CHAT SCREEN -->
+
+<div id="chat-screen" class="hidden">
+
+
+<!-- HEADER -->
+
+<header class="chat-header">
+
+<button class="back-btn" onclick="history.back()">
+←
+</button>
+
+<div class="title-area">
+
+<h1>AGASTYANS</h1>
+
+<div id="online-count">
+0 students online
+</div>
+
+</div>
+
+<button class="logout-btn" onclick="logout()">
+Logout
+</button>
+
+</header>
+
+
+
+<!-- MESSAGES -->
+
+<div id="messages-container"></div>
+
+
+
+<!-- TYPING INDICATOR -->
+
+<div id="typing-indicator"></div>
+
+
+
+<!-- INPUT AREA -->
+
+<div class="input-area">
+
+<button id="voice-btn" class="icon-btn">
+🎙
+</button>
+
+<button id="image-btn" class="icon-btn">
+🖼
+</button>
+
+<input
+type="file"
+id="image-input"
+accept="image/*"
+hidden>
+
+<input
+type="text"
+id="msg-input"
+placeholder="Type a message..."
+autocomplete="off">
+
+<button id="send-btn" type="button">
+➤
+</button>
+
+</div>
+
+
+
+<!-- FLOATING POLL BUTTON -->
+
+<button id="poll-btn" class="poll-floating">
+Poll
+</button>
+
+
+
+<!-- POLL CREATOR -->
+
+<div id="poll-creator" class="overlay hidden">
+
+<div class="poll-box">
+
+<h3>Create Poll</h3>
+
+<input
+type="text"
+id="poll-question"
+placeholder="Ask a question">
+
+<input
+type="text"
+class="poll-option"
+placeholder="Option 1">
+
+<input
+type="text"
+class="poll-option"
+placeholder="Option 2">
+
+<input
+type="text"
+class="poll-option"
+placeholder="Option 3">
+
+<input
+type="text"
+class="poll-option"
+placeholder="Option 4">
+
+<div class="poll-actions">
+
+<button id="create-poll">
+Create
+</button>
+
+<button id="cancel-poll">
+Cancel
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+
+
+</div>
+
+</div>
+
+
+
+<script src="supabase.js"></script>
+
+<script src="auth.js"></script>
+
+<script src="chat.js"></script>
+
 </body>
 </html>
