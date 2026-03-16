@@ -334,3 +334,20 @@ color:#ff6b6b;
 font-size:0.8rem;
 margin-top:10px;
 }
+/* MOBILE KEYBOARD FIX */
+
+#chat-screen{
+display:flex;
+flex-direction:column;
+height:100dvh;
+}
+
+#messages-container{
+flex:1;
+overflow-y:auto;
+}
+
+.input-area{
+position:sticky;
+bottom:0;
+}
