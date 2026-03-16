@@ -1,128 +1,112 @@
-// --- 1. CONFIGURATION & GENZ LOGIC ---
-const genZBurners = [
-    "VibeDestroyer_fr",
-    "NoCap_Agastyan",
-    "GhostMode_ON",
-    "Delulu_Realist",
-    "MainCharacter_Vibes"
-];
+// Assumes 'supabase' is initialized in supabase.js
+const msgContainer = document.getElementById('messages-container');
+const msgInput = document.getElementById('msg-input');
+const loginScreen = document.getElementById('login-screen');
+const chatScreen = document.getElementById('chat-screen');
+const errorMsg = document.getElementById('error-msg');
 
-const chatBox = document.getElementById('chat-messages');
-const mainInput = document.getElementById('main-input');
-const sendBtn = document.getElementById('send-btn');
-const overlay = document.getElementById('setup-overlay');
-const grid = document.getElementById('genz-options');
-const customInput = document.getElementById('custom-name');
+let myUsername = "";
+let myUserId = crypto.randomUUID(); // Generate a temporary unique ID for the session
 
-// Initialize the GenZ Username Grid
-genZBurners.forEach(name => {
-    const btn = document.createElement('button');
-    btn.className = 'user-opt';
-    btn.innerText = name;
-    btn.onclick = () => finishLogin(name);
-    grid.appendChild(btn);
-});
+// 1. Join Chat & Check Uniqueness
+document.getElementById('join-btn').onclick = async () => {
+    const inputName = document.getElementById('username-input').value.trim();
+    if (!inputName) return;
 
-// Handle Identity Selection
-function finishLogin(selectedName) {
-    const name = selectedName || customInput.value.trim();
-    if (!name) return alert("Pick a name first!");
-
-    sessionStorage.setItem('anon_user', name);
-    overlay.classList.add('hidden');
-    
-    // Start real-time sync
-    loadExistingMessages();
-    subscribeToLiveMessages();
-}
-
-// --- 2. SUPABASE CORE LOGIC ---
-
-// Load messages and filter out those older than 10 hours
-async function loadExistingMessages() {
     const tenHoursAgo = new Date(Date.now() - 10 * 60 * 60 * 1000).toISOString();
 
+    // Check uniqueness against your 'username' column
+    const { data: existingUser } = await supabase
+        .from('chat_messages') 
+        .select('username')
+        .eq('username', inputName)
+        .gt('created_at', tenHoursAgo)
+        .limit(1);
+
+    if (existingUser && existingUser.length > 0) {
+        errorMsg.innerText = "Username already active! Try another.";
+        return;
+    }
+
+    myUsername = inputName;
+    document.getElementById('display-name').innerText = `@${myUsername}`;
+    loginScreen.classList.add('hidden');
+    chatScreen.classList.remove('hidden');
+
+    initRealtime();
+    loadRecentMessages();
+};
+
+// 2. Load Messages using your 'message' column
+async function loadRecentMessages() {
+    const tenHoursAgo = new Date(Date.now() - 10 * 60 * 60 * 1000).toISOString();
+    
     const { data, error } = await supabase
-        .from('messages')
+        .from('chat_messages')
         .select('*')
-        .gt('created_at', tenHoursAgo) // The "Vanish" filter
+        .gt('created_at', tenHoursAgo)
         .order('created_at', { ascending: true });
 
-    if (error) return console.error(error);
-
-    chatBox.innerHTML = ''; 
-    data.forEach(msg => renderMessage(msg));
-    scrollToBottom();
+    if (data) {
+        msgContainer.innerHTML = '';
+        data.forEach(msg => renderMessage(msg));
+    }
 }
 
-// Real-time listener for new messages
-function subscribeToLiveMessages() {
+// 3. Realtime Subscription
+function initRealtime() {
     supabase
-        .channel('public:messages')
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
-            const msg = payload.new;
-            const tenHoursAgo = new Date(Date.now() - 10 * 60 * 60 * 1000);
-            
-            // Only show if it's within the 10-hour window
-            if (new Date(msg.created_at) > tenHoursAgo) {
-                renderMessage(msg);
-                scrollToBottom();
-            }
+        .channel('student-lounge')
+        .on('postgres_changes', { 
+            event: 'INSERT', 
+            schema: 'public', 
+            table: 'chat_messages' 
+        }, payload => {
+            renderMessage(payload.new);
         })
         .subscribe();
 }
 
-// Send Message Function
+// 4. Send Message using your exact columns
 async function sendMessage() {
-    const text = mainInput.value.trim();
-    const user = sessionStorage.getItem('anon_user');
+    const text = msgInput.value.trim();
+    if (!text) return;
 
-    if (!text || !user) return;
-
-    const { error } = await supabase
-        .from('messages')
-        .insert([{ content: text, username: user }]);
+    const { error } = await supabase.from('chat_messages').insert([
+        { 
+            username: myUsername, 
+            message: text,        // Your column name
+            user_id: myUserId,    // Your column name
+            media_url: null,      // Placeholder for GIFs/Stickers
+            reply_to: null        // Placeholder for replies
+        }
+    ]);
 
     if (!error) {
-        mainInput.value = '';
-        // Reset the input UI (hides Send button, shows icons)
-        mainInput.dispatchEvent(new Event('input')); 
+        msgInput.value = '';
     }
 }
 
-// --- 3. UI RENDERING ---
-
+// 5. Render Message (Supports Text & Media)
 function renderMessage(msg) {
-    const currentUser = sessionStorage.getItem('anon_user');
-    const isMe = msg.username === currentUser;
-
     const div = document.createElement('div');
-    div.className = `msg ${isMe ? 'sent' : 'received'}`;
+    const isMe = msg.username === myUsername;
+    div.className = `msg-bubble ${isMe ? 'me' : ''}`;
     
-    // Manual styling for the "Sent" side
-    if(isMe) {
-        div.style.alignSelf = 'flex-end';
-        div.style.background = 'var(--accent)';
-        div.style.borderBottomRightRadius = '4px';
-    } else {
-        div.style.alignSelf = 'flex-start';
-        div.style.background = 'var(--input-bg)';
-        div.style.borderBottomLeftRadius = '4px';
-    }
+    // Check if it's a media/GIF or text
+    let contentHTML = msg.media_url 
+        ? `<img src="${msg.media_url}" class="chat-media">` 
+        : `<span class="text">${msg.message}</span>`;
 
     div.innerHTML = `
-        <span class="sender" style="color: ${isMe ? '#e0e0e0' : 'var(--accent)'}">
-            ${isMe ? 'You' : msg.username}
-        </span>
-        <div class="text">${msg.content}</div>
+        <span class="user-label">${isMe ? 'You' : msg.username}</span>
+        ${contentHTML}
     `;
-    chatBox.appendChild(div);
+    
+    msgContainer.appendChild(div);
+    msgContainer.scrollTop = msgContainer.scrollHeight;
 }
 
-function scrollToBottom() {
-    chatBox.scrollTop = chatBox.scrollHeight;
-}
-
-// Event Listeners
-sendBtn.onclick = sendMessage;
-mainInput.onkeypress = (e) => { if (e.key === 'Enter') sendMessage(); };
+// Listeners
+document.getElementById('send-btn').onclick = sendMessage;
+msgInput.onkeypress = (e) => { if (e.key === 'Enter') sendMessage(); };
