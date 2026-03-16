@@ -1,155 +1,49 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>AGASTYANS Chat</title><!-- Connect existing project scripts --><script src="supabase.js"defer></script><script src="auth.js"defer></script><script src="chat.js"defer></script><style>
-:root{
-  /* Use same colors as registration page */
-  --bg:#0f172a;
-  --card:#1e293b;
-  --primary:#6366f1;
-  --text:#ffffff;
-}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Agastyans Anonymous</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="style.css"> </head>
+<body>
 
-body{
-  margin:0;
-  font-family:sans-serif;
-  background:var(--bg);
-  color:var(--text);
-  overflow:hidden;
-}
+    <div id="setup-overlay">
+        <div class="popup">
+            <h2>Pick a Temporary Identity</h2>
+            <div id="genz-options"></div>
+            <input type="text" id="custom-name" placeholder="Or type a burner name...">
+            <button class="join-btn" id="join-chat">Enter Chat</button>
+            <p style="font-size: 10px; color: #666; margin-top: 10px;">Messages vanish after 10 hours.</p>
+        </div>
+    </div>
 
-/* HEADER */
-header{
-  position:fixed;
-  top:0;
-  left:0;
-  right:0;
-  height:60px;
-  background:var(--card);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-weight:bold;
-  font-size:18px;
-  z-index:10;
-}
+    <div class="chat-container">
+        <header>
+            <button class="icon-btn"><i data-lucide="chevron-left"></i></button>
+            <div class="header-title">AGASTYANS</div>
+            <button class="icon-btn" id="logout-btn"><i data-lucide="log-out"></i></button>
+        </header>
 
-/* CHAT AREA */
-#chatContainer{
-  position:absolute;
-  top:60px;
-  bottom:70px;
-  left:0;
-  right:0;
-  overflow-y:auto;
-  padding:10px;
-}
+        <div class="chat-box" id="chat-messages">
+            </div>
 
-.message{
-  background:var(--card);
-  padding:10px;
-  border-radius:10px;
-  margin-bottom:8px;
-  max-width:80%;
-}
+        <div class="input-area">
+            <button class="icon-btn"><i data-lucide="camera" style="color: #0095f6"></i></button>
+            <div class="input-wrapper">
+                <input type="text" id="msg-input" placeholder="Message...">
+                <button class="icon-btn" id="send-btn" style="display:none;"><i data-lucide="send" style="color: #0095f6"></i></button>
+                <div id="input-icons" style="display: flex; gap: 10px;">
+                    <button class="icon-btn"><i data-lucide="mic"></i></button>
+                    <button class="icon-btn"><i data-lucide="image"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-/* INPUT BAR */
-#inputBar{
-  position:fixed;
-  bottom:0;
-  left:0;
-  right:0;
-  height:70px;
-  background:var(--card);
-  display:flex;
-  align-items:center;
-  padding:10px;
-  gap:10px;
-}
-
-#messageInput{
-  flex:1;
-  border:none;
-  padding:10px;
-  border-radius:8px;
-  font-size:16px;
-}
-
-#sendBtn{
-  background:var(--primary);
-  border:none;
-  color:white;
-  padding:10px 16px;
-  border-radius:8px;
-}
-
-/* USERNAME POPUP */
-#usernamePopup{
-  position:fixed;
-  top:0;
-  left:0;
-  right:0;
-  bottom:0;
-  background:rgba(0,0,0,0.8);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  z-index:20;
-}
-
-.popupCard{
-  background:var(--card);
-  padding:20px;
-  border-radius:12px;
-  width:90%;
-  max-width:400px;
-}
-
-.usernameOption{
-  background:#334155;
-  padding:10px;
-  border-radius:8px;
-  margin:6px 0;
-  text-align:center;
-  cursor:pointer;
-}
-
-#customUsername{
-  width:100%;
-  padding:10px;
-  margin-top:10px;
-  border-radius:8px;
-  border:none;
-}
-
-#startChat{
-  width:100%;
-  margin-top:10px;
-  padding:10px;
-  border:none;
-  border-radius:8px;
-  background:var(--primary);
-  color:white;
-}
-</style></head><body><header>
-AGASTYANS
-</header><div id="chatContainer"></div><div id="inputBar">
-<input id="messageInput" placeholder="Message...">
-<button id="sendBtn">Send</button>
-</div><!-- USERNAME SELECTION POPUP --><div id="usernamePopup">
-  <div class="popupCard"><h3>Select your username</h3>
-
-<div class="usernameOption">none</div>
-<div class="usernameOption">destroyer</div>
-<div class="usernameOption">f_ the_mfs</div>
-<div class="usernameOption">princess</div>
-<div class="usernameOption">lady don</div>
-
-<input id="customUsername" placeholder="Create your own username">
-
-<button id="startChat">Start Chat</button>
-
-  </div>
-</div></body>
+    <script src="supabase.js"></script>
+    <script src="auth.js"></script>
+    <script src="chat.js"></script>
+</body>
 </html>
