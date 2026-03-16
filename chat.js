@@ -34,6 +34,32 @@ let myUserId = sessionStorage.getItem("temp_id") || crypto.randomUUID();
 window.fillName = function(name){
   document.getElementById("username-input").value = name;
 }
+const joinBtn = document.getElementById("join-btn");
+
+joinBtn.addEventListener("click", () => {
+
+const usernameInput = document.getElementById("username-input");
+const username = usernameInput.value.trim();
+
+if(username.length < 3){
+document.getElementById("error-msg").innerText =
+"Username must be at least 3 characters";
+return;
+}
+
+myUsername = username;
+
+sessionStorage.setItem("temp_user", myUsername);
+sessionStorage.setItem("temp_id", myUserId);
+
+// show chat
+document.getElementById("login-screen").classList.add("hidden");
+document.getElementById("chat-screen").classList.remove("hidden");
+
+// show name in header
+document.getElementById("display-name").innerText = myUsername;
+
+});
 
 
 // ---------------- PAGE LOAD ----------------
