@@ -17,7 +17,7 @@ let myUserId = sessionStorage.getItem("temp_id") || crypto.randomUUID();
 
 
 // ---------------- SUGGESTION CLICK ----------------
-function fillName(name) {
+window.fillName = function(name) {
     document.getElementById("username-input").value = name;
 }
 
