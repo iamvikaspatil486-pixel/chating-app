@@ -1,3 +1,13 @@
+const user = JSON.parse(localStorage.getItem("anon_user"))
+
+if(!user){
+
+window.location.href="username.html"
+
+}
+
+const myUsername = user.name
+const myUserId = user.id
 window.onerror = function(message, source, lineno) {
   alert("Error: " + message + " at line " + lineno);
 };
