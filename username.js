@@ -1,13 +1,11 @@
 // username.js
 
-const usernameInput = document.getElementById("username-input");
-const joinBtn = document.getElementById("join-btn");
-const errorMsg = document.getElementById("error-msg");
-const suggestions = document.querySelectorAll(".badge");
+const customInput = document.getElementById("custom-name");
+const enterBtn = document.getElementById("enterBtn");
+const msg = document.getElementById("msg");
 
-// Check if a username already exists in localStorage
+// Check if user already has a temporary username
 let anonUser = JSON.parse(localStorage.getItem("anon_user"));
-
 if (anonUser) {
     const continueChoice = confirm(
         `Continue as "${anonUser.name}"? Click Cancel to pick a new username.`
@@ -19,12 +17,12 @@ if (anonUser) {
     }
 }
 
-// Fill input when suggestion clicked
-window.fillName = function(name) {
-    usernameInput.value = name;
+// Handle suggestion buttons
+window.selectName = async function(name) {
+    customInput.value = name;
 };
 
-// Utility: generate a unique username if duplicate
+// Utility: generate unique username if duplicate in last 10 hours
 async function generateUniqueUsername(baseName) {
     const tenHoursAgo = new Date(Date.now() - 10 * 60 * 60 * 1000).toISOString();
 
@@ -54,12 +52,12 @@ async function generateUniqueUsername(baseName) {
     return `${baseName}_${maxNum + 1}`;
 }
 
-// Handle join button
-joinBtn.addEventListener("click", async () => {
-    let username = usernameInput.value.trim();
+// Handle Enter Chat
+enterBtn.addEventListener("click", async () => {
+    let username = customInput.value.trim();
 
     if (username.length < 3) {
-        errorMsg.innerText = "Username must be at least 3 characters";
+        msg.innerText = "Username must be at least 3 characters";
         return;
     }
 
@@ -73,6 +71,6 @@ joinBtn.addEventListener("click", async () => {
 
     localStorage.setItem("anon_user", JSON.stringify(anonUser));
 
-    // Redirect to chat
+    // Redirect to chat page
     window.location.href = "chat.html";
 });
