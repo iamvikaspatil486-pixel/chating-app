@@ -1,55 +1,103 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Anonymous Chat</title>
-
-<script src="https://cdn.tailwindcss.com"></script>
-
+<style>
+body { font-family: Arial, sans-serif; background: #111; color: #fff; margin: 0; padding: 0; }
+#messages { height: 70vh; overflow-y: auto; padding: 10px; border-bottom: 1px solid #444; }
+.msg { margin-bottom: 10px; }
+.msg.me { text-align: right; color: #0ff; }
+#input-area { display: flex; padding: 10px; gap: 5px; }
+#msg-input { flex: 1; padding: 5px; border-radius: 4px; border: none; }
+#send-btn { padding: 5px 10px; cursor: pointer; border-radius: 4px; border: none; background: #0ff; color: #000; }
+</style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
+<script src="supabase.js"></script>
 </head>
+<body>
 
-<body class="bg-slate-900 text-white flex flex-col h-screen">
+<h2 style="text-align:center;">Anonymous Chat</h2>
+<div id="messages"></div>
 
-<!-- HEADER -->
-
-<div class="bg-slate-800 p-3 flex justify-between items-center">
-
-<h2 class="text-lg">Anonymous Chat</h2>
-
-<div id="usernameDisplay" class="text-sm text-gray-300"></div>
-
+<div id="input-area">
+<input type="text" id="msg-input" placeholder="Type a message..." />
+<button id="send-btn">Send</button>
 </div>
 
-<!-- MESSAGES -->
+<script>
+// Get anon username from localStorage
+const anonUser = JSON.parse(localStorage.getItem("anon_user"));
+if (!anonUser) {
+    alert("No username found! Go back and set your username first.");
+    window.location.href = "username.html";
+}
 
-<div id="messages"
-class="flex-1 overflow-y-auto p-4 space-y-2">
+// References
+const messagesDiv = document.getElementById("messages");
+const msgInput = document.getElementById("msg-input");
+const sendBtn = document.getElementById("send-btn");
 
-</div>
+// Load last 50 messages
+async function loadMessages() {
+    const { data, error } = await db
+        .from("chat_messages")
+        .select("*")
+        .order("created_at", { ascending: true })
+        .limit(50);
 
-<!-- INPUT -->
+    if (error) {
+        console.error(error);
+        return;
+    }
 
-<div class="p-3 bg-slate-800 flex gap-2">
+    messagesDiv.innerHTML = "";
+    data.forEach(msg => renderMessage(msg));
+}
 
-<input id="messageInput"
-placeholder="Type message..."
-class="flex-1 p-2 rounded text-black">
+// Render single message
+function renderMessage(msg) {
+    const div = document.createElement("div");
+    div.className = "msg" + (msg.username === anonUser.name ? " me" : "");
+    div.innerText = `${msg.username}: ${msg.message}`;
+    messagesDiv.appendChild(div);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
 
-<button id="sendBtn"
-class="bg-indigo-500 px-4 rounded">
+// Send message
+async function sendMessage() {
+    const text = msgInput.value.trim();
+    if (!text) return;
 
-Send
+    const { error } = await db.from("chat_messages").insert([{
+        username: anonUser.name,
+        user_id: anonUser.id,
+        message: text
+    }]);
 
-</button>
+    if (error) {
+        console.error(error);
+        return;
+    }
 
-</div>
+    msgInput.value = "";
+}
 
-<script src="chat.js"></script>
+// Event listeners
+sendBtn.addEventListener("click", sendMessage);
+msgInput.addEventListener("keypress", e => { if (e.key === "Enter") sendMessage(); });
+
+// Load messages on page load
+loadMessages();
+
+// Optional: simple real-time subscription
+db.channel("anon_chat")
+  .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_messages" }, payload => {
+    renderMessage(payload.new);
+  })
+  .subscribe();
+</script>
 
 </body>
 </html>
