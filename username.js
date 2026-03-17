@@ -1,90 +1,78 @@
-const TEN_HOURS = 10 * 60 * 60 * 1000
+// username.js
 
-let selectedName = null
+const usernameInput = document.getElementById("username-input");
+const joinBtn = document.getElementById("join-btn");
+const errorMsg = document.getElementById("error-msg");
+const suggestions = document.querySelectorAll(".badge");
 
-// suggested name click
-function selectName(name){
-document.getElementById("custom-name").value = name
+// Check if a username already exists in localStorage
+let anonUser = JSON.parse(localStorage.getItem("anon_user"));
+
+if (anonUser) {
+    const continueChoice = confirm(
+        `Continue as "${anonUser.name}"? Click Cancel to pick a new username.`
+    );
+    if (continueChoice) {
+        window.location.href = "chat.html";
+    } else {
+        localStorage.removeItem("anon_user");
+    }
 }
 
-// check existing username
-const stored = JSON.parse(localStorage.getItem("anon_user"))
+// Fill input when suggestion clicked
+window.fillName = function(name) {
+    usernameInput.value = name;
+};
 
-if(stored){
+// Utility: generate a unique username if duplicate
+async function generateUniqueUsername(baseName) {
+    const tenHoursAgo = new Date(Date.now() - 10 * 60 * 60 * 1000).toISOString();
 
-const age = Date.now() - stored.time
+    const { data: existing, error } = await db
+        .from("chat_messages")
+        .select("username")
+        .gt("created_at", tenHoursAgo)
+        .like("username", `${baseName}%`);
 
-if(age < TEN_HOURS){
+    if (error) {
+        console.error(error);
+        return baseName;
+    }
 
-if(confirm("Continue with existing username: "+stored.name+" ?")){
+    if (!existing || existing.length === 0) return baseName;
 
-window.location.href="chat.html"
-}else{
+    // Find next available number
+    let maxNum = 0;
+    existing.forEach(e => {
+        const match = e.username.match(new RegExp(`${baseName}_(\\d+)$`));
+        if (match) {
+            const n = parseInt(match[1]);
+            if (n > maxNum) maxNum = n;
+        }
+    });
 
-localStorage.removeItem("anon_user")
-
+    return `${baseName}_${maxNum + 1}`;
 }
 
-}else{
+// Handle join button
+joinBtn.addEventListener("click", async () => {
+    let username = usernameInput.value.trim();
 
-localStorage.removeItem("anon_user")
+    if (username.length < 3) {
+        errorMsg.innerText = "Username must be at least 3 characters";
+        return;
+    }
 
-}
+    username = await generateUniqueUsername(username);
 
-}
+    const anonUser = {
+        name: username,
+        id: crypto.randomUUID(),
+        timestamp: Date.now()
+    };
 
-// join button
-document.getElementById("enterBtn").onclick = async () => {
+    localStorage.setItem("anon_user", JSON.stringify(anonUser));
 
-let username =
-document.getElementById("custom-name").value.trim()
-
-if(username.length < 3){
-
-document.getElementById("msg").innerText="Username too short"
-return
-
-}
-
-await createUniqueUsername(username)
-
-}
-
-async function createUniqueUsername(baseName){
-
-// check existing usernames
-const { data } = await db
-.from("online_users")
-.select("username")
-.ilike("username", baseName+"%")
-
-let finalName = baseName
-
-if(data && data.length > 0){
-
-finalName = baseName + "_" + (data.length+1)
-
-}
-
-const userId = crypto.randomUUID()
-
-// save to supabase
-await db.from("online_users").insert({
-
-user_id:userId,
-username:finalName,
-last_seen:new Date()
-
-})
-
-localStorage.setItem("anon_user",JSON.stringify({
-
-name:finalName,
-id:userId,
-time:Date.now()
-
-}))
-
-window.location.href="chat.html"
-
-}
+    // Redirect to chat
+    window.location.href = "chat.html";
+});
