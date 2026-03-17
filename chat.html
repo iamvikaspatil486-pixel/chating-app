@@ -6,8 +6,7 @@
 <meta charset="UTF-8">
 
 <meta name="viewport"
-content="width=device-width, initial-scale=1.0,
-maximum-scale=1.0, user-scalable=no">
+content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
 <title>AGASTYANS Chat</title>
 
@@ -18,12 +17,13 @@ maximum-scale=1.0, user-scalable=no">
 body{
 margin:0;
 height:100vh;
-overflow:hidden;
+display:flex;
+flex-direction:column;
 background:url("chat-bg.jpg") center/cover no-repeat;
 }
 
 .chat-wrapper{
-height:100vh;
+flex:1;
 display:flex;
 flex-direction:column;
 background:rgba(0,0,0,0.55);
@@ -36,14 +36,11 @@ overflow-y:auto;
 padding:15px;
 }
 
-.input-bar{
-padding:10px;
+.msg-bar{
+width:100%;
+padding:8px;
+background:rgba(0,0,0,0.85);
 border-top:1px solid #333;
-background:rgba(0,0,0,0.7);
-}
-
-.msg-input{
-background:#1f2937;
 }
 
 </style>
@@ -56,8 +53,7 @@ background:#1f2937;
 
 <!-- TOP BAR -->
 
-<div class="flex items-center justify-between
-px-4 py-3 border-b border-gray-700">
+<div class="flex items-center justify-between px-4 py-3 border-b border-gray-700">
 
 <button class="text-white text-xl">
 ←
@@ -82,26 +78,19 @@ Logout
 
 <div class="mb-3">
 
-<div class="inline-block
-bg-gray-700 text-white
-px-4 py-2 rounded-2xl">
-
+<div class="inline-block bg-gray-700 text-white px-4 py-2 rounded-2xl">
 Hello 👋
-
 </div>
 
 </div>
+
 
 <!-- sent -->
 
 <div class="mb-3 text-right">
 
-<div class="inline-block
-bg-blue-500 text-white
-px-4 py-2 rounded-2xl">
-
+<div class="inline-block bg-blue-500 text-white px-4 py-2 rounded-2xl">
 Hi there!
-
 </div>
 
 </div>
@@ -109,19 +98,20 @@ Hi there!
 </div>
 
 
-<!-  MESSAGE INPUT BAR -->
 <!-- MESSAGE BAR -->
 
-<div class="w-full px-2 py-2 border-t border-gray-800 bg-black">
+<div class="msg-bar">
 
 <div class="flex items-center gap-2 bg-gray-900 rounded-full px-3 py-2">
 
 <!-- Camera -->
-<button class="bg-indigo-500 text-white w-9 h-9 flex items-center justify-center rounded-full text-lg">
+
+<button class="bg-indigo-500 text-white w-9 h-9 flex items-center justify-center rounded-full">
 📷
 </button>
 
 <!-- Message Input -->
+
 <input
 id="msgInput"
 type="text"
@@ -130,26 +120,25 @@ class="flex-1 bg-transparent text-white outline-none text-sm px-2"
 />
 
 <!-- Mic -->
+
 <button id="micBtn" class="text-gray-300 text-xl">
 🎤
 </button>
 
 <!-- Image -->
+
 <button class="text-gray-300 text-xl">
 🖼️
 </button>
 
 <!-- Sticker -->
+
 <button class="text-gray-300 text-xl">
 🧊
 </button>
 
-<!-- Plus -->
-<button class="text-gray-300 text-xl">
-➕
-</button>
-
 <!-- Send -->
+
 <button id="sendBtn" class="text-blue-400 text-lg hidden">
 ➤
 </button>
@@ -158,12 +147,29 @@ class="flex-1 bg-transparent text-white outline-none text-sm px-2"
 
 </div>
 
-
 </div>
 
-</div>
 
-</div>
+<script>
+
+const input = document.getElementById("msgInput")
+const mic = document.getElementById("micBtn")
+const send = document.getElementById("sendBtn")
+
+input.addEventListener("input", () => {
+
+if(input.value.trim() !== ""){
+mic.style.display = "none"
+send.classList.remove("hidden")
+}
+else{
+mic.style.display = "block"
+send.classList.add("hidden")
+}
+
+})
+
+</script>
 
 </body>
 
