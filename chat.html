@@ -109,32 +109,55 @@ Hi there!
 </div>
 
 
-<!-- MESSAGE INPUT BAR -->
+<!-  MESSAGE INPUT BAR -->
+<!-- MESSAGE BAR -->
 
-<div class="input-bar">
+<div class="w-full px-2 py-2 border-t border-gray-800 bg-black">
 
-<div class="flex items-center gap-2">
+<div class="flex items-center gap-2 bg-gray-900 rounded-full px-3 py-2">
 
-<button class="text-white text-xl">
-➕
+<!-- Camera -->
+<button class="bg-indigo-500 text-white w-9 h-9 flex items-center justify-center rounded-full text-lg">
+📷
 </button>
 
+<!-- Message Input -->
 <input
+id="msgInput"
 type="text"
 placeholder="Message..."
-class="msg-input flex-1
-p-2 rounded-full
-text-white outline-none
-px-4"
+class="flex-1 bg-transparent text-white outline-none text-sm px-2"
 />
 
-<button class="text-white text-xl">
+<!-- Mic -->
+<button id="micBtn" class="text-gray-300 text-xl">
 🎤
 </button>
 
-<button class="text-blue-400 text-xl">
+<!-- Image -->
+<button class="text-gray-300 text-xl">
+🖼️
+</button>
+
+<!-- Sticker -->
+<button class="text-gray-300 text-xl">
+🧊
+</button>
+
+<!-- Plus -->
+<button class="text-gray-300 text-xl">
+➕
+</button>
+
+<!-- Send -->
+<button id="sendBtn" class="text-blue-400 text-lg hidden">
 ➤
 </button>
+
+</div>
+
+</div>
+
 
 </div>
 
