@@ -1,76 +1,77 @@
-// username.js
-
-const customInput = document.getElementById("custom-name");
+// ---------------- DOM ELEMENTS ----------------
 const enterBtn = document.getElementById("enterBtn");
+const customInput = document.getElementById("custom-name");
 const msg = document.getElementById("msg");
 
-// Check if user already has a temporary username
-let anonUser = JSON.parse(localStorage.getItem("anon_user"));
-if (anonUser) {
-    const continueChoice = confirm(
-        `Continue as "${anonUser.name}"? Click Cancel to pick a new username.`
-    );
-    if (continueChoice) {
-        window.location.href = "chat.html";
-    } else {
-        localStorage.removeItem("anon_user");
-    }
-}
+// ---------------- LOCAL STORAGE KEYS ----------------
+const USER_KEY = "anon_user";
 
-// Handle suggestion buttons
-window.selectName = async function(name) {
+// ---------------- HELPER FUNCTIONS ----------------
+
+// Select a suggested name
+window.selectName = function(name) {
     customInput.value = name;
 };
 
-// Utility: generate unique username if duplicate in last 10 hours
+// Generate unique username if duplicate exists
 async function generateUniqueUsername(baseName) {
-    const tenHoursAgo = new Date(Date.now() - 10 * 60 * 60 * 1000).toISOString();
+    // Get all existing users from localStorage
+    let existing = JSON.parse(localStorage.getItem("online_users") || "[]");
 
-    const { data: existing, error } = await db
-        .from("chat_messages")
-        .select("username")
-        .gt("created_at", tenHoursAgo)
-        .like("username", `${baseName}%`);
-
-    if (error) {
-        console.error(error);
-        return baseName;
+    let uniqueName = baseName;
+    let counter = 1;
+    while (existing.includes(uniqueName)) {
+        uniqueName = `${baseName}_${counter}`;
+        counter++;
     }
 
-    if (!existing || existing.length === 0) return baseName;
+    // Add to existing list
+    existing.push(uniqueName);
+    localStorage.setItem("online_users", JSON.stringify(existing));
 
-    // Find next available number
-    let maxNum = 0;
-    existing.forEach(e => {
-        const match = e.username.match(new RegExp(`${baseName}_(\\d+)$`));
-        if (match) {
-            const n = parseInt(match[1]);
-            if (n > maxNum) maxNum = n;
-        }
-    });
-
-    return `${baseName}_${maxNum + 1}`;
+    return uniqueName;
 }
 
-// Handle Enter Chat
-enterBtn.addEventListener("click", async () => {
-    let username = customInput.value.trim();
-
-    if (username.length < 3) {
-        msg.innerText = "Username must be at least 3 characters";
-        return;
+// Check for existing username with expiry
+function checkExistingUser() {
+    const stored = JSON.parse(localStorage.getItem(USER_KEY) || "null");
+    if (stored) {
+        const now = Date.now();
+        // 10 hours = 10 * 60 * 60 * 1000 ms
+        if (now - stored.timestamp < 10 * 60 * 60 * 1000) {
+            // Ask user if they want to continue
+            const cont = confirm(`Continue with username "${stored.name}"?`);
+            if (cont) {
+                window.location.href = "chat.html";
+                return true;
+            } else {
+                localStorage.removeItem(USER_KEY);
+            }
+        }
     }
+    return false;
+}
 
-    username = await generateUniqueUsername(username);
+// ---------------- MAIN ----------------
+if (!checkExistingUser()) {
+    enterBtn.addEventListener("click", async () => {
+        let username = customInput.value.trim();
 
-    const anonUser = {
-        name: username,
-        id: crypto.randomUUID(),
-        timestamp: Date.now()
-    };
+        if (username.length < 3) {
+            msg.innerText = "Username must be at least 3 characters";
+            return;
+        }
 
-    localStorage.setItem("anon_user", JSON.stringify(anonUser));
+        username = await generateUniqueUsername(username);
 
-    // Redirect to chat page
-    window.location.href = "chat.html";
-});
+        const anonUser = {
+            name: username,
+            timestamp: Date.now()
+        };
+
+        localStorage.setItem(USER_KEY, JSON.stringify(anonUser));
+
+        // Redirect to chat page
+        window.location.href = "chat.html";
+    });
+}
