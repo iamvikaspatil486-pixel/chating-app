@@ -1,9 +1,8 @@
-// get elements
 const input = document.getElementById("msgInput")
 const sendBtn = document.getElementById("sendBtn")
 const messages = document.querySelector(".messages")
 
-// get username from storage
+// username from storage
 const username = localStorage.getItem("username") || "Anonymous"
 
 // show send button when typing
@@ -24,34 +23,30 @@ const text = input.value.trim()
 
 if(text === "") return
 
-// create message container
-const msgBox = document.createElement("div")
-msgBox.className = "mb-3"
+const msg = document.createElement("div")
 
-// message design
-msgBox.innerHTML = `
+msg.className = "mb-3 text-right"
+
+msg.innerHTML = `
 <div class="text-xs text-gray-400">${username}</div>
-<div class="bg-blue-500 text-white px-4 py-2 rounded-xl inline-block">
+<div class="bg-blue-500 px-4 py-2 inline-block rounded-xl">
 ${text}
 </div>
 `
 
-// add message
-messages.appendChild(msgBox)
+messages.appendChild(msg)
 
-// clear input
-input.value = ""
-sendBtn.style.display = "none"
+input.value=""
+sendBtn.style.display="none"
 
-// scroll to bottom
 messages.scrollTop = messages.scrollHeight
 
 }
 
-// send button click
+// click send
 sendBtn.addEventListener("click", sendMessage)
 
-// send when pressing enter
+// enter key send
 input.addEventListener("keypress", function(e){
 
 if(e.key === "Enter"){
