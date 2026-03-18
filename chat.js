@@ -36,30 +36,31 @@ if(voiceBtn) voiceBtn.style.display = "block"
 /* SEND MESSAGE */
 
 async function sendMessage(){
+async function sendMessage(){
 
 const text = input.value.trim()
 if(text === "") return
 
-const { error } = await db
+const { data, error } = await db
 .from("chat_messages")
 .insert({
 username: username,
 message: text
 })
+.select()
 
 if(error){
-console.error(error)
+console.error("Send message error:", error)
+alert(error.message)
 return
 }
 
-input.value = ""
+input.value=""
 
-sendBtn.style.display = "none"
-
-if(voiceBtn) voiceBtn.style.display = "block"
+sendBtn.style.display="none"
+if(voiceBtn) voiceBtn.style.display="block"
 
 }
-
 
 
 /* DISPLAY MESSAGE */
