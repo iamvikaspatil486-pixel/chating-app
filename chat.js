@@ -5,15 +5,9 @@ const sendBtn = document.getElementById("sendBtn")
 const voiceBtn = document.getElementById("voiceBtn")
 const messages = document.querySelector(".messages")
 
+const db = window.db
+
 const username = localStorage.getItem("username") || "Anonymous"
-
-
-/* SUPABASE */
-
-const supabaseUrl = "YOUR_SUPABASE_URL"
-const supabaseKey = "YOUR_PUBLIC_ANON_KEY"
-
-const db = supabase.createClient(supabaseUrl, supabaseKey)
 
 
 
@@ -25,17 +19,13 @@ if(input.value.trim() !== ""){
 
 sendBtn.style.display = "block"
 
-if(voiceBtn){
-voiceBtn.style.display = "none"
-}
+if(voiceBtn) voiceBtn.style.display = "none"
 
 }else{
 
 sendBtn.style.display = "none"
 
-if(voiceBtn){
-voiceBtn.style.display = "block"
-}
+if(voiceBtn) voiceBtn.style.display = "block"
 
 }
 
@@ -50,18 +40,23 @@ async function sendMessage(){
 const text = input.value.trim()
 if(text === "") return
 
-await db.from("chat_messages").insert({
+const { error } = await db
+.from("chat_messages")
+.insert({
 username: username,
 message: text
 })
+
+if(error){
+console.error(error)
+return
+}
 
 input.value = ""
 
 sendBtn.style.display = "none"
 
-if(voiceBtn){
-voiceBtn.style.display = "block"
-}
+if(voiceBtn) voiceBtn.style.display = "block"
 
 }
 
@@ -102,7 +97,7 @@ const { data, error } = await db
 .from("chat_messages")
 .select("*")
 .gt("created_at", tenHoursAgo)
-.order("created_at",{ascending:true})
+.order("created_at", { ascending: true })
 
 if(error){
 console.error(error)
@@ -130,7 +125,7 @@ event: "INSERT",
 schema: "public",
 table: "chat_messages"
 },
-(payload)=>{
+(payload) => {
 
 displayMessage(payload.new)
 
@@ -143,7 +138,7 @@ displayMessage(payload.new)
 
 /* ENTER KEY SEND */
 
-input.addEventListener("keypress",(e)=>{
+input.addEventListener("keypress", (e) => {
 
 if(e.key === "Enter"){
 sendMessage()
@@ -172,7 +167,7 @@ await db
 
 }
 
-setInterval(deleteOldMessages, 600000) // every 10 min
+setInterval(deleteOldMessages, 600000) // every 10 minutes
 
 
 })
