@@ -19,11 +19,28 @@ try{
 storedUser = JSON.parse(localStorage.getItem("anon_user"))
 }catch(e){}
 
-const username = storedUser?.name || "Anonymous"
+const username = storedUser?.name || "User_" + Math.floor(Math.random()*1000)
 const userId = storedUser?.id || crypto.randomUUID()
 
 let replyToMessage = null
 let longPressTimer = null
+
+/* ========================= */
+/* 🔥 FIX MESSAGE HIDE */
+/* ========================= */
+
+function adjustPadding(){
+const bottomBar = document.querySelector(".bottom-chat")
+if(bottomBar){
+const height = bottomBar.getBoundingClientRect().height
+messages.style.paddingBottom = (height + 15) + "px"
+}
+}
+
+window.addEventListener("load", adjustPadding)
+window.addEventListener("resize", adjustPadding)
+window.visualViewport?.addEventListener("resize", adjustPadding)
+setTimeout(adjustPadding, 300)
 
 /* ========================= */
 /* INPUT UI */
@@ -43,6 +60,91 @@ input.addEventListener("input", updateInputUI)
 updateInputUI()
 
 /* ========================= */
+/* 🟢 ONLINE USERS */
+/* ========================= */
+
+setInterval(async () => {
+await db.from("online_users").upsert({
+user_id: userId,
+username: username,
+typing: false,
+last_seen: new Date().toISOString()
+})
+}, 5000)
+
+async function loadOnlineCount(){
+const fiveSecAgo = new Date(Date.now() - 5000).toISOString()
+
+const { data } = await db
+.from("online_users")
+.select("*")
+.gt("last_seen", fiveSecAgo)
+
+const count = data?.length || 0
+
+let onlineDiv = document.getElementById("onlineCount")
+if(!onlineDiv){
+onlineDiv = document.createElement("div")
+onlineDiv.id = "onlineCount"
+onlineDiv.style.fontSize = "12px"
+onlineDiv.style.color = "#9ca3af"
+messages.prepend(onlineDiv)
+}
+
+onlineDiv.innerText = `🟢 ${count} online`
+}
+
+setInterval(loadOnlineCount, 3000)
+
+/* ========================= */
+/* ⌨️ TYPING INDICATOR */
+/* ========================= */
+
+let typingTimeout = null
+
+input.addEventListener("input", async () => {
+
+updateInputUI()
+
+await db.from("online_users").upsert({
+user_id: userId,
+username: username,
+typing: true,
+last_seen: new Date().toISOString()
+})
+
+clearTimeout(typingTimeout)
+
+typingTimeout = setTimeout(async () => {
+await db.from("online_users")
+.update({ typing: false })
+.eq("user_id", userId)
+}, 2000)
+
+})
+
+const typingDiv = document.createElement("div")
+typingDiv.style.fontSize = "12px"
+typingDiv.style.color = "#9ca3af"
+messages.appendChild(typingDiv)
+
+async function loadTyping(){
+
+const { data } = await db
+.from("online_users")
+.select("*")
+.eq("typing", true)
+
+const others = data?.filter(u => u.user_id !== userId)
+
+typingDiv.innerText = others?.length
+? `${others[0].username} is typing...`
+: ""
+}
+
+setInterval(loadTyping, 2000)
+
+/* ========================= */
 /* DISPLAY MESSAGE */
 /* ========================= */
 
@@ -52,37 +154,21 @@ const div = document.createElement("div")
 div.className = "mb-3"
 div.setAttribute("data-id", msg.id)
 
-let replyHTML = msg.reply_to ? `
-<div style="font-size:12px;opacity:0.7;border-left:2px solid #3b82f6;padding-left:6px;margin-bottom:4px;">
-Reply to: ${msg.reply_to}
-</div>` : ""
-
 let mediaHTML = ""
 
 if(msg.media_url){
-if(msg.media_url.endsWith(".mp4")){
-mediaHTML = `<video src="${msg.media_url}" controls style="max-width:200px;border-radius:10px;margin-top:5px;"></video>`
-}else{
 mediaHTML = `<img src="${msg.media_url}" style="max-width:200px;border-radius:10px;margin-top:5px;">`
-}
 }
 
 div.innerHTML = `
 <div style="font-size:11px;color:#9ca3af;">${msg.username}</div>
-${replyHTML}
 <div style="background:#1e293b;color:white;padding:10px 14px;border-radius:14px;display:inline-block;max-width:80%;">
 ${msg.message || ""}
 ${mediaHTML}
 </div>
 `
 
-/* reply */
-div.onclick = () => {
-replyToMessage = msg.message
-input.placeholder = "Replying..."
-}
-
-/* reactions trigger */
+/* reactions */
 div.addEventListener("touchstart", () => {
 longPressTimer = setTimeout(() => {
 showReactions(msg.id)
@@ -111,25 +197,21 @@ if(text === "") return
 displayMessage({
 id: Date.now(),
 username,
-message: text,
-reply_to: replyToMessage
+message: text
 })
 
 await db.from("chat_messages").insert({
 user_id: userId,
 username,
-message: text,
-reply_to: replyToMessage
+message: text
 })
 
 input.value = ""
-replyToMessage = null
-input.placeholder = "Message..."
 updateInputUI()
 }
 
 /* ========================= */
-/* 📸 IMAGE / GIF UPLOAD */
+/* 📸 IMAGE UPLOAD + PROGRESS */
 /* ========================= */
 
 fileInput?.addEventListener("change", async (e) => {
@@ -137,10 +219,42 @@ fileInput?.addEventListener("change", async (e) => {
 const file = e.target.files[0]
 if(!file) return
 
+const preview = document.createElement("div")
+preview.style.position = "fixed"
+preview.style.bottom = "120px"
+preview.style.left = "50%"
+preview.style.transform = "translateX(-50%)"
+preview.style.background = "#0f172a"
+preview.style.padding = "10px"
+preview.style.borderRadius = "10px"
+preview.style.zIndex = "999"
+
+preview.innerHTML = `
+<img src="${URL.createObjectURL(file)}" style="max-width:200px;border-radius:10px;"><br>
+<div id="progressText">Ready</div>
+<button id="sendImageBtn">Send</button>
+<button id="cancelImageBtn">Cancel</button>
+`
+
+document.body.appendChild(preview)
+
+document.getElementById("cancelImageBtn").onclick = () => preview.remove()
+
+document.getElementById("sendImageBtn").onclick = async () => {
+
+const progress = document.getElementById("progressText")
+
+let percent = 0
+const fake = setInterval(()=>{
+percent += 10
+progress.innerText = "Uploading " + percent + "%"
+if(percent >= 90) clearInterval(fake)
+}, 200)
+
 const fileName = Date.now() + "-" + file.name
 
-const { data, error } = await db.storage
-.from("chat-media")
+const { error } = await db.storage
+.from("chat-images") // ✅ fixed
 .upload(fileName, file)
 
 if(error){
@@ -154,19 +268,22 @@ const { data: publicUrl } = db.storage
 
 const url = publicUrl.publicUrl
 
-// show instantly
+progress.innerText = "Uploaded ✅"
+
 displayMessage({
 id: Date.now(),
 username,
 media_url: url
 })
 
-// store in DB
 await db.from("chat_messages").insert({
 user_id: userId,
 username,
 media_url: url
 })
+
+setTimeout(()=> preview.remove(), 800)
+}
 
 })
 
@@ -185,6 +302,8 @@ const { data } = await db
 .order("created_at", { ascending: true })
 
 messages.innerHTML = ""
+messages.appendChild(typingDiv)
+
 data.forEach(displayMessage)
 }
 
@@ -216,7 +335,6 @@ if(old) old.remove()
 const emojis = ["❤️","😂","🔥","👍"]
 
 const picker = document.createElement("div")
-picker.id = "reaction-picker"
 
 picker.style.position = "fixed"
 picker.style.bottom = "100px"
@@ -234,19 +352,6 @@ const btn = document.createElement("span")
 btn.innerText = emoji
 
 btn.onclick = async () => {
-await addReaction(messageId, emoji)
-picker.remove()
-}
-
-picker.appendChild(btn)
-})
-
-document.body.appendChild(picker)
-}
-
-/* 🔥 FIX: single reaction per user */
-
-async function addReaction(messageId, emoji){
 
 await db.from("reactions").delete()
 .eq("message_id", messageId)
@@ -257,9 +362,15 @@ message_id: messageId,
 user_id: userId,
 emoji
 })
+
+picker.remove()
 }
 
-/* LOAD REACTIONS */
+picker.appendChild(btn)
+})
+
+document.body.appendChild(picker)
+}
 
 async function loadReactions(messageId, container){
 
@@ -268,7 +379,7 @@ const { data } = await db
 .select("emoji")
 .eq("message_id", messageId)
 
-if(!data || data.length === 0) return
+if(!data) return
 
 const counts = {}
 
@@ -277,19 +388,14 @@ counts[r.emoji] = (counts[r.emoji] || 0) + 1
 })
 
 const reactionDiv = document.createElement("div")
-reactionDiv.style.marginTop = "4px"
 reactionDiv.style.display = "flex"
 reactionDiv.style.gap = "6px"
+reactionDiv.style.marginTop = "4px"
 
 Object.keys(counts).forEach(emoji => {
-
-const bubble = document.createElement("span")
-bubble.style.background = "#1e293b"
-bubble.style.padding = "2px 8px"
-bubble.style.borderRadius = "12px"
-bubble.innerText = `${emoji} ${counts[emoji]}`
-
-reactionDiv.appendChild(bubble)
+const span = document.createElement("span")
+span.innerText = `${emoji} ${counts[emoji]}`
+reactionDiv.appendChild(span)
 })
 
 container.appendChild(reactionDiv)
