@@ -7,7 +7,14 @@ const messages = document.querySelector(".messages")
 
 const db = window.db
 
-const username = localStorage.getItem("username") || "Anonymous"
+/* GET USER */
+const storedUser = JSON.parse(localStorage.getItem("anon_user"))
+
+const username = storedUser?.name || "Anonymous"
+const userId = storedUser?.id || crypto.randomUUID()
+
+/* REPLY STATE */
+let replyToMessage = null
 
 
 
@@ -33,16 +40,33 @@ function displayMessage(msg){
 
 const div = document.createElement("div")
 
-const isMine = msg.username === username
+div.className = "mb-3"  // ALL LEFT SIDE
 
-div.className = isMine ? "mb-3 text-right" : "mb-3"
+let replyHTML = ""
+
+if(msg.reply_to){
+replyHTML = `
+<div style="font-size:12px;opacity:0.7;border-left:2px solid #3b82f6;padding-left:6px;margin-bottom:4px;">
+Reply to: ${msg.reply_to}
+</div>
+`
+}
 
 div.innerHTML = `
-<div class="text-xs text-gray-400">${msg.username}</div>
-<div class="${isMine ? "bg-blue-500" : "bg-gray-700"} text-white px-4 py-2 rounded-xl inline-block">
+<div style="font-size:11px;color:#9ca3af;">${msg.username}</div>
+
+${replyHTML}
+
+<div style="background:#1e293b;color:white;padding:10px 14px;border-radius:14px;display:inline-block;max-width:80%;">
 ${msg.message || ""}
 </div>
 `
+
+/* CLICK TO REPLY */
+div.onclick = () => {
+replyToMessage = msg.message
+input.placeholder = "Replying..."
+}
 
 messages.appendChild(div)
 messages.scrollTop = messages.scrollHeight
@@ -51,41 +75,46 @@ messages.scrollTop = messages.scrollHeight
 
 
 
-/* SEND MESSAGE (INSTANT UI + DB) */
+/* SEND MESSAGE */
 
 async function sendMessage(){
 
 const text = input.value.trim()
 if(text === "") return
 
-// 🔥 1. Show instantly (no wait)
+// 🔥 instant UI
 displayMessage({
 username: username,
-message: text
+message: text,
+reply_to: replyToMessage
 })
 
-// clear input
-input.value = ""
-sendBtn.style.display = "none"
-if(voiceBtn) voiceBtn.style.display = "block"
-
-// 🔥 2. Send to database
+// send to DB
 const { error } = await db
 .from("chat_messages")
 .insert({
+user_id: userId,
 username: username,
-message: text
+message: text,
+reply_to: replyToMessage
 })
 
 if(error){
-console.error("Send error:", error)
+console.error(error)
 }
 
+input.value = ""
+replyToMessage = null
+input.placeholder = "Message..."
+
+sendBtn.style.display = "none"
+if(voiceBtn) voiceBtn.style.display = "block"
+
 }
 
 
 
-/* LOAD LAST 10 HOURS */
+/* LOAD MESSAGES (last 10 hrs) */
 
 async function loadMessages(){
 
@@ -103,6 +132,7 @@ return
 }
 
 messages.innerHTML = ""
+
 data.forEach(displayMessage)
 
 }
@@ -111,7 +141,7 @@ loadMessages()
 
 
 
-/* REALTIME CHAT */
+/* REALTIME */
 
 db.channel("live-chat")
 
@@ -124,10 +154,12 @@ table: "chat_messages"
 },
 (payload) => {
 
-// ❗ prevent duplicate (already shown instantly)
-if(payload.new.username === username) return
+const msg = payload.new
 
-displayMessage(payload.new)
+// prevent duplicate
+if(msg.user_id === userId) return
+
+displayMessage(msg)
 
 }
 )
@@ -136,7 +168,7 @@ displayMessage(payload.new)
 
 
 
-/* ENTER KEY SEND */
+/* ENTER KEY */
 
 input.addEventListener("keypress", (e) => {
 if(e.key === "Enter"){
@@ -152,7 +184,7 @@ sendBtn.addEventListener("click", sendMessage)
 
 
 
-/* AUTO DELETE OLD MESSAGES */
+/* AUTO DELETE (10 hrs) */
 
 async function deleteOldMessages(){
 
@@ -165,7 +197,7 @@ await db
 
 }
 
-setInterval(deleteOldMessages, 600000) // every 10 min
+setInterval(deleteOldMessages, 600000)
 
 
 })
