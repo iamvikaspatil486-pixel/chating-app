@@ -31,9 +31,14 @@ let longPressTimer = null
 
 function adjustPadding(){
 const bottomBar = document.querySelector(".bottom-chat")
+const preview = document.getElementById("previewBox")
+
+let extra = 0
+if(preview) extra = preview.offsetHeight
+
 if(bottomBar){
 const height = bottomBar.getBoundingClientRect().height
-messages.style.paddingBottom = (height + 15) + "px"
+messages.style.paddingBottom = (height + extra + 15) + "px"
 }
 }
 
@@ -80,18 +85,7 @@ const { data } = await db
 .select("*")
 .gt("last_seen", fiveSecAgo)
 
-const count = data?.length || 0
-
-let onlineDiv = document.getElementById("onlineCount")
-if(!onlineDiv){
-onlineDiv = document.createElement("div")
-onlineDiv.id = "onlineCount"
-onlineDiv.style.fontSize = "12px"
-onlineDiv.style.color = "#9ca3af"
-messages.prepend(onlineDiv)
-}
-
-onlineDiv.innerText = `🟢 ${count} online`
+document.getElementById("onlineCount").innerText = `🟢 ${data?.length || 0}`
 }
 
 setInterval(loadOnlineCount, 3000)
@@ -168,7 +162,7 @@ ${mediaHTML}
 </div>
 `
 
-/* reactions */
+/* reactions trigger */
 div.addEventListener("touchstart", () => {
 longPressTimer = setTimeout(() => {
 showReactions(msg.id)
@@ -183,6 +177,7 @@ messages.appendChild(div)
 messages.scrollTop = messages.scrollHeight
 
 loadReactions(msg.id, div)
+adjustPadding() // 🔥 important
 }
 
 /* ========================= */
@@ -211,7 +206,7 @@ updateInputUI()
 }
 
 /* ========================= */
-/* 📸 IMAGE UPLOAD + PROGRESS */
+/* 📸 IMAGE UPLOAD */
 /* ========================= */
 
 fileInput?.addEventListener("change", async (e) => {
@@ -220,6 +215,7 @@ const file = e.target.files[0]
 if(!file) return
 
 const preview = document.createElement("div")
+preview.id = "previewBox" // 🔥 important
 preview.style.position = "fixed"
 preview.style.bottom = "120px"
 preview.style.left = "50%"
@@ -237,38 +233,24 @@ preview.innerHTML = `
 `
 
 document.body.appendChild(preview)
+adjustPadding()
 
-document.getElementById("cancelImageBtn").onclick = () => preview.remove()
+document.getElementById("cancelImageBtn").onclick = () => {
+preview.remove()
+adjustPadding()
+}
 
 document.getElementById("sendImageBtn").onclick = async () => {
 
-const progress = document.getElementById("progressText")
-
-let percent = 0
-const fake = setInterval(()=>{
-percent += 10
-progress.innerText = "Uploading " + percent + "%"
-if(percent >= 90) clearInterval(fake)
-}, 200)
-
 const fileName = Date.now() + "-" + file.name
 
-const { error } = await db.storage
-.from("chat-images") // ✅ fixed
-.upload(fileName, file)
-
-if(error){
-console.error(error)
-return
-}
+await db.storage.from("chat-images").upload(fileName, file)
 
 const { data: publicUrl } = db.storage
 .from("chat-images")
 .getPublicUrl(fileName)
 
 const url = publicUrl.publicUrl
-
-progress.innerText = "Uploaded ✅"
 
 displayMessage({
 id: Date.now(),
@@ -282,7 +264,8 @@ username,
 media_url: url
 })
 
-setTimeout(()=> preview.remove(), 800)
+preview.remove()
+adjustPadding()
 }
 
 })
@@ -305,12 +288,13 @@ messages.innerHTML = ""
 messages.appendChild(typingDiv)
 
 data.forEach(displayMessage)
+adjustPadding()
 }
 
 loadMessages()
 
 /* ========================= */
-/* REALTIME */
+/* 🔥 REALTIME CHAT */
 /* ========================= */
 
 db.channel("live-chat")
@@ -322,6 +306,29 @@ displayMessage(payload.new)
 }
 })
 .subscribe()
+
+/* ========================= */
+/* 🔥 REALTIME REACTIONS */
+/* ========================= */
+
+db.channel("reactions-live")
+.on("postgres_changes",
+{ event: "*", schema: "public", table: "reactions" },
+(payload) => {
+updateReactionUI(payload.new)
+})
+.subscribe()
+
+function updateReactionUI(reaction){
+
+const msgDiv = document.querySelector(`[data-id="${reaction.message_id}"]`)
+if(!msgDiv) return
+
+const old = msgDiv.querySelector(".reaction-box")
+if(old) old.remove()
+
+loadReactions(reaction.message_id, msgDiv)
+}
 
 /* ========================= */
 /* REACTIONS */
@@ -363,6 +370,7 @@ user_id: userId,
 emoji
 })
 
+updateReactionUI({message_id: messageId}) // 🔥 instant update
 picker.remove()
 }
 
@@ -388,6 +396,7 @@ counts[r.emoji] = (counts[r.emoji] || 0) + 1
 })
 
 const reactionDiv = document.createElement("div")
+reactionDiv.className = "reaction-box"
 reactionDiv.style.display = "flex"
 reactionDiv.style.gap = "6px"
 reactionDiv.style.marginTop = "4px"
