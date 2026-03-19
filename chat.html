@@ -5,8 +5,9 @@
 
 <meta charset="UTF-8">
 
+<!-- 🔥 IMPORTANT FIX -->
 <meta name="viewport"
-content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
 <title>AGASTYANS Chat</title>
 
@@ -14,15 +15,16 @@ content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 <script src="supabase.js"></script>
 <script src="chat.js"></script>
+
 <style>
 
 *{
 box-sizing:border-box;
 }
 
-body{
+html, body{
 margin:0;
-height:100vh;
+height:100dvh; /* 🔥 FIX (NOT 100vh) */
 display:flex;
 flex-direction:column;
 background:#0f172a;
@@ -41,18 +43,19 @@ color:white;
 border-bottom:1px solid #1e293b;
 }
 
-/* messages */
+/* 🔥 FIXED MESSAGES */
+
 .messages{
 flex:1;
 overflow-y:auto;
 padding:15px;
-padding-bottom:120px; /* ❗ remove fixed value */
-color:white;}
+padding-bottom:0; /* ❗ dynamic padding from JS */
+color:white;
 
-/* 🔥 Insta-like smooth scroll behavior */
+/* smooth scroll */
 scroll-behavior:smooth;
-scroll-padding-bottom:120px;
 }
+
 /* bottom chat */
 
 .bottom-chat{
@@ -60,10 +63,12 @@ position:fixed;
 bottom:0;
 left:0;
 width:100%;
-max-width:100vw;
 background:#0f172a;
 border-top:1px solid #1e293b;
 padding:8px;
+
+/* 🔥 mobile safe area fix */
+padding-bottom:calc(8px + env(safe-area-inset-bottom));
 }
 
 /* icons row */
@@ -120,6 +125,8 @@ color:#3b82f6;
 <button onclick="history.back()">←</button>
 
 <h2 class="font-bold">AGASTYANS</h2>
+
+<!-- 🔥 ONLINE USERS -->
 <div id="onlineCount"></div>
 
 <button class="text-red-400">Logout</button>
@@ -129,21 +136,7 @@ color:#3b82f6;
 
 <!-- MESSAGES -->
 
-<div class="messages">
-
-<div class="mb-3">
-<div class="bg-gray-700 px-4 py-2 inline-block rounded-xl">
-Hello 👋
-</div>
-</div>
-
-<div class="mb-3 text-right">
-<div class="bg-blue-500 px-4 py-2 inline-block rounded-xl">
-Hi there!
-</div>
-</div>
-
-</div>
+<div class="messages"></div>
 
 
 <!-- BOTTOM CHAT -->
@@ -179,9 +172,6 @@ class="msg-input"
 </div>
 
 </div>
-
-
-
 
 </body>
 </html>
