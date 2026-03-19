@@ -16,51 +16,15 @@ const username = localStorage.getItem("username") || "Anonymous"
 input.addEventListener("input", () => {
 
 if(input.value.trim() !== ""){
-
 sendBtn.style.display = "block"
-
 if(voiceBtn) voiceBtn.style.display = "none"
-
 }else{
-
 sendBtn.style.display = "none"
-
 if(voiceBtn) voiceBtn.style.display = "block"
-
 }
 
 })
 
-
-
-/* SEND MESSAGE */
-
-async function sendMessage(){
-async function sendMessage(){
-
-const text = input.value.trim()
-if(text === "") return
-
-const { data, error } = await db
-.from("chat_messages")
-.insert({
-username: username,
-message: text
-})
-.select()
-
-if(error){
-console.error("Send message error:", error)
-alert(error.message)
-return
-}
-
-input.value=""
-
-sendBtn.style.display="none"
-if(voiceBtn) voiceBtn.style.display="block"
-
-}
 
 
 /* DISPLAY MESSAGE */
@@ -81,14 +45,47 @@ ${msg.message || ""}
 `
 
 messages.appendChild(div)
-
 messages.scrollTop = messages.scrollHeight
 
 }
 
 
 
-/* LOAD LAST 10 HOURS MESSAGES */
+/* SEND MESSAGE (INSTANT UI + DB) */
+
+async function sendMessage(){
+
+const text = input.value.trim()
+if(text === "") return
+
+// 🔥 1. Show instantly (no wait)
+displayMessage({
+username: username,
+message: text
+})
+
+// clear input
+input.value = ""
+sendBtn.style.display = "none"
+if(voiceBtn) voiceBtn.style.display = "block"
+
+// 🔥 2. Send to database
+const { error } = await db
+.from("chat_messages")
+.insert({
+username: username,
+message: text
+})
+
+if(error){
+console.error("Send error:", error)
+}
+
+}
+
+
+
+/* LOAD LAST 10 HOURS */
 
 async function loadMessages(){
 
@@ -106,7 +103,6 @@ return
 }
 
 messages.innerHTML = ""
-
 data.forEach(displayMessage)
 
 }
@@ -128,6 +124,9 @@ table: "chat_messages"
 },
 (payload) => {
 
+// ❗ prevent duplicate (already shown instantly)
+if(payload.new.username === username) return
+
 displayMessage(payload.new)
 
 }
@@ -140,16 +139,14 @@ displayMessage(payload.new)
 /* ENTER KEY SEND */
 
 input.addEventListener("keypress", (e) => {
-
 if(e.key === "Enter"){
 sendMessage()
 }
-
 })
 
 
 
-/* SEND BUTTON CLICK */
+/* BUTTON CLICK */
 
 sendBtn.addEventListener("click", sendMessage)
 
@@ -168,7 +165,7 @@ await db
 
 }
 
-setInterval(deleteOldMessages, 600000) // every 10 minutes
+setInterval(deleteOldMessages, 600000) // every 10 min
 
 
 })
