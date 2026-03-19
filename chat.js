@@ -4,6 +4,15 @@ const input = document.getElementById("msgInput")
 const sendBtn = document.getElementById("sendBtn")
 const voiceBtn = document.getElementById("voiceBtn")
 const messages = document.querySelector(".messages")
+function adjustPadding(){
+const bottomBar = document.querySelector(".bottom-chat")
+if(bottomBar){
+messages.style.paddingBottom = bottomBar.offsetHeight + "px"
+}
+}
+
+window.addEventListener("load", adjustPadding)
+window.addEventListener("resize", adjustPadding)
 
 /* 🔥 FIX: ensure elements exist */
 if(!input || !sendBtn || !messages){
