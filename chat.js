@@ -31,14 +31,9 @@ let longPressTimer = null
 
 function adjustPadding(){
 const bottomBar = document.querySelector(".bottom-chat")
-const preview = document.getElementById("previewBox")
-
-let extra = 0
-if(preview) extra = preview.offsetHeight
-
 if(bottomBar){
 const height = bottomBar.getBoundingClientRect().height
-messages.style.paddingBottom = (height + extra + 15) + "px"
+messages.style.paddingBottom = (height + 15) + "px"
 }
 }
 
@@ -65,80 +60,6 @@ input.addEventListener("input", updateInputUI)
 updateInputUI()
 
 /* ========================= */
-/* 🟢 ONLINE USERS */
-/* ========================= */
-
-setInterval(async () => {
-await db.from("online_users").upsert({
-user_id: userId,
-username: username,
-typing: false,
-last_seen: new Date().toISOString()
-})
-}, 5000)
-
-async function loadOnlineCount(){
-const fiveSecAgo = new Date(Date.now() - 5000).toISOString()
-
-const { data } = await db
-.from("online_users")
-.select("*")
-.gt("last_seen", fiveSecAgo)
-
-document.getElementById("onlineCount").innerText = `🟢 ${data?.length || 0}`
-}
-
-setInterval(loadOnlineCount, 3000)
-
-/* ========================= */
-/* ⌨️ TYPING INDICATOR */
-/* ========================= */
-
-let typingTimeout = null
-
-input.addEventListener("input", async () => {
-
-updateInputUI()
-
-await db.from("online_users").upsert({
-user_id: userId,
-username: username,
-typing: true,
-last_seen: new Date().toISOString()
-})
-
-clearTimeout(typingTimeout)
-
-typingTimeout = setTimeout(async () => {
-await db.from("online_users")
-.update({ typing: false })
-.eq("user_id", userId)
-}, 2000)
-
-})
-
-const typingDiv = document.createElement("div")
-typingDiv.style.fontSize = "12px"
-typingDiv.style.color = "#9ca3af"
-messages.appendChild(typingDiv)
-
-async function loadTyping(){
-
-const { data } = await db
-.from("online_users")
-.select("*")
-.eq("typing", true)
-
-const others = data?.filter(u => u.user_id !== userId)
-
-typingDiv.innerText = others?.length
-? `${others[0].username} is typing...`
-: ""
-}
-
-setInterval(loadTyping, 2000)
-
-/* ========================= */
 /* DISPLAY MESSAGE */
 /* ========================= */
 
@@ -148,11 +69,9 @@ const div = document.createElement("div")
 div.className = "mb-3"
 div.setAttribute("data-id", msg.id)
 
-let mediaHTML = ""
-
-if(msg.media_url){
-mediaHTML = `<img src="${msg.media_url}" style="max-width:200px;border-radius:10px;margin-top:5px;">`
-}
+let mediaHTML = msg.media_url
+? `<img src="${msg.media_url}" style="max-width:200px;border-radius:10px;margin-top:5px;">`
+: ""
 
 div.innerHTML = `
 <div style="font-size:11px;color:#9ca3af;">${msg.username}</div>
@@ -162,14 +81,29 @@ ${mediaHTML}
 </div>
 `
 
-/* reactions trigger */
-div.addEventListener("touchstart", () => {
+/* 🔥 SWIPE REPLY */
+let startX = 0
+
+div.addEventListener("touchstart", (e) => {
+startX = e.touches[0].clientX
+
 longPressTimer = setTimeout(() => {
 showReactions(msg.id)
 }, 500)
 })
 
+div.addEventListener("touchmove", (e) => {
+let moveX = e.touches[0].clientX - startX
+
+if(moveX > 80){
+replyToMessage = msg.message
+input.placeholder = "Replying..."
+div.style.transform = "translateX(20px)"
+}
+})
+
 div.addEventListener("touchend", () => {
+div.style.transform = "translateX(0)"
 clearTimeout(longPressTimer)
 })
 
@@ -177,7 +111,6 @@ messages.appendChild(div)
 messages.scrollTop = messages.scrollHeight
 
 loadReactions(msg.id, div)
-adjustPadding() // 🔥 important
 }
 
 /* ========================= */
@@ -206,71 +139,6 @@ updateInputUI()
 }
 
 /* ========================= */
-/* 📸 IMAGE UPLOAD */
-/* ========================= */
-
-fileInput?.addEventListener("change", async (e) => {
-
-const file = e.target.files[0]
-if(!file) return
-
-const preview = document.createElement("div")
-preview.id = "previewBox" // 🔥 important
-preview.style.position = "fixed"
-preview.style.bottom = "120px"
-preview.style.left = "50%"
-preview.style.transform = "translateX(-50%)"
-preview.style.background = "#0f172a"
-preview.style.padding = "10px"
-preview.style.borderRadius = "10px"
-preview.style.zIndex = "999"
-
-preview.innerHTML = `
-<img src="${URL.createObjectURL(file)}" style="max-width:200px;border-radius:10px;"><br>
-<div id="progressText">Ready</div>
-<button id="sendImageBtn">Send</button>
-<button id="cancelImageBtn">Cancel</button>
-`
-
-document.body.appendChild(preview)
-adjustPadding()
-
-document.getElementById("cancelImageBtn").onclick = () => {
-preview.remove()
-adjustPadding()
-}
-
-document.getElementById("sendImageBtn").onclick = async () => {
-
-const fileName = Date.now() + "-" + file.name
-
-await db.storage.from("chat-images").upload(fileName, file)
-
-const { data: publicUrl } = db.storage
-.from("chat-images")
-.getPublicUrl(fileName)
-
-const url = publicUrl.publicUrl
-
-displayMessage({
-id: Date.now(),
-username,
-media_url: url
-})
-
-await db.from("chat_messages").insert({
-user_id: userId,
-username,
-media_url: url
-})
-
-preview.remove()
-adjustPadding()
-}
-
-})
-
-/* ========================= */
 /* LOAD MESSAGES */
 /* ========================= */
 
@@ -285,16 +153,14 @@ const { data } = await db
 .order("created_at", { ascending: true })
 
 messages.innerHTML = ""
-messages.appendChild(typingDiv)
 
 data.forEach(displayMessage)
-adjustPadding()
 }
 
 loadMessages()
 
 /* ========================= */
-/* 🔥 REALTIME CHAT */
+/* REALTIME */
 /* ========================= */
 
 db.channel("live-chat")
@@ -336,12 +202,27 @@ loadReactions(reaction.message_id, msgDiv)
 
 function showReactions(messageId){
 
+// remove old picker
 const old = document.getElementById("reaction-picker")
 if(old) old.remove()
 
 const emojis = ["❤️","😂","🔥","👍"]
 
+const overlay = document.createElement("div")
+overlay.id = "reaction-overlay"
+
+overlay.style.position = "fixed"
+overlay.style.top = "0"
+overlay.style.left = "0"
+overlay.style.width = "100%"
+overlay.style.height = "100%"
+overlay.style.zIndex = "998"
+
+// click outside = close
+overlay.onclick = () => overlay.remove()
+
 const picker = document.createElement("div")
+picker.id = "reaction-picker"
 
 picker.style.position = "fixed"
 picker.style.bottom = "100px"
@@ -352,14 +233,17 @@ picker.style.padding = "10px"
 picker.style.borderRadius = "20px"
 picker.style.display = "flex"
 picker.style.gap = "10px"
+picker.style.zIndex = "999"
 
 emojis.forEach(emoji => {
 
 const btn = document.createElement("span")
 btn.innerText = emoji
 
-btn.onclick = async () => {
+btn.onclick = async (e) => {
+e.stopPropagation()
 
+// 🔥 single reaction per user
 await db.from("reactions").delete()
 .eq("message_id", messageId)
 .eq("user_id", userId)
@@ -370,15 +254,19 @@ user_id: userId,
 emoji
 })
 
-updateReactionUI({message_id: messageId}) // 🔥 instant update
-picker.remove()
+overlay.remove()
 }
 
 picker.appendChild(btn)
 })
 
-document.body.appendChild(picker)
+overlay.appendChild(picker)
+document.body.appendChild(overlay)
 }
+
+/* ========================= */
+/* LOAD REACTIONS */
+/* ========================= */
 
 async function loadReactions(messageId, container){
 
@@ -387,7 +275,11 @@ const { data } = await db
 .select("emoji")
 .eq("message_id", messageId)
 
-if(!data) return
+if(!data || data.length === 0) return
+
+// 🔥 remove old reactions
+const old = container.querySelector(".reaction-box")
+if(old) old.remove()
 
 const counts = {}
 
