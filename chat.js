@@ -19,19 +19,77 @@ let longPressTimer = null
 
 
 
-/* SEND BUTTON VISIBILITY */
+/* ========================= */
+/* 🔥 TYPING INDICATOR */
+/* ========================= */
 
-input.addEventListener("input", () => {
+let typingTimeout = null
+
+input.addEventListener("input", async () => {
 
 if(input.value.trim() !== ""){
+
 sendBtn.style.display = "block"
 if(voiceBtn) voiceBtn.style.display = "none"
+
+// 🔥 update typing status
+await db.from("online_users").upsert({
+user_id: userId,
+username: username,
+typing: true,
+last_seen: new Date().toISOString()
+})
+
+clearTimeout(typingTimeout)
+
+typingTimeout = setTimeout(async () => {
+await db.from("online_users").update({ typing: false }).eq("user_id", userId)
+}, 2000)
+
 }else{
+
 sendBtn.style.display = "none"
 if(voiceBtn) voiceBtn.style.display = "block"
+
+await db.from("online_users").update({ typing: false }).eq("user_id", userId)
+
 }
 
 })
+
+
+
+/* SHOW TYPING */
+
+const typingDiv = document.createElement("div")
+typingDiv.style.fontSize = "12px"
+typingDiv.style.color = "#9ca3af"
+typingDiv.style.padding = "5px"
+messages.appendChild(typingDiv)
+
+async function loadTyping(){
+
+const { data } = await db
+.from("online_users")
+.select("*")
+.eq("typing", true)
+
+if(!data || data.length === 0){
+typingDiv.innerText = ""
+return
+}
+
+const others = data.filter(u => u.user_id !== userId)
+
+if(others.length > 0){
+typingDiv.innerText = `${others[0].username} is typing...`
+}else{
+typingDiv.innerText = ""
+}
+
+}
+
+setInterval(loadTyping, 2000)
 
 
 
@@ -40,7 +98,6 @@ if(voiceBtn) voiceBtn.style.display = "block"
 function displayMessage(msg){
 
 const div = document.createElement("div")
-
 div.className = "mb-3"
 
 /* REPLY UI */
@@ -123,6 +180,8 @@ message: text,
 reply_to: replyToMessage
 })
 
+await db.from("online_users").update({ typing: false }).eq("user_id", userId)
+
 const { error } = await db
 .from("chat_messages")
 .insert({
@@ -165,6 +224,7 @@ return
 }
 
 messages.innerHTML = ""
+messages.appendChild(typingDiv)
 
 data.forEach(displayMessage)
 
@@ -174,7 +234,7 @@ loadMessages()
 
 
 
-/* REALTIME */
+/* REALTIME CHAT */
 
 db.channel("live-chat")
 .on(
@@ -187,11 +247,28 @@ table: "chat_messages"
 (payload) => {
 
 const msg = payload.new
-
 if(msg.user_id === userId) return
 
 displayMessage(msg)
 
+}
+)
+.subscribe()
+
+
+
+/* REALTIME REACTIONS */
+
+db.channel("reactions-live")
+.on(
+"postgres_changes",
+{
+event: "*",
+schema: "public",
+table: "reactions"
+},
+() => {
+loadMessages()
 }
 )
 .subscribe()
@@ -237,9 +314,13 @@ setInterval(deleteOldMessages, 600000)
 
 function showReactions(messageId){
 
-const emojis = ["❤️","😂","🔥","🖕","👍"]
+const oldPicker = document.getElementById("reaction-picker")
+if(oldPicker) oldPicker.remove()
+
+const emojis = ["❤️","😂","🔥","👍"]
 
 const picker = document.createElement("div")
+picker.id = "reaction-picker"
 
 picker.style.position = "fixed"
 picker.style.bottom = "100px"
@@ -276,15 +357,13 @@ document.body.appendChild(picker)
 
 async function addReaction(messageId, emoji){
 
-// try update first
-const { data, error } = await db
+const { data } = await db
 .from("reactions")
 .update({ emoji: emoji })
 .eq("message_id", messageId)
 .eq("user_id", userId)
 .select()
 
-// if no row updated → insert
 if(!data || data.length === 0){
 
 await db
@@ -297,20 +376,21 @@ emoji: emoji
 
 }
 
-loadMessages()
 }
 
 
+
+/* GROUPED REACTIONS */
+
 async function loadReactions(messageId, container){
 
-const { data, error } = await db
+const { data } = await db
 .from("reactions")
 .select("emoji")
 .eq("message_id", messageId)
 
-if(error || !data || data.length === 0) return
+if(!data || data.length === 0) return
 
-// 🔥 GROUP COUNT
 const counts = {}
 
 data.forEach(r => {
@@ -323,11 +403,9 @@ reactionDiv.style.display = "flex"
 reactionDiv.style.gap = "6px"
 reactionDiv.style.flexWrap = "wrap"
 
-// create bubbles
 Object.keys(counts).forEach(emoji => {
 
 const bubble = document.createElement("span")
-
 bubble.style.background = "#1e293b"
 bubble.style.padding = "2px 8px"
 bubble.style.borderRadius = "12px"
@@ -342,3 +420,5 @@ reactionDiv.appendChild(bubble)
 container.appendChild(reactionDiv)
 
 }
+
+})
