@@ -15,6 +15,7 @@ const userId = storedUser?.id || crypto.randomUUID()
 
 /* REPLY STATE */
 let replyToMessage = null
+let longPressTimer = null
 
 
 
@@ -40,8 +41,9 @@ function displayMessage(msg){
 
 const div = document.createElement("div")
 
-div.className = "mb-3"  // ALL LEFT SIDE
+div.className = "mb-3"
 
+/* REPLY UI */
 let replyHTML = ""
 
 if(msg.reply_to){
@@ -54,9 +56,7 @@ Reply to: ${msg.reply_to}
 
 div.innerHTML = `
 <div style="font-size:11px;color:#9ca3af;">${msg.username}</div>
-
 ${replyHTML}
-
 <div style="background:#1e293b;color:white;padding:10px 14px;border-radius:14px;display:inline-block;max-width:80%;">
 ${msg.message || ""}
 </div>
@@ -68,8 +68,43 @@ replyToMessage = msg.message
 input.placeholder = "Replying..."
 }
 
+/* 📱 SWIPE + LONG PRESS */
+let startX = 0
+
+div.addEventListener("touchstart", (e) => {
+startX = e.touches[0].clientX
+
+longPressTimer = setTimeout(() => {
+showReactions(msg.id)
+}, 500)
+})
+
+div.addEventListener("touchmove", (e) => {
+let moveX = e.touches[0].clientX - startX
+
+if(moveX > 80){
+replyToMessage = msg.message
+input.placeholder = "Replying to: " + msg.username
+div.style.transform = "translateX(20px)"
+}
+})
+
+div.addEventListener("touchend", () => {
+div.style.transform = "translateX(0)"
+clearTimeout(longPressTimer)
+})
+
+/* DESKTOP RIGHT CLICK */
+div.addEventListener("contextmenu", (e) => {
+e.preventDefault()
+showReactions(msg.id)
+})
+
 messages.appendChild(div)
 messages.scrollTop = messages.scrollHeight
+
+/* LOAD REACTIONS */
+loadReactions(msg.id, div)
 
 }
 
@@ -82,14 +117,12 @@ async function sendMessage(){
 const text = input.value.trim()
 if(text === "") return
 
-// 🔥 instant UI
 displayMessage({
 username: username,
 message: text,
 reply_to: replyToMessage
 })
 
-// send to DB
 const { error } = await db
 .from("chat_messages")
 .insert({
@@ -114,7 +147,7 @@ if(voiceBtn) voiceBtn.style.display = "block"
 
 
 
-/* LOAD MESSAGES (last 10 hrs) */
+/* LOAD MESSAGES */
 
 async function loadMessages(){
 
@@ -144,7 +177,6 @@ loadMessages()
 /* REALTIME */
 
 db.channel("live-chat")
-
 .on(
 "postgres_changes",
 {
@@ -156,14 +188,12 @@ table: "chat_messages"
 
 const msg = payload.new
 
-// prevent duplicate
 if(msg.user_id === userId) return
 
 displayMessage(msg)
 
 }
 )
-
 .subscribe()
 
 
@@ -184,7 +214,7 @@ sendBtn.addEventListener("click", sendMessage)
 
 
 
-/* AUTO DELETE (10 hrs) */
+/* AUTO DELETE */
 
 async function deleteOldMessages(){
 
@@ -199,5 +229,101 @@ await db
 
 setInterval(deleteOldMessages, 600000)
 
+
+
+/* ========================= */
+/* 🔥 REACTIONS SYSTEM */
+/* ========================= */
+
+function showReactions(messageId){
+
+const emojis = ["❤️","😂","🔥","🖕","👍"]
+
+const picker = document.createElement("div")
+
+picker.style.position = "fixed"
+picker.style.bottom = "100px"
+picker.style.left = "50%"
+picker.style.transform = "translateX(-50%)"
+picker.style.background = "#1e293b"
+picker.style.padding = "10px"
+picker.style.borderRadius = "20px"
+picker.style.display = "flex"
+picker.style.gap = "10px"
+picker.style.zIndex = "999"
+
+emojis.forEach(emoji => {
+
+const btn = document.createElement("span")
+btn.innerText = emoji
+btn.style.fontSize = "20px"
+btn.style.cursor = "pointer"
+
+btn.onclick = async () => {
+await addReaction(messageId, emoji)
+document.body.removeChild(picker)
+}
+
+picker.appendChild(btn)
+
+})
+
+document.body.appendChild(picker)
+
+}
+
+
+
+async function addReaction(messageId, emoji){
+
+const { data } = await db
+.from("reactions")
+.select("*")
+.eq("message_id", messageId)
+.eq("user_id", userId)
+.single()
+
+if(data){
+
+await db
+.from("reactions")
+.update({ emoji: emoji })
+.eq("id", data.id)
+
+}else{
+
+await db
+.from("reactions")
+.insert({
+message_id: messageId,
+user_id: userId,
+emoji: emoji
+})
+
+}
+
+}
+
+
+
+async function loadReactions(messageId, container){
+
+const { data } = await db
+.from("reactions")
+.select("emoji")
+.eq("message_id", messageId)
+
+if(!data || data.length === 0) return
+
+const reactionDiv = document.createElement("div")
+
+reactionDiv.style.marginTop = "4px"
+reactionDiv.style.fontSize = "14px"
+
+reactionDiv.innerText = data.map(r => r.emoji).join(" ")
+
+container.appendChild(reactionDiv)
+
+}
 
 })
