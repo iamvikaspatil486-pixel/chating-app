@@ -276,21 +276,16 @@ document.body.appendChild(picker)
 
 async function addReaction(messageId, emoji){
 
-const { data } = await db
-.from("reactions")
-.select("*")
-.eq("message_id", messageId)
-.eq("user_id", userId)
-.single()
-
-if(data){
-
-await db
+// try update first
+const { data, error } = await db
 .from("reactions")
 .update({ emoji: emoji })
-.eq("id", data.id)
+.eq("message_id", messageId)
+.eq("user_id", userId)
+.select()
 
-}else{
+// if no row updated → insert
+if(!data || data.length === 0){
 
 await db
 .from("reactions")
@@ -302,28 +297,48 @@ emoji: emoji
 
 }
 
+loadMessages()
 }
-
 
 
 async function loadReactions(messageId, container){
 
-const { data } = await db
+const { data, error } = await db
 .from("reactions")
 .select("emoji")
 .eq("message_id", messageId)
 
-if(!data || data.length === 0) return
+if(error || !data || data.length === 0) return
+
+// 🔥 GROUP COUNT
+const counts = {}
+
+data.forEach(r => {
+counts[r.emoji] = (counts[r.emoji] || 0) + 1
+})
 
 const reactionDiv = document.createElement("div")
-
 reactionDiv.style.marginTop = "4px"
-reactionDiv.style.fontSize = "14px"
+reactionDiv.style.display = "flex"
+reactionDiv.style.gap = "6px"
+reactionDiv.style.flexWrap = "wrap"
 
-reactionDiv.innerText = data.map(r => r.emoji).join(" ")
+// create bubbles
+Object.keys(counts).forEach(emoji => {
+
+const bubble = document.createElement("span")
+
+bubble.style.background = "#1e293b"
+bubble.style.padding = "2px 8px"
+bubble.style.borderRadius = "12px"
+bubble.style.fontSize = "12px"
+
+bubble.innerText = `${emoji} ${counts[emoji]}`
+
+reactionDiv.appendChild(bubble)
+
+})
 
 container.appendChild(reactionDiv)
 
 }
-
-})
