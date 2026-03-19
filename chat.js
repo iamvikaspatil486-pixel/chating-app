@@ -4,15 +4,6 @@ const input = document.getElementById("msgInput")
 const sendBtn = document.getElementById("sendBtn")
 const voiceBtn = document.getElementById("voiceBtn")
 const messages = document.querySelector(".messages")
-function adjustPadding(){
-const bottomBar = document.querySelector(".bottom-chat")
-if(bottomBar){
-messages.style.paddingBottom = bottomBar.offsetHeight + "px"
-}
-}
-
-window.addEventListener("load", adjustPadding)
-window.addEventListener("resize", adjustPadding)
 
 /* 🔥 FIX: ensure elements exist */
 if(!input || !sendBtn || !messages){
@@ -22,7 +13,7 @@ return
 
 const db = window.db
 
-/* 🔥 FIX: safe user parsing */
+/* 🔥 SAFE USER */
 let storedUser = null
 try{
 storedUser = JSON.parse(localStorage.getItem("anon_user"))
@@ -33,13 +24,33 @@ storedUser = null
 const username = storedUser?.name || "Anonymous"
 const userId = storedUser?.id || crypto.randomUUID()
 
-/* REPLY STATE */
 let replyToMessage = null
 let longPressTimer = null
 
 
 
-/* 🔥 FIX: force initial button state */
+/* ========================= */
+/* 🔥 MESSAGE BAR FIX */
+/* ========================= */
+
+function adjustPadding(){
+const bottomBar = document.querySelector(".bottom-chat")
+if(bottomBar){
+messages.style.paddingBottom = (bottomBar.offsetHeight + 10) + "px"
+}
+}
+
+window.addEventListener("load", adjustPadding)
+window.addEventListener("resize", adjustPadding)
+adjustPadding()
+
+
+
+/* ========================= */
+/* SEND BUTTON STATE FIX */
+/* ========================= */
+
+function updateInputUI(){
 if(input.value.trim() !== ""){
 sendBtn.style.display = "block"
 if(voiceBtn) voiceBtn.style.display = "none"
@@ -47,28 +58,27 @@ if(voiceBtn) voiceBtn.style.display = "none"
 sendBtn.style.display = "none"
 if(voiceBtn) voiceBtn.style.display = "block"
 }
+}
 
+updateInputUI()
 
-
-/* 🔥 FIX: handle back/refresh */
 window.addEventListener("pageshow", () => {
-input.dispatchEvent(new Event("input"))
+updateInputUI()
 })
 
 
 
 /* ========================= */
-/* 🔥 TYPING INDICATOR */
+/* TYPING INDICATOR */
 /* ========================= */
 
 let typingTimeout = null
 
 input.addEventListener("input", async () => {
 
-if(input.value.trim() !== ""){
+updateInputUI()
 
-sendBtn.style.display = "block"
-if(voiceBtn) voiceBtn.style.display = "none"
+if(input.value.trim() !== ""){
 
 await db?.from("online_users").upsert({
 user_id: userId,
@@ -84,12 +94,7 @@ await db?.from("online_users").update({ typing: false }).eq("user_id", userId)
 }, 2000)
 
 }else{
-
-sendBtn.style.display = "none"
-if(voiceBtn) voiceBtn.style.display = "block"
-
 await db?.from("online_users").update({ typing: false }).eq("user_id", userId)
-
 }
 
 })
@@ -102,6 +107,7 @@ const typingDiv = document.createElement("div")
 typingDiv.style.fontSize = "12px"
 typingDiv.style.color = "#9ca3af"
 typingDiv.style.padding = "5px"
+
 messages.appendChild(typingDiv)
 
 async function loadTyping(){
@@ -111,18 +117,16 @@ const { data } = await db
 .select("*")
 .eq("typing", true)
 
-if(!data || data.length === 0){
+if(!data){
 typingDiv.innerText = ""
 return
 }
 
 const others = data.filter(u => u.user_id !== userId)
 
-if(others.length > 0){
-typingDiv.innerText = `${others[0].username} is typing...`
-}else{
-typingDiv.innerText = ""
-}
+typingDiv.innerText = others.length > 0
+? `${others[0].username} is typing...`
+: ""
 
 }
 
@@ -130,12 +134,15 @@ setInterval(loadTyping, 2000)
 
 
 
+/* ========================= */
 /* DISPLAY MESSAGE */
+/* ========================= */
 
 function displayMessage(msg){
 
 const div = document.createElement("div")
 div.className = "mb-3"
+div.setAttribute("data-id", msg.id)
 
 let replyHTML = ""
 
@@ -160,28 +167,15 @@ replyToMessage = msg.message
 input.placeholder = "Replying..."
 }
 
-let startX = 0
+/* LONG PRESS */
 
-div.addEventListener("touchstart", (e) => {
-startX = e.touches[0].clientX
-
+div.addEventListener("touchstart", () => {
 longPressTimer = setTimeout(() => {
 showReactions(msg.id)
 }, 500)
 })
 
-div.addEventListener("touchmove", (e) => {
-let moveX = e.touches[0].clientX - startX
-
-if(moveX > 80){
-replyToMessage = msg.message
-input.placeholder = "Replying to: " + msg.username
-div.style.transform = "translateX(20px)"
-}
-})
-
 div.addEventListener("touchend", () => {
-div.style.transform = "translateX(0)"
 clearTimeout(longPressTimer)
 })
 
@@ -199,7 +193,9 @@ loadReactions(msg.id, div)
 
 
 
+/* ========================= */
 /* SEND MESSAGE */
+/* ========================= */
 
 async function sendMessage(){
 
@@ -207,32 +203,26 @@ const text = input.value.trim()
 if(text === "") return
 
 displayMessage({
-username: username,
+id: Date.now(),
+username,
 message: text,
 reply_to: replyToMessage
 })
 
 await db?.from("online_users").update({ typing: false }).eq("user_id", userId)
 
-const { error } = await db
-.from("chat_messages")
-.insert({
+await db.from("chat_messages").insert({
 user_id: userId,
-username: username,
+username,
 message: text,
 reply_to: replyToMessage
 })
-
-if(error){
-console.error(error)
-}
 
 input.value = ""
 replyToMessage = null
 input.placeholder = "Message..."
 
-sendBtn.style.display = "none"
-if(voiceBtn) voiceBtn.style.display = "block"
+updateInputUI()
 
 }
 
@@ -244,16 +234,11 @@ async function loadMessages(){
 
 const tenHoursAgo = new Date(Date.now() - 10*60*60*1000).toISOString()
 
-const { data, error } = await db
+const { data } = await db
 .from("chat_messages")
 .select("*")
 .gt("created_at", tenHoursAgo)
 .order("created_at", { ascending: true })
-
-if(error){
-console.error(error)
-return
-}
 
 messages.innerHTML = ""
 messages.appendChild(typingDiv)
@@ -266,57 +251,64 @@ loadMessages()
 
 
 
+/* ========================= */
 /* REALTIME CHAT */
+/* ========================= */
 
 db.channel("live-chat")
 .on("postgres_changes",
 { event: "INSERT", schema: "public", table: "chat_messages" },
 (payload) => {
-if(payload.new.user_id === userId) return
+if(payload.new.user_id !== userId){
 displayMessage(payload.new)
+}
 })
 .subscribe()
 
 
 
-/* REALTIME REACTIONS */
+/* ========================= */
+/* 🔥 REALTIME REACTIONS FIX */
+/* ========================= */
 
 db.channel("reactions-live")
 .on("postgres_changes",
-{ event: "*", schema: "public", table: "reactions" },
-() => loadMessages()
+{ event: "INSERT", schema: "public", table: "reactions" },
+(payload) => updateReactionUI(payload.new)
+)
+.on("postgres_changes",
+{ event: "UPDATE", schema: "public", table: "reactions" },
+(payload) => updateReactionUI(payload.new)
 )
 .subscribe()
 
 
 
-input.addEventListener("keypress", (e) => {
-if(e.key === "Enter") sendMessage()
-})
+function updateReactionUI(reaction){
 
-sendBtn.addEventListener("click", sendMessage)
+const msgDiv = document.querySelector(`[data-id="${reaction.message_id}"]`)
+if(!msgDiv) return
 
+// remove old reactions
+const old = msgDiv.querySelector(".reaction-box")
+if(old) old.remove()
 
+loadReactions(reaction.message_id, msgDiv)
 
-/* AUTO DELETE */
-
-async function deleteOldMessages(){
-const tenHoursAgo = new Date(Date.now() - 10*60*60*1000).toISOString()
-await db.from("chat_messages").delete().lt("created_at", tenHoursAgo)
 }
 
-setInterval(deleteOldMessages, 600000)
 
 
-
+/* ========================= */
 /* REACTIONS */
+/* ========================= */
 
 function showReactions(messageId){
 
-const oldPicker = document.getElementById("reaction-picker")
-if(oldPicker) oldPicker.remove()
+const old = document.getElementById("reaction-picker")
+if(old) old.remove()
 
-const emojis = ["❤️","😂","🔥","🖕","👍","💯","💔"]
+const emojis = ["❤️","😂","🔥","👍","💯"]
 
 const picker = document.createElement("div")
 picker.id = "reaction-picker"
@@ -330,23 +322,23 @@ picker.style.padding = "10px"
 picker.style.borderRadius = "20px"
 picker.style.display = "flex"
 picker.style.gap = "10px"
-picker.style.zIndex = "999"
 
 emojis.forEach(emoji => {
 const btn = document.createElement("span")
 btn.innerText = emoji
 btn.style.fontSize = "20px"
-btn.style.cursor = "pointer"
 
 btn.onclick = async () => {
 await addReaction(messageId, emoji)
-document.body.removeChild(picker)
+updateReactionUI({message_id: messageId}) // 🔥 instant
+picker.remove()
 }
 
 picker.appendChild(btn)
 })
 
 document.body.appendChild(picker)
+
 }
 
 
@@ -372,7 +364,7 @@ emoji
 
 
 
-/* GROUPED REACTIONS */
+/* LOAD REACTIONS */
 
 async function loadReactions(messageId, container){
 
@@ -390,10 +382,10 @@ counts[r.emoji] = (counts[r.emoji] || 0) + 1
 })
 
 const reactionDiv = document.createElement("div")
+reactionDiv.className = "reaction-box"
 reactionDiv.style.marginTop = "4px"
 reactionDiv.style.display = "flex"
 reactionDiv.style.gap = "6px"
-reactionDiv.style.flexWrap = "wrap"
 
 Object.keys(counts).forEach(emoji => {
 const bubble = document.createElement("span")
@@ -408,5 +400,24 @@ reactionDiv.appendChild(bubble)
 container.appendChild(reactionDiv)
 
 }
+
+
+
+/* EVENTS */
+
+input.addEventListener("keypress", e => {
+if(e.key === "Enter") sendMessage()
+})
+
+sendBtn.addEventListener("click", sendMessage)
+
+
+
+/* AUTO DELETE */
+
+setInterval(async () => {
+const tenHoursAgo = new Date(Date.now() - 10*60*60*1000).toISOString()
+await db.from("chat_messages").delete().lt("created_at", tenHoursAgo)
+}, 600000)
 
 })
