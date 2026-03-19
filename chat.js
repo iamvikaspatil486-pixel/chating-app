@@ -5,10 +5,21 @@ const sendBtn = document.getElementById("sendBtn")
 const voiceBtn = document.getElementById("voiceBtn")
 const messages = document.querySelector(".messages")
 
+/* 🔥 FIX: ensure elements exist */
+if(!input || !sendBtn || !messages){
+console.error("UI elements missing")
+return
+}
+
 const db = window.db
 
-/* GET USER */
-const storedUser = JSON.parse(localStorage.getItem("anon_user"))
+/* 🔥 FIX: safe user parsing */
+let storedUser = null
+try{
+storedUser = JSON.parse(localStorage.getItem("anon_user"))
+}catch(e){
+storedUser = null
+}
 
 const username = storedUser?.name || "Anonymous"
 const userId = storedUser?.id || crypto.randomUUID()
@@ -16,6 +27,24 @@ const userId = storedUser?.id || crypto.randomUUID()
 /* REPLY STATE */
 let replyToMessage = null
 let longPressTimer = null
+
+
+
+/* 🔥 FIX: force initial button state */
+if(input.value.trim() !== ""){
+sendBtn.style.display = "block"
+if(voiceBtn) voiceBtn.style.display = "none"
+}else{
+sendBtn.style.display = "none"
+if(voiceBtn) voiceBtn.style.display = "block"
+}
+
+
+
+/* 🔥 FIX: handle back/refresh */
+window.addEventListener("pageshow", () => {
+input.dispatchEvent(new Event("input"))
+})
 
 
 
@@ -32,8 +61,7 @@ if(input.value.trim() !== ""){
 sendBtn.style.display = "block"
 if(voiceBtn) voiceBtn.style.display = "none"
 
-// 🔥 update typing status
-await db.from("online_users").upsert({
+await db?.from("online_users").upsert({
 user_id: userId,
 username: username,
 typing: true,
@@ -43,7 +71,7 @@ last_seen: new Date().toISOString()
 clearTimeout(typingTimeout)
 
 typingTimeout = setTimeout(async () => {
-await db.from("online_users").update({ typing: false }).eq("user_id", userId)
+await db?.from("online_users").update({ typing: false }).eq("user_id", userId)
 }, 2000)
 
 }else{
@@ -51,7 +79,7 @@ await db.from("online_users").update({ typing: false }).eq("user_id", userId)
 sendBtn.style.display = "none"
 if(voiceBtn) voiceBtn.style.display = "block"
 
-await db.from("online_users").update({ typing: false }).eq("user_id", userId)
+await db?.from("online_users").update({ typing: false }).eq("user_id", userId)
 
 }
 
@@ -100,7 +128,6 @@ function displayMessage(msg){
 const div = document.createElement("div")
 div.className = "mb-3"
 
-/* REPLY UI */
 let replyHTML = ""
 
 if(msg.reply_to){
@@ -119,13 +146,11 @@ ${msg.message || ""}
 </div>
 `
 
-/* CLICK TO REPLY */
 div.onclick = () => {
 replyToMessage = msg.message
 input.placeholder = "Replying..."
 }
 
-/* 📱 SWIPE + LONG PRESS */
 let startX = 0
 
 div.addEventListener("touchstart", (e) => {
@@ -151,7 +176,6 @@ div.style.transform = "translateX(0)"
 clearTimeout(longPressTimer)
 })
 
-/* DESKTOP RIGHT CLICK */
 div.addEventListener("contextmenu", (e) => {
 e.preventDefault()
 showReactions(msg.id)
@@ -160,7 +184,6 @@ showReactions(msg.id)
 messages.appendChild(div)
 messages.scrollTop = messages.scrollHeight
 
-/* LOAD REACTIONS */
 loadReactions(msg.id, div)
 
 }
@@ -180,7 +203,7 @@ message: text,
 reply_to: replyToMessage
 })
 
-await db.from("online_users").update({ typing: false }).eq("user_id", userId)
+await db?.from("online_users").update({ typing: false }).eq("user_id", userId)
 
 const { error } = await db
 .from("chat_messages")
@@ -237,22 +260,12 @@ loadMessages()
 /* REALTIME CHAT */
 
 db.channel("live-chat")
-.on(
-"postgres_changes",
-{
-event: "INSERT",
-schema: "public",
-table: "chat_messages"
-},
+.on("postgres_changes",
+{ event: "INSERT", schema: "public", table: "chat_messages" },
 (payload) => {
-
-const msg = payload.new
-if(msg.user_id === userId) return
-
-displayMessage(msg)
-
-}
-)
+if(payload.new.user_id === userId) return
+displayMessage(payload.new)
+})
 .subscribe()
 
 
@@ -260,32 +273,17 @@ displayMessage(msg)
 /* REALTIME REACTIONS */
 
 db.channel("reactions-live")
-.on(
-"postgres_changes",
-{
-event: "*",
-schema: "public",
-table: "reactions"
-},
-() => {
-loadMessages()
-}
+.on("postgres_changes",
+{ event: "*", schema: "public", table: "reactions" },
+() => loadMessages()
 )
 .subscribe()
 
 
 
-/* ENTER KEY */
-
 input.addEventListener("keypress", (e) => {
-if(e.key === "Enter"){
-sendMessage()
-}
+if(e.key === "Enter") sendMessage()
 })
-
-
-
-/* BUTTON CLICK */
 
 sendBtn.addEventListener("click", sendMessage)
 
@@ -294,30 +292,22 @@ sendBtn.addEventListener("click", sendMessage)
 /* AUTO DELETE */
 
 async function deleteOldMessages(){
-
 const tenHoursAgo = new Date(Date.now() - 10*60*60*1000).toISOString()
-
-await db
-.from("chat_messages")
-.delete()
-.lt("created_at", tenHoursAgo)
-
+await db.from("chat_messages").delete().lt("created_at", tenHoursAgo)
 }
 
 setInterval(deleteOldMessages, 600000)
 
 
 
-/* ========================= */
-/* 🔥 REACTIONS SYSTEM */
-/* ========================= */
+/* REACTIONS */
 
 function showReactions(messageId){
 
 const oldPicker = document.getElementById("reaction-picker")
 if(oldPicker) oldPicker.remove()
 
-const emojis = ["❤️","😂","🔥","👍"]
+const emojis = ["❤️","😂","🔥","🖕","👍","💯","💔"]
 
 const picker = document.createElement("div")
 picker.id = "reaction-picker"
@@ -334,7 +324,6 @@ picker.style.gap = "10px"
 picker.style.zIndex = "999"
 
 emojis.forEach(emoji => {
-
 const btn = document.createElement("span")
 btn.innerText = emoji
 btn.style.fontSize = "20px"
@@ -346,11 +335,9 @@ document.body.removeChild(picker)
 }
 
 picker.appendChild(btn)
-
 })
 
 document.body.appendChild(picker)
-
 }
 
 
@@ -359,21 +346,17 @@ async function addReaction(messageId, emoji){
 
 const { data } = await db
 .from("reactions")
-.update({ emoji: emoji })
+.update({ emoji })
 .eq("message_id", messageId)
 .eq("user_id", userId)
 .select()
 
 if(!data || data.length === 0){
-
-await db
-.from("reactions")
-.insert({
+await db.from("reactions").insert({
 message_id: messageId,
 user_id: userId,
-emoji: emoji
+emoji
 })
-
 }
 
 }
@@ -404,17 +387,13 @@ reactionDiv.style.gap = "6px"
 reactionDiv.style.flexWrap = "wrap"
 
 Object.keys(counts).forEach(emoji => {
-
 const bubble = document.createElement("span")
 bubble.style.background = "#1e293b"
 bubble.style.padding = "2px 8px"
 bubble.style.borderRadius = "12px"
 bubble.style.fontSize = "12px"
-
 bubble.innerText = `${emoji} ${counts[emoji]}`
-
 reactionDiv.appendChild(bubble)
-
 })
 
 container.appendChild(reactionDiv)
