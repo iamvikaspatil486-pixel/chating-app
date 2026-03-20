@@ -5,6 +5,8 @@ const sendBtn = document.getElementById("sendBtn")
 const voiceBtn = document.getElementById("voiceBtn")
 const messages = document.querySelector(".messages")
 const fileInput = document.querySelector('input[type="file"]')
+const gifBtn = document.getElementById("gifBtn")
+gifBtn.onclick = openGifPicker
 
 if(!input || !sendBtn || !messages){
 console.error("UI elements missing")
