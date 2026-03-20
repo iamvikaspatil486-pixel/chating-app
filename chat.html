@@ -24,7 +24,7 @@ box-sizing:border-box;
 
 html, body{
 margin:0;
-height:100dvh; /* 🔥 FIX (NOT 100vh) */
+height:100dvh;
 display:flex;
 flex-direction:column;
 background:#0f172a;
@@ -43,16 +43,14 @@ color:white;
 border-bottom:1px solid #1e293b;
 }
 
-/* 🔥 FIXED MESSAGES */
+/* messages */
 
 .messages{
 flex:1;
 overflow-y:auto;
 padding:15px;
-padding-bottom:0; /* ❗ dynamic padding from JS */
+padding-bottom:0;
 color:white;
-
-/* smooth scroll */
 scroll-behavior:smooth;
 }
 
@@ -66,8 +64,6 @@ width:100%;
 background:#0f172a;
 border-top:1px solid #1e293b;
 padding:8px;
-
-/* 🔥 mobile safe area fix */
 padding-bottom:calc(8px + env(safe-area-inset-bottom));
 }
 
@@ -126,7 +122,6 @@ color:#3b82f6;
 
 <h2 class="font-bold">AGASTYANS</h2>
 
-<!-- 🔥 ONLINE USERS -->
 <div id="onlineCount"></div>
 
 <button class="text-red-400">Logout</button>
@@ -153,6 +148,9 @@ color:#3b82f6;
 </label>
 
 <button class="icon">🎤</button>
+
+<!-- 🔥 NEW GIF BUTTON -->
+<button id="gifBtn" class="icon">GIF</button>
 
 <button id="sendBtn" class="send-btn">➤</button>
 
