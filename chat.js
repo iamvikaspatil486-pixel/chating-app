@@ -6,6 +6,49 @@ const voiceBtn = document.getElementById("voiceBtn")
 const messages = document.querySelector(".messages")
 const fileInput = document.querySelector('input[type="file"]')
 const gifBtn = document.getElementById("gifBtn")
+fileInput.addEventListener("change", async (e) => {
+
+const file = e.target.files[0]
+if (!file) return
+
+const fileName = `chat/${Date.now()}-${file.name}`
+
+// ✅ FIXED BUCKET NAME
+const { error: uploadError } = await db.storage
+.from("chat-images")
+.upload(fileName, file)
+
+if (uploadError) {
+console.error("Upload error:", uploadError)
+alert("Image upload failed")
+return
+}
+
+// get public URL
+const { data } = db.storage
+.from("chat-images")
+.getPublicUrl(fileName)
+
+const publicUrl = data.publicUrl
+
+// show instantly
+displayMessage({
+id: Date.now(),
+username,
+media_url: publicUrl
+})
+
+// save in DB
+await db.from("chat_messages").insert({
+user_id: userId,
+username,
+media_url: publicUrl
+})
+
+// reset input
+fileInput.value = ""
+
+})
 
 if(!input || !sendBtn || !messages){
 console.error("UI elements missing")
@@ -17,7 +60,7 @@ const db = window.db
 /* ========================= */
 /* 🔥 GIPHY API */
 /* ========================= */
-const GIPHY_API_KEY = "YOUR_GIPHY_API_KEY"
+const GIPHY_API_KEY = "4O3KmphtX0AmuqeXjq61mvOdzYJWe8gN"
 
 /* USER */
 let storedUser = null
