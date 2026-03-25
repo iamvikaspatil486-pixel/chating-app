@@ -1,13 +1,4 @@
-document.addEventListener("DOMContentLoaded", () => {window.OneSignalDeferred = window.OneSignalDeferred || [];
-
-OneSignalDeferred.push(function(OneSignal) {
-  OneSignal.showSlidedownPrompt();
-});
-
-const input = document.getElementById("msgInput")
-OneSignalDeferred.push(async function(OneSignal) {
-  await OneSignal.showSlidedownPrompt();
-});
+document.addEventListener("DOMContentLoaded", () => 
 const sendBtn = document.getElementById("sendBtn")
 const voiceBtn = document.getElementById("voiceBtn")
 const messages = document.querySelector(".messages")
@@ -77,6 +68,25 @@ storedUser = JSON.parse(localStorage.getItem("anon_user"))
 
 const username = storedUser?.name || "User_" + Math.floor(Math.random()*1000)
 const userId = storedUser?.id || crypto.randomUUID()
+/* ========================= */
+/* 🔔 ONESIGNAL USER LINK */
+/* ========================= */
+
+window.OneSignalDeferred = window.OneSignalDeferred || [];
+
+OneSignalDeferred.push(function(OneSignal) {
+
+  // link your app user to OneSignal
+  OneSignal.login(userId);
+
+  // optional: store username for targeting
+  OneSignal.User.addTag("username", username);
+
+  // show permission popup
+  OneSignal.showSlidedownPrompt();
+
+});
+                                      
 
 let longPressTimer = null
 
