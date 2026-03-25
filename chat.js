@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", () => 
+document.addEventListener("DOMContentLoaded", () => {
 const sendBtn = document.getElementById("sendBtn")
 const voiceBtn = document.getElementById("voiceBtn")
 const messages = document.querySelector(".messages")
