@@ -1,6 +1,9 @@
 document.addEventListener("DOMContentLoaded", () => {
 
 const input = document.getElementById("msgInput")
+OneSignalDeferred.push(async function(OneSignal) {
+  await OneSignal.showSlidedownPrompt();
+});
 const sendBtn = document.getElementById("sendBtn")
 const voiceBtn = document.getElementById("voiceBtn")
 const messages = document.querySelector(".messages")
