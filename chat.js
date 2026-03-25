@@ -1,4 +1,8 @@
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", () => {window.OneSignalDeferred = window.OneSignalDeferred || [];
+
+OneSignalDeferred.push(function(OneSignal) {
+  OneSignal.showSlidedownPrompt();
+});
 
 const input = document.getElementById("msgInput")
 OneSignalDeferred.push(async function(OneSignal) {
