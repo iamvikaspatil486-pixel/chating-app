@@ -12,7 +12,7 @@ const gifBtn = document.getElementById("gifBtn")
 if(!input || !sendBtn || !messages){
 console.error("UI elements missing")
 return
-})
+}
 
 /* ========================= */
 /* USER */
