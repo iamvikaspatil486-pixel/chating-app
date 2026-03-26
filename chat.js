@@ -41,6 +41,19 @@ OneSignalDeferred.push(async function(OneSignal) {
   await OneSignal.Notifications.requestPermission();
   await OneSignal.login(userId);
   await OneSignal.User.addTag("username", username);
+  setTimeout(async () => {
+  try {
+    const permission = await OneSignal.Notifications.permission;
+    const subId = await OneSignal.User.PushSubscription.id;
+
+    alert(
+      "Permission: " + permission + "\n" +
+      "Subscription ID: " + subId
+    );
+  } catch (e) {
+    alert("Error: " + e.message);
+  }
+}, 6000);
 
   console.log("Subscribed:", await OneSignal.User.PushSubscription.id);
 
