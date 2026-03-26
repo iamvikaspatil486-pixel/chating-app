@@ -51,23 +51,8 @@ OneSignalDeferred.push(async function(OneSignal) {
 /* 🔔 SEND PUSH FUNCTION */
 /* ========================= */
 
-async function sendPushNotification(message){
 
-await fetch("https://onesignal.com/api/v1/notifications", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    "Authorization": "Basic YOUR_REST_API_KEY"
-  },
-  body: JSON.stringify({
-    app_id: "4a955aa0-18a1-48ea-a2bf-7eb74d85eebc",
-    included_segments: ["All"],
-    headings: { en: "New Message 💬" },
-    contents: { en: message }
-  })
-})
 
-}
 
 /* ========================= */
 /* IMAGE UPLOAD */
