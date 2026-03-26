@@ -94,16 +94,24 @@ fileInput.value = ""
 /* ========================= */
 
 function updateInputUI(){
-if(input.value.trim() !== ""){
-sendBtn.style.display = "inline-block"
-if(voiceBtn) voiceBtn.style.display = "none"
-}else{
-sendBtn.style.display = "none"
-if(voiceBtn) voiceBtn.style.display = "inline-block"
-}
+  try {
+    const hasText = input.value.trim().length > 0
+
+    sendBtn.style.display = hasText ? "inline-block" : "none"
+
+    if(voiceBtn){
+      voiceBtn.style.display = hasText ? "none" : "inline-block"
+    }
+  } catch(e){
+    console.error("UI error:", e)
+  }
 }
 
-input.addEventListener("input", updateInputUI)
+input.addEventListener("input", () => {
+  console.log("Typing:", input.value) // debug
+  updateInputUI()
+})
+
 updateInputUI()
 
 /* ========================= */
