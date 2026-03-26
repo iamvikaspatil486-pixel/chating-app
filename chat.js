@@ -1,5 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const db = window.db
+
+const db = window.db
 
 const input = document.getElementById("msgInput")
 const sendBtn = document.getElementById("sendBtn")
@@ -12,8 +13,6 @@ if(!input || !sendBtn || !messages){
 console.error("UI elements missing")
 return
 }
-
-
 
 /* ========================= */
 /* USER */
@@ -28,29 +27,10 @@ const username = storedUser?.name || "User_" + Math.floor(Math.random()*1000)
 const userId = storedUser?.id || crypto.randomUUID()
 
 /* ========================= */
-/* 🔔 ONESIGNAL FULL FIX */
+/* 🔔 ONESIGNAL (FIXED) */
 /* ========================= */
 
 window.OneSignalDeferred = window.OneSignalDeferred || [];
-
-OneSignalDeferred.push(async function(OneSignal) {
-
-  // ✅ Proper permission
-  await OneSignal.Notifications.requestPermission();
-
-  // ✅ Link user
-  await OneSignal.login(userId);
-
-  // ✅ Tag user
-  await OneSignal.User.addTag("username", username);
-
-  console.log("✅ OneSignal ready");
-
-});
-
-/* ========================= */
-/* 🔔 SEND PUSH FUNCTION */
-/* ========================= */
 
 OneSignalDeferred.push(async function(OneSignal) {
 
@@ -59,14 +39,12 @@ OneSignalDeferred.push(async function(OneSignal) {
   });
 
   await OneSignal.Notifications.requestPermission();
-
   await OneSignal.login(userId);
-
   await OneSignal.User.addTag("username", username);
 
   console.log("Subscribed:", await OneSignal.User.PushSubscription.id);
-});
 
+});
 
 /* ========================= */
 /* IMAGE UPLOAD */
@@ -178,13 +156,6 @@ if(error){
   console.error(error)
   alert("❌ Not saved in DB")
 }
-
-input.value = ""
-updateInputUI()
-}
-
-/* 🔔 TRIGGER PUSH */
-sendPushNotification(text)
 
 input.value = ""
 updateInputUI()
