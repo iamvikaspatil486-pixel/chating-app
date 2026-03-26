@@ -1,53 +1,11 @@
 document.addEventListener("DOMContentLoaded", () => {
+
 const input = document.getElementById("msgInput")
 const sendBtn = document.getElementById("sendBtn")
 const voiceBtn = document.getElementById("voiceBtn")
 const messages = document.querySelector(".messages")
 const fileInput = document.querySelector('input[type="file"]')
 const gifBtn = document.getElementById("gifBtn")
-fileInput.addEventListener("change", async (e) => {
-
-const file = e.target.files[0]
-if (!file) return
-
-const fileName = `chat/${Date.now()}-${file.name}`
-
-// ✅ FIXED BUCKET NAME
-const { error: uploadError } = await db.storage
-.from("chat-images")
-.upload(fileName, file)
-
-if (uploadError) {
-console.error("Upload error:", uploadError)
-alert("Image upload failed")
-return
-}
-
-// get public URL
-const { data } = db.storage
-.from("chat-images")
-.getPublicUrl(fileName)
-
-const publicUrl = data.publicUrl
-
-// show instantly
-displayMessage({
-id: Date.now(),
-username,
-media_url: publicUrl
-})
-
-// save in DB
-await db.from("chat_messages").insert({
-user_id: userId,
-username,
-media_url: publicUrl
-})
-
-// reset input
-fileInput.value = ""
-
-})
 
 if(!input || !sendBtn || !messages){
 console.error("UI elements missing")
@@ -57,11 +15,9 @@ return
 const db = window.db
 
 /* ========================= */
-/* 🔥 GIPHY API */
-/* ========================= */
-const GIPHY_API_KEY = "4O3KmphtX0AmuqeXjq61mvOdzYJWe8gN"
-
 /* USER */
+/* ========================= */
+
 let storedUser = null
 try{
 storedUser = JSON.parse(localStorage.getItem("anon_user"))
@@ -69,44 +25,92 @@ storedUser = JSON.parse(localStorage.getItem("anon_user"))
 
 const username = storedUser?.name || "User_" + Math.floor(Math.random()*1000)
 const userId = storedUser?.id || crypto.randomUUID()
+
 /* ========================= */
-/* 🔔 ONESIGNAL USER LINK */
+/* 🔔 ONESIGNAL FULL FIX */
 /* ========================= */
 
 window.OneSignalDeferred = window.OneSignalDeferred || [];
 
-OneSignalDeferred.push(function(OneSignal) {
+OneSignalDeferred.push(async function(OneSignal) {
 
-  // link your app user to OneSignal
-  OneSignal.login(userId);
+  // ✅ Proper permission
+  await OneSignal.Notifications.requestPermission();
 
-  // optional: store username for targeting
-  OneSignal.User.addTag("username", username);
+  // ✅ Link user
+  await OneSignal.login(userId);
 
-  // show permission popup
-  OneSignal.showSlidedownPrompt();
+  // ✅ Tag user
+  await OneSignal.User.addTag("username", username);
+
+  console.log("✅ OneSignal ready");
 
 });
-                                      
-
-let longPressTimer = null
 
 /* ========================= */
-/* FIX MESSAGE HIDE */
+/* 🔔 SEND PUSH FUNCTION */
 /* ========================= */
 
-function adjustPadding(){
-const bottomBar = document.querySelector(".bottom-chat")
-if(bottomBar){
-const height = bottomBar.getBoundingClientRect().height
-messages.style.paddingBottom = (height + 15) + "px"
-}
+async function sendPushNotification(message){
+
+await fetch("https://onesignal.com/api/v1/notifications", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "Authorization": "Basic YOUR_REST_API_KEY"
+  },
+  body: JSON.stringify({
+    app_id: "4a955aa0-18a1-48ea-a2bf-7eb74d85eebc",
+    included_segments: ["All"],
+    headings: { en: "New Message 💬" },
+    contents: { en: message }
+  })
+})
+
 }
 
-window.addEventListener("load", adjustPadding)
-window.addEventListener("resize", adjustPadding)
-window.visualViewport?.addEventListener("resize", adjustPadding)
-setTimeout(adjustPadding, 300)
+/* ========================= */
+/* IMAGE UPLOAD */
+/* ========================= */
+
+fileInput.addEventListener("change", async (e) => {
+
+const file = e.target.files[0]
+if (!file) return
+
+const fileName = `chat/${Date.now()}-${file.name}`
+
+const { error: uploadError } = await db.storage
+.from("chat-images")
+.upload(fileName, file)
+
+if (uploadError) {
+console.error(uploadError)
+alert("Image upload failed")
+return
+}
+
+const { data } = db.storage
+.from("chat-images")
+.getPublicUrl(fileName)
+
+const publicUrl = data.publicUrl
+
+displayMessage({
+id: Date.now(),
+username,
+media_url: publicUrl
+})
+
+await db.from("chat_messages").insert({
+user_id: userId,
+username,
+media_url: publicUrl
+})
+
+fileInput.value = ""
+
+})
 
 /* ========================= */
 /* INPUT UI */
@@ -133,7 +137,6 @@ function displayMessage(msg){
 
 const div = document.createElement("div")
 div.className = "mb-3"
-div.setAttribute("data-id", msg.id)
 
 let mediaHTML = msg.media_url
 ? `<img src="${msg.media_url}" style="max-width:200px;border-radius:10px;margin-top:5px;">`
@@ -152,7 +155,7 @@ messages.scrollTop = messages.scrollHeight
 }
 
 /* ========================= */
-/* SEND TEXT */
+/* SEND MESSAGE */
 /* ========================= */
 
 async function sendMessage(){
@@ -172,6 +175,9 @@ username,
 message: text
 })
 
+/* 🔔 TRIGGER PUSH */
+sendPushNotification(text)
+
 input.value = ""
 updateInputUI()
 }
@@ -182,16 +188,12 @@ updateInputUI()
 
 async function loadMessages(){
 
-const tenHoursAgo = new Date(Date.now() - 10*60*60*1000).toISOString()
-
 const { data } = await db
 .from("chat_messages")
 .select("*")
-.gt("created_at", tenHoursAgo)
 .order("created_at", { ascending: true })
 
 messages.innerHTML = ""
-
 data.forEach(displayMessage)
 }
 
@@ -212,34 +214,20 @@ displayMessage(payload.new)
 .subscribe()
 
 /* ========================= */
-/* GIF BUTTON */
+/* GIF */
 /* ========================= */
+
+const GIPHY_API_KEY = "4O3KmphtX0AmuqeXjq61mvOdzYJWe8gN"
 
 gifBtn.onclick = openGifPicker
-
-/* ========================= */
-/* GIF PICKER */
-/* ========================= */
 
 async function openGifPicker(){
 
 const overlay = document.createElement("div")
-overlay.style.position = "fixed"
-overlay.style.top = "0"
-overlay.style.left = "0"
-overlay.style.width = "100%"
-overlay.style.height = "100%"
-overlay.style.background = "rgba(0,0,0,0.8)"
-overlay.style.zIndex = "999"
+overlay.style = "position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:999"
 
 const box = document.createElement("div")
-box.style.position = "absolute"
-box.style.bottom = "0"
-box.style.width = "100%"
-box.style.height = "50%"
-box.style.background = "#0f172a"
-box.style.overflowY = "scroll"
-box.style.padding = "10px"
+box.style = "position:absolute;bottom:0;width:100%;height:50%;background:#0f172a;overflow-y:scroll;padding:10px"
 
 overlay.appendChild(box)
 document.body.appendChild(overlay)
@@ -251,9 +239,7 @@ data.data.forEach(gif => {
 
 const img = document.createElement("img")
 img.src = gif.images.fixed_height.url
-img.style.width = "100px"
-img.style.margin = "5px"
-img.style.borderRadius = "10px"
+img.style = "width:100px;margin:5px;border-radius:10px"
 
 img.onclick = async () => {
 
@@ -278,9 +264,7 @@ box.appendChild(img)
 overlay.onclick = () => overlay.remove()
 }
 
-/* ========================= */
 /* EVENTS */
-/* ========================= */
 
 input.addEventListener("keydown", e => {
 if(e.key === "Enter") sendMessage()
