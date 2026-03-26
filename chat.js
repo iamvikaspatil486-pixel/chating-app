@@ -29,7 +29,6 @@ const userId = storedUser?.id || crypto.randomUUID()
 /* ========================= */
 /* 🔔 ONESIGNAL (FIXED) */
 /* ========================= */
-
 window.OneSignalDeferred = window.OneSignalDeferred || [];
 
 OneSignalDeferred.push(async function(OneSignal) {
@@ -41,21 +40,27 @@ OneSignalDeferred.push(async function(OneSignal) {
   await OneSignal.Notifications.requestPermission();
   await OneSignal.login(userId);
   await OneSignal.User.addTag("username", username);
+
+  console.log("✅ OneSignal initialized");
+
+  // 🔥 DEBUG (FIXED)
   setTimeout(async () => {
-  try {
-    const permission = await OneSignal.Notifications.permission;
-    const subId = await OneSignal.User.PushSubscription.id;
+    try {
+      const permission = await OneSignal.Notifications.permission;
+      const subId = await OneSignal.User.PushSubscription.id;
 
-    alert(
-      "Permission: " + permission + "\n" +
-      "Subscription ID: " + subId
-    );
-  } catch (e) {
-    alert("Error: " + e.message);
-  }
-}, 6000);
+      alert(
+        "Permission: " + permission + "\n" +
+        "Subscription ID: " + subId
+      );
 
-  console.log("Subscribed:", await OneSignal.User.PushSubscription.id);
+      console.log("Permission:", permission);
+      console.log("Subscription ID:", subId);
+
+    } catch (e) {
+      alert("Error: " + e.message);
+    }
+  }, 6000);
 
 });
 
