@@ -136,29 +136,32 @@ messages.scrollTop = messages.scrollHeight
 /* ========================= */
 
 async function sendMessage(){
+async function sendMessage(){
 
-const text = input.value.trim()
-if(text === "") return
+  const text = input.value.trim()
+  if(text === "") return
 
-displayMessage({
-  id: Date.now(),
-  username,
-  message: text
-})
+  displayMessage({
+    id: Date.now(),
+    username,
+    message: text
+  })
 
-const { error } = await db.from("chat_messages").insert({
-  user_id: userId,
-  username,
-  message: text
-})
+  const { error } = await db.from("chat_messages").insert({
+    user_id: userId,
+    username,
+    message: text
+  })
 
-if(error){
-  console.error(error)
-  alert("❌ Not saved in DB")
-}
+  if(error){
+    console.error(error)
+    alert("❌ Not saved in DB")
+    return
+  }
 
-input.value = ""
-updateInputUI()
+  // ✅ ONLY RESET AFTER SUCCESS
+  input.value = ""
+  updateInputUI()
 }
 
 /* ========================= */
