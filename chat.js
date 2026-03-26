@@ -12,7 +12,7 @@ const gifBtn = document.getElementById("gifBtn")
 if(!input || !sendBtn || !messages){
 console.error("UI elements missing")
 return
-}
+})
 
 /* ========================= */
 /* USER */
@@ -134,8 +134,10 @@ messages.scrollTop = messages.scrollHeight
 /* ========================= */
 /* SEND MESSAGE */
 /* ========================= */
+/* ========================= */
+/* SEND MESSAGE */
+/* ========================= */
 
-async function sendMessage(){
 async function sendMessage(){
 
   const text = input.value.trim()
@@ -159,10 +161,11 @@ async function sendMessage(){
     return
   }
 
-  // ✅ ONLY RESET AFTER SUCCESS
+  // ✅ reset only after success
   input.value = ""
   updateInputUI()
 }
+
 
 /* ========================= */
 /* LOAD MESSAGES */
