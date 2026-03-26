@@ -1,4 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
+  const db = window.db
 
 const input = document.getElementById("msgInput")
 const sendBtn = document.getElementById("sendBtn")
@@ -12,7 +13,7 @@ console.error("UI elements missing")
 return
 }
 
-const db = window.db
+
 
 /* ========================= */
 /* USER */
@@ -51,7 +52,20 @@ OneSignalDeferred.push(async function(OneSignal) {
 /* 🔔 SEND PUSH FUNCTION */
 /* ========================= */
 
+OneSignalDeferred.push(async function(OneSignal) {
 
+  await OneSignal.init({
+    appId: "4a955aa0-18a1-48ea-a2bf-7eb74d85eebc",
+  });
+
+  await OneSignal.Notifications.requestPermission();
+
+  await OneSignal.login(userId);
+
+  await OneSignal.User.addTag("username", username);
+
+  console.log("Subscribed:", await OneSignal.User.PushSubscription.id);
+});
 
 
 /* ========================= */
@@ -149,16 +163,25 @@ const text = input.value.trim()
 if(text === "") return
 
 displayMessage({
-id: Date.now(),
-username,
-message: text
+  id: Date.now(),
+  username,
+  message: text
 })
 
-await db.from("chat_messages").insert({
-user_id: userId,
-username,
-message: text
+const { error } = await db.from("chat_messages").insert({
+  user_id: userId,
+  username,
+  message: text
 })
+
+if(error){
+  console.error(error)
+  alert("❌ Not saved in DB")
+}
+
+input.value = ""
+updateInputUI()
+}
 
 /* 🔔 TRIGGER PUSH */
 sendPushNotification(text)
