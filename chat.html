@@ -164,7 +164,7 @@ html, body {
     if (!confirmed) return;
 
     try {
-      const { error } = await supabase.auth.signOut();
+      const { error } = await db.auth.signOut();
       if (error) throw error;
 
       // Redirect to login page after logout
