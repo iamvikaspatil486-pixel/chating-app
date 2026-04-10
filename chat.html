@@ -1,130 +1,179 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Join Students Harate</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        .step{display:none}
-        .step.active{display:block}
-        html, body {
-            height: 100%;
-            overflow-y: auto; /* Changed to auto to allow reading the privacy notes on small screens */
-        }
-    </style>
+<meta charset="UTF-8">
+
+<!-- Prevent zooming -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<title>AGASTYANS Chat</title>
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+
+
+
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<script src="supabase.js"></script>
+<script src="chat.js"></script>
+
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    background: #0f172a;
+    font-family: sans-serif;
+    overflow: hidden;
+}
+
+/* header */
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    color: white;
+    border-bottom: 1px solid #1e293b;
+    flex-shrink: 0;
+}
+
+/* messages */
+.messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 15px;
+    padding-bottom: 90px; /* space for bottom chat */
+    color: white;
+    scroll-behavior: smooth;
+}
+
+/* bottom chat */
+.bottom-chat {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: #0f172a;
+    border-top: 1px solid #1e293b;
+    padding: 8px 12px;
+    padding-bottom: calc(8px + env(safe-area-inset-bottom));
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+/* icons row */
+.action-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+/* message input row */
+.msg-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.msg-input {
+    flex: 1;
+    min-width: 0;
+    background: #1e293b;
+    border: none;
+    border-radius: 25px;
+    padding: 10px 14px;
+    color: white;
+    outline: none;
+}
+
+/* icons */
+.icon {
+    font-size: 22px;
+    color: white;
+    cursor: pointer;
+}
+
+/* send button */
+.send-btn {
+    font-size: 22px;
+    color: #3b82f6;
+    cursor: pointer;
+}
+
+/* adjust GIF button so it doesn't overlap send */
+#gifBtn {
+    flex-shrink: 0;
+}
+
+</style>
+
 </head>
 
-<body class="bg-slate-900 text-white min-h-screen flex items-center justify-center px-6">
+<body>
 
-<div class="w-full max-w-md my-8">
+<!-- HEADER -->
+<div class="header">
+    <button onclick="history.back()">←</button>
+    <h2 class="font-bold">AGASTYANS</h2>
+    <div id="onlineCount"></div>
+    <button id="logoutBtn" class="text-red-400">Logout</button>
+</div>
 
-    <h2 class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-6 text-center">
-        Join Now
-    </h2>
+<!-- MESSAGES -->
+<div class="messages"></div>
 
-    <form id="registrationForm" class="space-y-4" onsubmit="handleJoinNow(event)">
+<!-- BOTTOM CHAT -->
+<div class="bottom-chat">
 
-        <!-- STEP 1 -->
-        <div id="step1" class="step active space-y-4">
-            <input type="text" id="fullName" placeholder="Original Name"
-                class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 focus:outline-none focus:border-cyan-500" required>
+    <!-- ICON ROW -->
+    <div class="action-row">
+        <label class="icon">
+            🖼
+            <input type="file" hidden accept="image/*">
+        </label>
 
-            <input type="text" id="rollNo" placeholder="Roll No."
-                class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 focus:outline-none focus:border-cyan-500" required>
+ <button id="voiceBtn" class="icon">🎤</button>
 
-            <input type="text" id="nickname" placeholder="Nickname (Optional)"
-                class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 focus:outline-none focus:border-cyan-500">
+        <!-- GIF BUTTON -->
+        <button id="gifBtn" class="icon">GIF</button>
 
-            <input type="email" id="email" placeholder="Email"
-                class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 focus:outline-none focus:border-cyan-500" required>
+        <!-- SEND BUTTON -->
+        <button id="sendBtn" class="send-btn" style="display:none">➤</button>
+    </div>
 
-            <button type="button" onclick="nextStep()"
-                class="w-full py-4 bg-slate-800 border border-slate-700 rounded-2xl font-bold hover:bg-slate-700 transition">
-                Next
-            </button>
-        </div>
-
-        <!-- STEP 2 -->
-        <div id="step2" class="step space-y-4">
-            <div class="relative">
-                <input type="password" id="password" placeholder="Set Password"
-                    class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 focus:outline-none focus:border-cyan-500" required>
-                <button type="button" onclick="togglePassword('password')" class="absolute right-3 top-3 text-slate-400">
-                    <i id="password-icon" data-lucide="eye"></i>
-                </button>
-            </div>
-
-            <div class="relative">
-                <input type="password" id="confPass" placeholder="Confirm Password"
-                    class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 focus:outline-none focus:border-cyan-500" required>
-                <button type="button" onclick="togglePassword('confPass')" class="absolute right-3 top-3 text-slate-400">
-                    <i id="confPass-icon" data-lucide="eye"></i>
-                </button>
-            </div>
-
-            <div class="flex gap-4">
-                <button type="button" onclick="prevStep()"
-                    class="flex-1 py-4 bg-slate-800 border border-slate-700 rounded-2xl font-bold hover:bg-slate-700 transition">
-                    Back
-                </button>
-                <button type="submit" id="submitBtn"
-                    class="flex-[2] py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-2xl font-bold hover:opacity-90 transition">
-                    Request Admin
-                </button>
-            </div>
-
-            <!-- ADMIN NOTE -->
-            <p class="text-xs text-slate-400 text-center mt-4 italic">
-                * Admin will approve you only if you are from Agastyans batch. This prevents login from other students.
-            </p>
-        </div>
-    </form>
-
-    <!-- TRUST & PRIVACY SECTION -->
-    <div class="mt-10 p-4 border-t border-slate-800 space-y-3">
-        <h3 class="text-sm font-semibold text-cyan-400 flex items-center gap-2">
-            <i data-lucide="shield-check" class="w-4 h-4"></i> Security & Privacy
-        </h3>
-        <ul class="text-xs text-slate-400 space-y-2 list-disc ml-4">
-            <li>We cannot share your personal info with anyone.</li>
-            <li>You can delete your account and all your data at any time.</li>
-            <li>Email is required to reset your password if you forget it or want to login on other phones with your 'approved' account.</li>
-        </ul>
+    <!-- MESSAGE INPUT -->
+    <div class="msg-row">
+        <input id="msgInput" type="text" placeholder="Message..." class="msg-input" />
     </div>
 
 </div>
 
-<!-- SCRIPTS -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase.js"></script>
-<script src="register.js"></script>
-<script>
-    lucide.createIcons();
-    
-    // UI Logic for steps
-    function nextStep() {
-        document.getElementById('step1').classList.remove('active');
-        document.getElementById('step2').classList.add('active');
-    }
-    function prevStep() {
-        document.getElementById('step2').classList.remove('active');
-        document.getElementById('step1').classList.add('active');
-    }
-    function togglePassword(id) {
-        const input = document.getElementById(id);
-        const icon = document.getElementById(id + '-icon');
-        if (input.type === 'password') {
-            input.type = 'text';
-            icon.setAttribute('data-lucide', 'eye-off');
-        } else {
-            input.type = 'password';
-            icon.setAttribute('data-lucide', 'eye');
-        }
-        lucide.createIcons();
-    }
-</script>
-
 </body>
+<script>
+  document.getElementById('logoutBtn').addEventListener('click', async () => {
+    const confirmed = confirm('Are you sure you want to logout?');
+    if (!confirmed) return;
+
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+
+      // Redirect to login page after logout
+      window.location.href = 'index.html'; // change to your login page
+    } catch (err) {
+      alert('Logout failed: ' + err.message);
+    }
+  });
+</script>
 </html>
+
+If 
