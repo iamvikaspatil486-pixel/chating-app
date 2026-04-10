@@ -161,15 +161,12 @@ updateInputUI()
 
 // Store all loaded messages by id for reply lookup
 const messageMap = {}
-
 function displayMessage(msg){
   messageMap[msg.id] = msg
 
   const div = document.createElement("div")
   div.className = "mb-3"
   div.dataset.id = msg.id
-
-  const isOwn = msg.username === username
 
   let replyHTML = ""
   if (msg.reply_to) {
@@ -202,7 +199,7 @@ function displayMessage(msg){
 
   div.innerHTML = `
     <div style="font-size:11px;color:#9ca3af;margin-bottom:2px;">${msg.username}</div>
-    <div style="
+    <div class="msgBubble" style="
       background:#1e293b;
       color:white;
       padding:10px 14px;
@@ -210,6 +207,8 @@ function displayMessage(msg){
       display:inline-block;
       max-width:80%;
       position:relative;
+      transition: transform 0.2s ease;
+      cursor: pointer;
     ">
       ${replyHTML}
       ${msg.message || ""}
@@ -232,9 +231,62 @@ function displayMessage(msg){
     setReply(msg)
   })
 
+  // ========================
+  // SWIPE TO REPLY GESTURE
+  // ========================
+  const bubble = div.querySelector(".msgBubble")
+  let startX = 0
+  let currentX = 0
+  let isSwiping = false
+  const SWIPE_THRESHOLD = 60
+
+  bubble.addEventListener("touchstart", (e) => {
+    startX = e.touches[0].clientX
+    isSwiping = true
+  }, { passive: true })
+
+  bubble.addEventListener("touchmove", (e) => {
+    if (!isSwiping) return
+    currentX = e.touches[0].clientX
+    const diff = currentX - startX
+
+    // Only allow swipe right
+    if (diff > 0 && diff < 100) {
+      bubble.style.transform = `translateX(${diff}px)`
+
+      // Show reply icon hint
+      if (diff > SWIPE_THRESHOLD) {
+        bubble.style.borderLeft = "3px solid #3b82f6"
+      } else {
+        bubble.style.borderLeft = ""
+      }
+    }
+  }, { passive: true })
+
+  bubble.addEventListener("touchend", () => {
+    const diff = currentX - startX
+    isSwiping = false
+
+    // Snap back
+    bubble.style.transform = "translateX(0)"
+    bubble.style.borderLeft = ""
+
+    if (diff > SWIPE_THRESHOLD) {
+      // Trigger reply
+      setReply(msg)
+
+      // Vibrate for haptic feedback
+      if (navigator.vibrate) navigator.vibrate(40)
+    }
+
+    currentX = 0
+    startX = 0
+  })
+
   messages.appendChild(div)
   messages.scrollTop = messages.scrollHeight
 }
+
 
 /* ========================= */
 /* SEND MESSAGE */
