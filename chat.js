@@ -217,10 +217,7 @@ function displayMessage(msg){
     
   `
 
-  // Reply button click
-  div.querySelector(".replyBtn").addEventListener("click", () => {
-    setReply(msg)
-  })
+  
 
   // ========================
   // SWIPE TO REPLY GESTURE
