@@ -214,16 +214,7 @@ function displayMessage(msg){
       ${msg.message || ""}
       ${mediaHTML}
     </div>
-    <div class="replyBtnWrap" style="margin-top:3px;">
-      <button class="replyBtn" data-id="${msg.id}" style="
-        font-size:11px;
-        color:#3b82f6;
-        background:none;
-        border:none;
-        cursor:pointer;
-        padding:0;
-      ">↩ Reply</button>
-    </div>
+    
   `
 
   // Reply button click
