@@ -70,6 +70,12 @@ async function loadPosts() {
             .eq("post_id", post.id)
 
         const likeCount = likes ? likes.length : 0
+        // Check if current user liked this post
+const { data: { session } } = await db.auth.getSession()
+const currentUserId = session?.user?.id
+const userLiked = likes && currentUserId
+    ? likes.some(l => l.user_id === currentUserId)
+    : false
 
 
         // GET COMMENTS COUNT
@@ -206,14 +212,26 @@ async function likePost(postId) {
 // UPDATE LIKE COUNT
 async function updateLikes(postId) {
 
+    const { data: { session } } = await db.auth.getSession()
+    const currentUserId = session?.user?.id
+
     const { data } = await db
         .from("likes")
         .select("*")
         .eq("post_id", postId)
 
     const count = data ? data.length : 0
+    const userLiked = data && currentUserId
+        ? data.some(l => l.user_id === currentUserId)
+        : false
 
     document.getElementById("likes-" + postId).innerText = count
+
+    const heart = document.getElementById("heart-" + postId)
+    if (heart) {
+        heart.style.fill = userLiked ? "red" : "none"
+        heart.style.color = userLiked ? "red" : "#94a3b8"
+    }
 }
 
 
