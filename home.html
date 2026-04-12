@@ -76,7 +76,7 @@ content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable
           Stay in the loop!
         </p>
         <p class="text-xs text-slate-400 mt-0.5 leading-relaxed">
-          Get notified when classmates post, like or comment — never miss a moment.
+          Get notified when classmates start chating in group — never miss a moment.
         </p>
       </div>
 
@@ -463,7 +463,7 @@ class="bg-cyan-500 p-3 rounded-full text-slate-900">
       localStorage.setItem('notifChoice', 'declined');
       localStorage.setItem('notifDeclinedAt', Date.now().toString());
       hidePopup();
-      showToast("We'll ask again tomorrow 🙂", 'bg-slate-700');
+      showToast("okay", 'bg-slate-700');
     }
 
     btnDecline.addEventListener('click', handleDecline);
