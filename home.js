@@ -1,3 +1,12 @@
+window.addEventListener("load", async () => {
+  const { data: { user } } = await db.auth.getUser();
+  if (user) {
+    OneSignal.push(async function () {
+      await OneSignal.setExternalUserId(user.id);
+      console.log("✅ Linked on load:", user.id);
+    });
+  }
+});
 const feed = document.getElementById("feed")
 const noPosts = document.getElementById("noPosts")
 
