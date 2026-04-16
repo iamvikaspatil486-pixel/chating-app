@@ -1,4 +1,3 @@
-
 Document.addEventListener("DOMContentLoaded", () => {
 
 const db = window.db
@@ -46,7 +45,8 @@ function setReply(msg) {
 
 function clearReply() {
   replyTo = null
-  document.getElementById("replyBar").style.display = "none"
+  const bar = document.getElementById("replyBar")
+  if(bar) bar.style.display = "none"
 }
 
 /* ========================= */
@@ -75,8 +75,10 @@ replyBar.innerHTML = `
 `
 
 const bottomChat = document.querySelector(".bottom-chat")
-bottomChat.insertBefore(replyBar, bottomChat.firstChild)
-document.getElementById("cancelReply").addEventListener("click", clearReply)
+if(bottomChat) {
+    bottomChat.insertBefore(replyBar, bottomChat.firstChild)
+    document.getElementById("cancelReply").addEventListener("click", clearReply)
+}
 
 /* ========================= */
 /* CONTEXT MENU (hold menu) */
@@ -111,16 +113,16 @@ function showContextMenu(msg, bubble, e) {
 
   document.body.appendChild(menu);
 
-  const rect = bubble.getBoundingClientRect();
-  const menuWidth = 140;
-  const menuHeight = 100;
+  // Use touch coordinates if available
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
-  // Position menu slightly above the finger/bubble
-  let top = (e.touches ? e.touches[0].clientY : e.clientY) - 80;
-  let left = (e.touches ? e.touches[0].clientX : e.clientX) - 70;
+  let top = clientY - 80; 
+  let left = clientX - 70;
 
-  if (left + menuWidth > window.innerWidth) left = window.innerWidth - menuWidth - 10;
-  if (top + menuHeight > window.innerHeight) top = window.innerHeight - menuHeight - 10;
+  // Keep menu on screen
+  if (left + 140 > window.innerWidth) left = window.innerWidth - 150;
+  if (top + 100 > window.innerHeight) top = window.innerHeight - 110;
   if (left < 10) left = 10;
   if (top < 10) top = 10;
 
@@ -145,7 +147,7 @@ function showContextMenu(msg, bubble, e) {
   };
 
   setTimeout(() => {
-    const closeMenu = () => menu.remove();
+    const closeMenu = () => { if(menu) menu.remove(); };
     window.addEventListener('click', closeMenu, { once: true });
     window.addEventListener('touchstart', closeMenu, { once: true });
   }, 100);
@@ -213,16 +215,6 @@ OneSignalDeferred.push(async function(OneSignal) {
   await OneSignal.login(userId);
   await OneSignal.User.addTag("username", username);
   console.log("✅ OneSignal initialized");
-
-  setTimeout(async () => {
-    try {
-      const permission = await OneSignal.Notifications.permission;
-      const subId = await OneSignal.User.PushSubscription.id;
-      // alert("Permission: " + permission + "\nSubscription ID: " + subId);
-    } catch (e) {
-      console.error("OS Error: " + e.message);
-    }
-  }, 6000);
 });
 
 /* ========================= */
@@ -255,17 +247,14 @@ fileInput.addEventListener("change", async (e) => {
 })
 
 /* ========================= */
-/* INPUT UI */
+/* INPUT UI (Fixed) */
 /* ========================= */
 
 function updateInputUI(){
-  try {
-    const hasText = input.value.trim().length > 0
-    sendBtn.style.display = hasText ? "inline-block" : "none"
-    if(voiceBtn) voiceBtn.style.display = hasText ? "none" : "inline-block"
-  } catch(e){
-    console.error("UI error:", e)
-  }
+    const hasText = input.value.trim().length > 0;
+    // We use flex/none to ensure the button pops in correctly
+    sendBtn.style.display = hasText ? "flex" : "none";
+    if(voiceBtn) voiceBtn.style.display = hasText ? "none" : "flex";
 }
 
 input.addEventListener("input", updateInputUI)
@@ -333,13 +322,12 @@ function displayMessage(msg){
 
   const bubble = div.querySelector(".msgBubble")
 
-  /* ---- HOLD TO SHOW MENU ---- */
+  /* ---- HOLD TO SHOW MENU (Fixed for Mobile) ---- */
   if (isOwn) {
     let holdTimer = null
 
     bubble.addEventListener("touchstart", (e) => {
       holdTimer = setTimeout(() => {
-        // Prevent default browser menu
         if(e.cancelable) e.preventDefault();
         if (navigator.vibrate) navigator.vibrate(40)
         showContextMenu(msg, bubble, e)
@@ -348,7 +336,7 @@ function displayMessage(msg){
 
     bubble.addEventListener("touchend", () => clearTimeout(holdTimer))
     bubble.addEventListener("touchmove", () => clearTimeout(holdTimer))
-    bubble.addEventListener("contextmenu", (e) => e.preventDefault()) // Block right-click
+    bubble.addEventListener("contextmenu", (e) => e.preventDefault()) 
   }
 
   /* ---- SWIPE TO REPLY ---- */
@@ -432,6 +420,7 @@ async function loadMessages(){
     .select("*")
     .order("created_at", { ascending: true })
 
+  if(!data) return;
   messages.innerHTML = ""
   data.forEach(msg => { messageMap[msg.id] = msg })
   data.forEach(msg => {
@@ -537,13 +526,13 @@ async function openGifPicker(){
 /* ========================= */
 
 input.addEventListener("keydown", e => {
-  if(e.key === "Enter") sendMessage()
+  if(e.key === "Enter") {
+      e.preventDefault(); // Prevents new line on mobile
+      sendMessage();
+  }
 })
 
 sendBtn.addEventListener("click", sendMessage)
 
 })
-
-`
-
 
