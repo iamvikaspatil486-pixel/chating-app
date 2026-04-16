@@ -104,15 +104,8 @@ window.location.href="home.html";
 }
 async function saveOneSignalPlayerId(userId) {
   try {
-    const playerId = await OneSignal.getUserId();
-    if (!playerId) return;
-
-    await db
-      .from("students")
-      .update({ onesignal_player_id: playerId })
-      .eq("id", userId);
-
-    console.log("✅ OneSignal player ID saved:", playerId);
+    await OneSignal.setExternalUserId(userId);
+    console.log("✅ OneSignal external user ID set:", userId);
   } catch (e) {
     console.log("OneSignal not ready:", e);
   }
