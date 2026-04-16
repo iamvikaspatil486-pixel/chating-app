@@ -103,12 +103,14 @@ window.location.href="home.html";
 
 }
 async function saveOneSignalPlayerId(userId) {
-  try {
-    await OneSignal.setExternalUserId(userId);
-    console.log("✅ OneSignal external user ID set:", userId);
-  } catch (e) {
-    console.log("OneSignal not ready:", e);
-  }
+  OneSignal.push(async function () {
+    try {
+      await OneSignal.setExternalUserId(userId);
+      console.log("✅ OneSignal external user ID set:", userId);
+    } catch (e) {
+      console.error("❌ OneSignal error:", e);
+    }
+  });
 }
 
 
