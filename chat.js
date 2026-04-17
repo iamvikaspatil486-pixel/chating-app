@@ -212,26 +212,34 @@ async function deleteMessage(msgId) {
 /* ========================= */
 /* 🔔 ONESIGNAL */
 /* ========================= */
-window.OneSignalDeferred = window.OneSignalDeferred || [];
+
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
 
 OneSignalDeferred.push(async function(OneSignal) {
   await OneSignal.init({ appId: "d433012f-f675-43f4-b382-f9e8b32407f0" });
   await OneSignal.Notifications.requestPermission();
-  await OneSignal.login(userId);
-  await OneSignal.User.addTag("username", username);
-  console.log("✅ OneSignal initialized");
+
+  // ✅ Get user safely inside here
+  const { data: { user } } = await db.auth.getUser();
+  
+  if (!user) {
+    console.log("❌ No user found, skipping OneSignal login");
+    return;
+  }
+
+  await OneSignal.login(user.id);
+  console.log("✅ OneSignal logged in as:", user.id);
 
   setTimeout(async () => {
     try {
-      const permission = await OneSignal.Notifications.permission;
-      const subId = await OneSignal.User.PushSubscription.id;
-      alert("Permission: " + permission + "\nSubscription ID: " + subId);
+      const permission = OneSignal.Notifications.permission;
+      const subId = OneSignal.User.PushSubscription.id;
+      alert("Permission: " + permission + "\nSub ID: " + subId);
     } catch (e) {
       alert("Error: " + e.message);
     }
   }, 6000);
 });
-
 /* ========================= */
 /* IMAGE UPLOAD */
 /* ========================= */
