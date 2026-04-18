@@ -455,20 +455,7 @@ class="bg-cyan-500 p-3 rounded-full text-slate-900">
     showToast('Notifications not supported on this device.', 'bg-slate-700');
   });
 });
-      // Callback style works on all browsers including older mobile WebKit
-      const result = Notification.requestPermission(handlePermission);
-
-      // Modern browsers also return a Promise — handle that too (avoid double-calling)
-      if (result && typeof result.then === 'function') {
-        result.then(p => {
-          // Only handle if callback wasn't already called (some browsers do both)
-          if (typeof p === 'string') handlePermission(p);
-        }).catch(() => {
-          showToast('Notifications not supported on this device.', 'bg-slate-700');
-        });
-      }
-    });
-
+      
     // ── DECLINE / DISMISS buttons ─────────────────────────────
     function handleDecline() {
       localStorage.setItem('notifChoice', 'declined');
