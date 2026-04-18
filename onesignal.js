@@ -10,7 +10,7 @@ OneSignalDeferred.push(async function(OneSignal) {
       return;
     }
 
-    await OneSignal.init({ appId: "d433012f-f675-43f4-b382-f9e8b32407f0" });
+    await OneSignal.init({ appId: "d433012f-f675-43f4-b382-f9e8b32407f0", serviceWorkerPath: "/OneSignalSDK.sw.js" });
     await OneSignal.Notifications.requestPermission();
 
     const { data: { user } } = await db.auth.getUser();
