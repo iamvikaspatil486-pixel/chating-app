@@ -237,7 +237,20 @@ User
 
 </template>
 
-
+<!-- PWA Install Banner -->
+<div id="installBanner" class="hidden fixed top-16 left-3 right-3 z-50 max-w-md mx-auto">
+  <div class="bg-slate-800 border border-slate-600 rounded-2xl p-4 flex items-center gap-3 shadow-2xl">
+    <div class="text-2xl">📲</div>
+    <div class="flex-1">
+      <p class="text-sm font-bold text-white">Install App</p>
+      <p class="text-xs text-slate-400">Add to home screen for better experience</p>
+    </div>
+    <button id="installBtn" class="bg-cyan-500 text-slate-900 font-bold text-xs px-3 py-2 rounded-xl">
+      Install
+    </button>
+    <button id="installClose" class="text-slate-500 text-lg ml-1">✕</button>
+  </div>
+</div>
 <!-- BOTTOM NAV -->
 <nav class="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 flex justify-around items-center p-3">
 
@@ -469,36 +482,7 @@ class="bg-cyan-500 p-3 rounded-full text-slate-900">
 
   })();
 </script>
-<script>
-  // PWA Install Button
-  let deferredPrompt;
 
-  window.addEventListener('beforeinstallprompt', function(e) {
-    e.preventDefault();
-    deferredPrompt = e;
-    document.getElementById('installBanner').classList.remove('hidden');
-  });
-
-  document.getElementById('installBtn').addEventListener('click', function() {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    deferredPrompt.userChoice.then(function(result) {
-      if (result.outcome === 'accepted') {
-        document.getElementById('installBanner').classList.add('hidden');
-      }
-      deferredPrompt = null;
-    });
-  });
-
-  document.getElementById('installClose').addEventListener('click', function() {
-    document.getElementById('installBanner').classList.add('hidden');
-  });
-
-  // Hide if already installed as PWA
-  if (window.matchMedia('(display-mode: standalone)').matches) {
-    // Already installed, don't show banner
-  }
-</script>
 </body>
 </html>
 
