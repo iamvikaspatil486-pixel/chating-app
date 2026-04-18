@@ -68,7 +68,7 @@ return;
 
 const {data:student,error}=await db
 .from("students")
-.select("email,is_approved, id")
+.select("email,is_approved")
 .eq("roll_no",roll)
 .single();
 
@@ -94,7 +94,7 @@ return;
 }
 
 // wait for session to be saved
-await saveOneSignalPlayerId(data.user.id);
+
 const { data: sessionData } = await db.auth.getSession();
 
 if(sessionData.session){
@@ -102,16 +102,7 @@ window.location.href="home.html";
 }
 
 }
-async function saveOneSignalPlayerId(userId) {
-  OneSignal.push(async function () {
-    try {
-      await OneSignal.setExternalUserId(userId);
-      console.log("✅ OneSignal external user ID set:", userId);
-    } catch (e) {
-      console.error("❌ OneSignal error:", e);
-    }
-  });
-}
+
 
 
 // FORGOT PASSWORD – SEND RESET LINK
