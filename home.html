@@ -425,14 +425,11 @@ class="bg-cyan-500 p-3 rounded-full text-slate-900">
     setTimeout(showPopup, 1800);
 
     // ── ALLOW button ─────────────────────────────────────────
-    btnAllow.addEventListener('click', async () => {
+ btnAllow.addEventListener('click', function() {
   hidePopup();
 
-  try {
-    // ✅ This subscribes through OneSignal properly
-    await OneSignal.Notifications.requestPermission();
-    
-    const granted = OneSignal.Notifications.permission;
+  OneSignal.Notifications.requestPermission().then(function() {
+    var granted = OneSignal.Notifications.permission;
     if (granted) {
       localStorage.setItem('notifChoice', 'granted');
       showToast('🔔 Notifications enabled!', 'bg-cyan-600');
@@ -441,9 +438,9 @@ class="bg-cyan-500 p-3 rounded-full text-slate-900">
       localStorage.setItem('notifDeclinedAt', Date.now().toString());
       showToast('Notifications blocked.', 'bg-slate-700');
     }
-  } catch(e) {
+  }).catch(function() {
     showToast('Notifications not supported on this device.', 'bg-slate-700');
-  }
+  });
 });
       // Callback style works on all browsers including older mobile WebKit
       const result = Notification.requestPermission(handlePermission);
