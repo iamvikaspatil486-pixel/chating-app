@@ -425,30 +425,26 @@ class="bg-cyan-500 p-3 rounded-full text-slate-900">
     setTimeout(showPopup, 1800);
 
     // ── ALLOW button ─────────────────────────────────────────
-    btnAllow.addEventListener('click', () => {
-      hidePopup();
+    btnAllow.addEventListener('click', async () => {
+  hidePopup();
 
-      function handlePermission(permission) {
-        if (permission === 'granted') {
-          localStorage.setItem('notifChoice', 'granted');
-          showToast('🔔 Notifications enabled!', 'bg-cyan-600');
-          try {
-            new Notification('Students Harate 🎓', {
-              body: "You're all set! We'll notify you of new posts & activity."
-            });
-          } catch (e) { /* silent — some browsers block Notification constructor on mobile */ }
-
-        } else if (permission === 'denied') {
-          localStorage.setItem('notifChoice', 'declined');
-          localStorage.setItem('notifDeclinedAt', Date.now().toString());
-          showToast('Notifications blocked in browser settings.', 'bg-slate-700');
-
-        } else {
-          // 'default' — user dismissed the browser prompt without choosing
-          showToast("No worries, we'll ask again tomorrow 🙂", 'bg-slate-700');
-        }
-      }
-
+  try {
+    // ✅ This subscribes through OneSignal properly
+    await OneSignal.Notifications.requestPermission();
+    
+    const granted = OneSignal.Notifications.permission;
+    if (granted) {
+      localStorage.setItem('notifChoice', 'granted');
+      showToast('🔔 Notifications enabled!', 'bg-cyan-600');
+    } else {
+      localStorage.setItem('notifChoice', 'declined');
+      localStorage.setItem('notifDeclinedAt', Date.now().toString());
+      showToast('Notifications blocked.', 'bg-slate-700');
+    }
+  } catch(e) {
+    showToast('Notifications not supported on this device.', 'bg-slate-700');
+  }
+});
       // Callback style works on all browsers including older mobile WebKit
       const result = Notification.requestPermission(handlePermission);
 
