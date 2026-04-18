@@ -213,33 +213,8 @@ async function deleteMessage(msgId) {
 /* 🔔 ONESIGNAL */
 /* ========================= */
 
-  window.OneSignalDeferred = window.OneSignalDeferred || [];
-
-OneSignalDeferred.push(async function(OneSignal) {
-  await OneSignal.init({ appId: "d433012f-f675-43f4-b382-f9e8b32407f0" });
-  await OneSignal.Notifications.requestPermission();
-
-  // ✅ Get user safely inside here
-  const { data: { user } } = await db.auth.getUser();
   
-  if (!user) {
-    console.log("❌ No user found, skipping OneSignal login");
-    return;
-  }
-
-  await OneSignal.login(user.id);
-  console.log("✅ OneSignal logged in as:", user.id);
-
-  setTimeout(async () => {
-    try {
-      const permission = OneSignal.Notifications.permission;
-      const subId = OneSignal.User.PushSubscription.id;
-      alert("Permission: " + permission + "\nSub ID: " + subId);
-    } catch (e) {
-      alert("Error: " + e.message);
-    }
-  }, 6000);
-});
+  
 /* ========================= */
 /* IMAGE UPLOAD */
 /* ========================= */
