@@ -4,19 +4,19 @@ async function initFCM() {
     const { getMessaging, getToken, onMessage } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging.js');
 
     const firebaseConfig = {
-      apiKey: "your-apiKey",
-      authDomain: "your-authDomain",
-      projectId: "your-projectId",
-      storageBucket: "your-storageBucket",
-      messagingSenderId: "your-messagingSenderId",
-      appId: "your-appId"
+      apiKey: "AIzaSyBUOY-y9cqFqjBOIQbzms6sr7zCofod1QU",
+      authDomain: "original-harate.firebaseapp.com",
+      projectId: "original-harate",
+      storageBucket: "original-harate.firebasestorage.app",
+      messagingSenderId: "484091091861",
+      appId: "1:484091091861:web:95da49ae32cddfd385b49c"
     };
 
     const app = initializeApp(firebaseConfig);
     const messaging = getMessaging(app);
 
     const token = await getToken(messaging, {
-      vapidKey: 'your-VAPID-key',
+      vapidKey: 'BN7Ir1MTxK7PwllwVyFt2OPtDKEBZk4dRHSj99CcVvYKYPx1PQ11cr1ZIxr-xMaAbIzhYVgyYi23-dtMVd5NkEE',
       serviceWorkerRegistration: await navigator.serviceWorker.register('/firebase-messaging-sw.js')
     });
 
