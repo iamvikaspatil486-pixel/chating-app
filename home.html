@@ -17,9 +17,7 @@ content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable
   <script>eruda.init();</script>
 
 <script src="supabase.js"></script>
-  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js"></script>
-<script src="onesignal.js"></script>
-
+  <script src="fcm.js"></script>
 <style>
   /* Notification Popup Animation */
   @keyframes slideUp {
@@ -440,21 +438,18 @@ class="bg-cyan-500 p-3 rounded-full text-slate-900">
     // ── ALLOW button ─────────────────────────────────────────
  btnAllow.addEventListener('click', function() {
   hidePopup();
-
-  OneSignal.Notifications.requestPermission().then(function() {
-    var granted = OneSignal.Notifications.permission;
-    if (granted) {
+  Notification.requestPermission().then(function(p) {
+    if (p === 'granted') {
       localStorage.setItem('notifChoice', 'granted');
       showToast('🔔 Notifications enabled!', 'bg-cyan-600');
+      initFCM(); // ✅ trigger FCM after permission granted
     } else {
       localStorage.setItem('notifChoice', 'declined');
       localStorage.setItem('notifDeclinedAt', Date.now().toString());
       showToast('Notifications blocked.', 'bg-slate-700');
     }
-  }).catch(function() {
-    showToast('Notifications not supported on this device.', 'bg-slate-700');
   });
- });
+});
       
     // ── DECLINE / DISMISS buttons ─────────────────────────────
     function handleDecline() {
