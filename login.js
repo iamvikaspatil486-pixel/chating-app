@@ -127,7 +127,7 @@ return;
 }
 
 const {error:resetError}=await db.auth.resetPasswordForEmail(email,{
-redirectTo:"https://students-harate.vercel.app/reset_password.html"
+redirectTo:"https://studentsharate.me/reset_password.html"
 });
 
 if(resetError){
