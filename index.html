@@ -1,3 +1,8 @@
+// Check if this is a password reset redirect
+const hash = window.location.hash;
+if (hash && hash.includes('type=recovery')) {
+  window.location.href = 'reset_password.html' + hash;
+}
 <!DOCTYPE html>
 <html lang="en">
 <head>
