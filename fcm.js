@@ -40,13 +40,7 @@ async function initFCM() {
       console.log('❌ No FCM token generated');
     }
 
-    onMessage(messaging, function(payload) {
-      new Notification(payload.notification.title, {
-        body: payload.notification.body,
-        icon: '/icon-192.png'
-      });
-    });
-
+    
   } catch(e) {
     console.log('FCM error:', e.message);
   }
