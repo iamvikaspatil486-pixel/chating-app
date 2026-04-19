@@ -43,4 +43,10 @@ async function initFCM() {
   }
 }
 
-initFCM();
+db.auth.getUser().then(function(res) {
+  if (res.data.user) {
+    initFCM();
+  } else {
+    console.log('❌ No user logged in, skipping FCM');
+  }
+});
