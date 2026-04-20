@@ -406,21 +406,20 @@ async function sendMessage(){
   const msgData = { user_id: userId, username, message: text }
   if (replyTo) msgData.reply_to = replyTo.id
 
-  displayMessage({
-    id: Date.now(),
-    username,
-    message: text,
-    reply_to: replyTo?.id,
-    _replyData: replyTo ? { ...replyTo } : null
-  })
-
-  const { error } = await db.from("chat_messages").insert(msgData)
+  // ✅ Get real ID from Supabase first
+  const { data, error } = await db.from("chat_messages").insert(msgData).select().single()
 
   if(error){
     console.error(error)
     alert("❌ Not saved in DB")
     return
   }
+
+  // ✅ Display with real ID
+  displayMessage({
+    ...data,
+    _replyData: replyTo ? { ...replyTo } : null
+  })
 
   input.value = ""
   clearReply()
