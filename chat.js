@@ -305,17 +305,33 @@ function displayMessage(msg){
     ? `<img src="${msg.media_url}" style="max-width:200px;border-radius:10px;margin-top:5px;">`
     : ""
 
-  // Show "edited" label if message was edited
   const editedHTML = msg.is_edited
     ? `<span class="editedLabel" style="font-size:10px;color:#64748b;margin-left:6px;">edited</span>`
     : ""
+
+  // 3 dots button
+  const dotsHTML = `
+    <button class="dotsBtn" style="
+      position:absolute;
+      top:6px;
+      right:6px;
+      background:none;
+      border:none;
+      color:#64748b;
+      font-size:16px;
+      cursor:pointer;
+      padding:2px 6px;
+      border-radius:6px;
+      line-height:1;
+    ">⋮</button>
+  `
 
   div.innerHTML = `
     <div style="font-size:11px;color:#9ca3af;margin-bottom:2px;">${msg.username}</div>
     <div class="msgBubble" style="
       background:#1e293b;
       color:white;
-      padding:10px 14px;
+      padding:10px 28px 10px 14px;
       border-radius:14px;
       display:inline-block;
       max-width:80%;
@@ -327,10 +343,29 @@ function displayMessage(msg){
       <span class="msgText">${msg.message || ""}</span>
       ${editedHTML}
       ${mediaHTML}
+      ${dotsHTML}
     </div>
   `
 
   const bubble = div.querySelector(".msgBubble")
+  const dotsBtn = div.querySelector(".dotsBtn")
+
+  // 3 dots click handler
+  dotsBtn.addEventListener("click", (e) => {
+    e.stopPropagation()
+    if (msg.user_id !== userId) {
+      // Not the sender
+      const jokes = [
+        "😂 Nice try!",
+        "🚫 Not your message!",
+        "👀 You can't touch this!",
+        "😏 Caught you!"
+      ]
+      alert(jokes[Math.floor(Math.random() * jokes.length)])
+      return
+    }
+    showContextMenu(msg, bubble)
+  })
 
   /* ---- HOLD TO SHOW MENU ---- */
   if (isOwn) {
@@ -384,6 +419,9 @@ function displayMessage(msg){
   messages.appendChild(div)
   messages.scrollTop = messages.scrollHeight
 }
+
+  
+
 
 /* ========================= */
 /* SEND MESSAGE */
