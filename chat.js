@@ -353,13 +353,13 @@ function displayMessage(msg){
   // 3 dots click handler
   dotsBtn.addEventListener("click", (e) => {
     e.stopPropagation()
-    if (msg.user_id !== userId) {
+    if (msg.username !== username) {
       // Not the sender
       const jokes = [
         "😂 Nice try!",
         "🚫 Not your message!",
         "👀 You can't touch this!",
-        "😏 Caught you!"
+        "no! not you🫢"
       ]
       alert(jokes[Math.floor(Math.random() * jokes.length)])
       return
