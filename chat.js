@@ -78,83 +78,69 @@ bottomChat.insertBefore(replyBar, bottomChat.firstChild)
 document.getElementById("cancelReply").addEventListener("click", clearReply)
 
 /* ========================= */
-/* CONTEXT MENU (hold menu) */
+/* CONTEXT MENU */
 /* ========================= */
 
 function showContextMenu(msg, bubble) {
-  if (msg.user_id !== userId) return;
+  const existingMenu = document.getElementById("ctxMenu")
+  if (existingMenu) existingMenu.remove()
 
-  // 1. Force remove any existing menu
-  const existingMenu = document.getElementById("ctxMenu");
-  if (existingMenu) existingMenu.remove();
-
-  // 2. Create the menu
-  const menu = document.createElement("div");
-  menu.id = "ctxMenu";
-  
-  // FIXED CSS: Added higher z-index and fixed positioning
+  const menu = document.createElement("div")
+  menu.id = "ctxMenu"
   menu.style = `
     position: fixed;
     background: #1e293b;
     border: 1px solid #334155;
     border-radius: 12px;
     overflow: hidden;
-    z-index: 10000; 
+    z-index: 10000;
     min-width: 140px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.6);
     pointer-events: auto;
-  `;
+  `
 
   menu.innerHTML = `
-    <button id="ctxEdit" style="display:block; width:100%; padding:14px 16px; background:none; border:none; color:white; font-size:15px; text-align:left; cursor:pointer; border-bottom:1px solid #334155;">✏️ Edit</button>
-    <button id="ctxDelete" style="display:block; width:100%; padding:14px 16px; background:none; border:none; color:#f87171; font-size:15px; text-align:left; cursor:pointer;">🗑️ Delete</button>
-  `;
+    <button id="ctxEdit" style="display:block;width:100%;padding:14px 16px;background:none;border:none;color:white;font-size:15px;text-align:left;cursor:pointer;border-bottom:1px solid #334155;">✏️ Edit</button>
+    <button id="ctxDelete" style="display:block;width:100%;padding:14px 16px;background:none;border:none;color:#f87171;font-size:15px;text-align:left;cursor:pointer;">🗑️ Delete</button>
+  `
 
-  document.body.appendChild(menu);
+  document.body.appendChild(menu)
 
-  // 3. IMPROVED POSITIONING LOGIC
-  const rect = bubble.getBoundingClientRect();
-  const menuWidth = 140;
-  const menuHeight = 100;
+  const rect = bubble.getBoundingClientRect()
+  const menuWidth = 140
+  const menuHeight = 100
+  let top = rect.top + (rect.height / 2)
+  let left = rect.left + (rect.width / 2)
+  if (left + menuWidth > window.innerWidth) left = window.innerWidth - menuWidth - 20
+  if (top + menuHeight > window.innerHeight) top = window.innerHeight - menuHeight - 20
+  if (left < 10) left = 10
+  if (top < 10) top = 10
+  menu.style.top = top + "px"
+  menu.style.left = left + "px"
 
-  let top = rect.top + (rect.height / 2); // Start at middle of bubble
-  let left = rect.left + (rect.width / 2); // Start at middle of bubble
-
-  // Keep menu inside screen boundaries
-  if (left + menuWidth > window.innerWidth) left = window.innerWidth - menuWidth - 20;
-  if (top + menuHeight > window.innerHeight) top = window.innerHeight - menuHeight - 20;
-  if (left < 10) left = 10;
-  if (top < 10) top = 10;
-
-  menu.style.top = top + "px";
-  menu.style.left = left + "px";
-
-  // 4. ACTION LISTENERS
   document.getElementById("ctxEdit").onclick = (e) => {
-    e.stopPropagation();
-    menu.remove();
-    const newText = prompt("Edit message:", msg.message);
+    e.stopPropagation()
+    menu.remove()
+    const newText = prompt("Edit message:", msg.message)
     if (newText && newText.trim() !== msg.message) {
-        editMessage(msg.id, newText.trim(), bubble);
+      editMessage(msg.id, newText.trim(), bubble)
     }
-  };
+  }
 
   document.getElementById("ctxDelete").onclick = (e) => {
-    e.stopPropagation();
-    menu.remove();
+    e.stopPropagation()
+    menu.remove()
     if (confirm("Delete this message?")) {
-        deleteMessage(msg.id);
+      deleteMessage(msg.id)
     }
-  };
+  }
 
-  // 5. CLOSE ON OUTSIDE CLICK
   setTimeout(() => {
-    const closeMenu = () => menu.remove();
-    window.addEventListener('click', closeMenu, { once: true });
-    window.addEventListener('touchstart', closeMenu, { once: true });
-  }, 100);
+    const closeMenu = () => menu.remove()
+    window.addEventListener('click', closeMenu, { once: true })
+    window.addEventListener('touchstart', closeMenu, { once: true })
+  }, 100)
 }
-
 
 /* ========================= */
 /* EDIT MESSAGE */
@@ -171,11 +157,9 @@ async function editMessage(msgId, newText, bubble) {
     return
   }
 
-  // Update text on screen
   const msgTextEl = bubble.querySelector(".msgText")
   if (msgTextEl) msgTextEl.textContent = newText
 
-  // Show "edited" label
   let editedLabel = bubble.querySelector(".editedLabel")
   if (!editedLabel) {
     editedLabel = document.createElement("span")
@@ -185,7 +169,6 @@ async function editMessage(msgId, newText, bubble) {
     bubble.appendChild(editedLabel)
   }
 
-  // Update messageMap
   if (messageMap[msgId]) messageMap[msgId].message = newText
 }
 
@@ -209,12 +192,6 @@ async function deleteMessage(msgId) {
   delete messageMap[msgId]
 }
 
-/* ========================= */
-/* 🔔 ONESIGNAL */
-/* ========================= */
-
-  
-  
 /* ========================= */
 /* IMAGE UPLOAD */
 /* ========================= */
@@ -274,7 +251,8 @@ function displayMessage(msg){
   div.className = "mb-3"
   div.dataset.id = msg.id
 
-  const isOwn = msg.username=== username
+  // ✅ Use username to check ownership
+  const isOwn = msg.username === username
 
   let replyHTML = ""
   if (msg.reply_to) {
@@ -309,7 +287,7 @@ function displayMessage(msg){
     ? `<span class="editedLabel" style="font-size:10px;color:#64748b;margin-left:6px;">edited</span>`
     : ""
 
-  // 3 dots button
+  // ✅ 3 dots button on every message
   const dotsHTML = `
     <button class="dotsBtn" style="
       position:absolute;
@@ -318,10 +296,9 @@ function displayMessage(msg){
       background:none;
       border:none;
       color:#64748b;
-      font-size:16px;
+      font-size:18px;
       cursor:pointer;
       padding:2px 6px;
-      border-radius:6px;
       line-height:1;
     ">⋮</button>
   `
@@ -331,7 +308,7 @@ function displayMessage(msg){
     <div class="msgBubble" style="
       background:#1e293b;
       color:white;
-      padding:10px 28px 10px 14px;
+      padding:10px 32px 10px 14px;
       border-radius:14px;
       display:inline-block;
       max-width:80%;
@@ -350,16 +327,16 @@ function displayMessage(msg){
   const bubble = div.querySelector(".msgBubble")
   const dotsBtn = div.querySelector(".dotsBtn")
 
-  // 3 dots click handler
+  // ✅ 3 dots click
   dotsBtn.addEventListener("click", (e) => {
     e.stopPropagation()
-    if (msg.username !== username) {
-      // Not the sender
+    if (!isOwn) {
       const jokes = [
         "😂 Nice try!",
         "🚫 Not your message!",
         "👀 You can't touch this!",
-        "no! not you🫢"
+        "😏 Caught you!",
+        "🤣 Wrong message bro!"
       ]
       alert(jokes[Math.floor(Math.random() * jokes.length)])
       return
@@ -370,14 +347,12 @@ function displayMessage(msg){
   /* ---- HOLD TO SHOW MENU ---- */
   if (isOwn) {
     let holdTimer = null
-
     bubble.addEventListener("touchstart", () => {
       holdTimer = setTimeout(() => {
         if (navigator.vibrate) navigator.vibrate(40)
         showContextMenu(msg, bubble)
       }, 500)
     }, { passive: true })
-
     bubble.addEventListener("touchend", () => clearTimeout(holdTimer))
     bubble.addEventListener("touchmove", () => clearTimeout(holdTimer))
   }
@@ -419,9 +394,6 @@ function displayMessage(msg){
   messages.appendChild(div)
   messages.scrollTop = messages.scrollHeight
 }
-
-  
-
 
 /* ========================= */
 /* SEND MESSAGE */
@@ -498,7 +470,6 @@ db.channel("live-chat")
     const bubble = el.querySelector(".msgBubble")
     const msgTextEl = bubble?.querySelector(".msgText")
     if (msgTextEl) msgTextEl.textContent = msg.message || ""
-    // Add edited label if not already there
     if (!bubble?.querySelector(".editedLabel")) {
       const editedLabel = document.createElement("span")
       editedLabel.className = "editedLabel"
