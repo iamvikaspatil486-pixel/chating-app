@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Notice Page</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial;
+      background: linear-gradient(135deg, #1e1e2f, #2b2b45);
+      color: white;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      padding: 15px;
+      font-size: 20px;
+    }
+
+    .dots {
+      cursor: pointer;
+      font-size: 24px;
+    }
+
+    .notice-container {
+      padding: 15px;
+    }
+
+    .notice {
+      background: #3a3a5a;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .admin-box {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      background: #222;
+      padding: 15px;
+    }
+
+    textarea {
+      width: 100%;
+      height: 80px;
+      border-radius: 5px;
+      border: none;
+      padding: 10px;
+    }
+
+    button {
+      margin-top: 10px;
+      padding: 10px;
+      width: 100%;
+      background: #4caf50;
+      border: none;
+      color: white;
+      font-size: 16px;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="header">
+    <div>📢 Notices</div>
+    <div class="dots" id="dots">⋮</div>
+  </div>
+
+  <div class="notice-container" id="notices"></div>
+
+  <!-- Admin Input -->
+  <div class="admin-box hidden" id="adminBox">
+    <textarea id="noticeInput" placeholder="Write notice..."></textarea>
+    <button onclick="postNotice()">Post Notice</button>
+  </div>
+
+<script>
+let tapCount = 0;
+
+document.getElementById("dots").addEventListener("click", () => {
+  tapCount++;
+
+  if (tapCount === 2) {
+    tapCount = 0;
+
+    let pass = prompt("Enter Admin Password");
+
+    if (pass === "9353vik") {
+      document.getElementById("adminBox").classList.remove("hidden");
+    } else {
+      alert("Wrong password ❌");
+    }
+  }
+
+  setTimeout(() => tapCount = 0, 1000);
+});
+
+// Post Notice
+function postNotice() {
+  const text = document.getElementById("noticeInput").value;
+
+  if (!text) return;
+
+  const noticeDiv = document.createElement("div");
+  noticeDiv.className = "notice";
+  noticeDiv.innerText = text;
+
+  document.getElementById("notices").prepend(noticeDiv);
+
+  document.getElementById("noticeInput").value = "";
+}
+</script>
+
+</body>
+</html>
