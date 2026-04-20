@@ -274,7 +274,7 @@ function displayMessage(msg){
   div.className = "mb-3"
   div.dataset.id = msg.id
 
-  const isOwn = msg.user_id === userId
+  const isOwn = msg.username=== username
 
   let replyHTML = ""
   if (msg.reply_to) {
