@@ -169,7 +169,13 @@ html, body {
     const confirmed = confirm('Are you sure you want to logout?');
     if (!confirmed) return;
 
-    try {
+    try {// ✅ Clear FCM token first
+    const { data: { user } } = await db.auth.getUser();
+    if (user) {
+      await db.from('students')
+        .update({ fcm_token: null })
+        .eq('id', user.id);
+    }
       const { error } = await db.auth.signOut();
       if (error) throw error;
 
