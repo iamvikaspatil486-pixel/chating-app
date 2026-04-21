@@ -419,7 +419,7 @@ async function sendMessage(){
 
   // ✅ Display with real ID
   displayMessage({
-    ...data,
+    ...inserted,
     _replyData: replyTo ? { ...replyTo } : null
   })
 
