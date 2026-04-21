@@ -194,7 +194,7 @@ function openRegister() { window.location.href = "register.html"; }
 let deferredPrompt = null;
 
 const DISMISSED_KEY  = "pwa_install_dismissed";
-const DISMISSED_DAYS = 7;
+const DISMISSED_DAYS = 0;
 
 function wasRecentlyDismissed() {
   const ts = localStorage.getItem(DISMISSED_KEY);
