@@ -37,21 +37,28 @@ function checkExistingUser() {
     const stored = JSON.parse(localStorage.getItem(USER_KEY) || "null");
     if (stored) {
         const now = Date.now();
-        // 10 hours = 10 * 60 * 60 * 1000 ms
         if (now - stored.timestamp < 10 * 60 * 60 * 1000) {
-            // Ask user if they want to continue
             const cont = confirm(`Continue with username "${stored.name}"?`);
             if (cont) {
                 window.location.href = "chat.html";
                 return true;
             } else {
-                localStorage.removeItem(USER_KEY);
+                // ✅ Warn before allowing new username
+                const understood = confirm(
+                  `⚠️ Warning!\n\nIf you create a new username, you will NOT be able to edit or delete messages sent by "${stored.name}".\n\nDo you still want to change your username?`
+                )
+                if (!understood) {
+                  // User changed mind — go to chat with old username
+                  window.location.href = "chat.html"
+                  return true
+                }
+                // User confirmed — remove old username and let them pick new one
+                localStorage.removeItem(USER_KEY)
             }
         }
     }
     return false;
 }
-
 // ---------------- MAIN ----------------
 if (!checkExistingUser()) {
     enterBtn.addEventListener("click", async () => {
