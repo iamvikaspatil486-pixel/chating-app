@@ -509,45 +509,89 @@ async function openGifPicker(){
   const overlay = document.createElement("div")
   overlay.style = "position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:999"
 
-  const box = document.createElement("div")
-  box.style = "position:absolute;bottom:0;width:100%;height:50%;background:#0f172a;overflow-y:scroll;padding:10px"
+  const container = document.createElement("div")
+  container.style = "position:absolute;bottom:0;width:100%;height:60%;background:#0f172a;border-radius:20px 20px 0 0;display:flex;flex-direction:column;"
 
-  overlay.appendChild(box)
+  // Search bar
+  const searchBar = document.createElement("div")
+  searchBar.style = "padding:12px;border-bottom:1px solid #1e293b;flex-shrink:0;"
+  searchBar.innerHTML = `
+    <input id="gifSearch" type="text" placeholder="Search GIFs..."
+      style="width:100%;background:#1e293b;border:none;border-radius:10px;padding:10px 14px;color:white;font-size:14px;outline:none;">
+  `
+
+  // GIF grid
+  const box = document.createElement("div")
+  box.style = "flex:1;overflow-y:scroll;padding:10px;display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start;"
+
+  container.appendChild(searchBar)
+  container.appendChild(box)
+  overlay.appendChild(container)
   document.body.appendChild(overlay)
 
-  const res = await fetch(`https://api.giphy.com/v1/gifs/trending?api_key=${GIPHY_API_KEY}&limit=20`)
-  const data = await res.json()
+  // Load GIFs function
+  async function loadGifs(query = "") {
+    box.innerHTML = `<p style="color:#64748b;font-size:13px;width:100%;text-align:center;padding:20px;">Loading...</p>`
 
-  data.data.forEach(gif => {
-    const img = document.createElement("img")
-    img.src = gif.images.fixed_height.url
-    img.style = "width:100px;margin:5px;border-radius:10px"
+    const url = query
+      ? `https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_API_KEY}&q=${encodeURIComponent(query)}&limit=30`
+      : `https://api.giphy.com/v1/gifs/trending?api_key=${GIPHY_API_KEY}&limit=30`
 
-    img.onclick = async () => {
-      const insertData = { user_id: userId, username, media_url: gif.images.fixed_height.url }
-      if (replyTo) insertData.reply_to = replyTo.id
+    const res = await fetch(url)
+    const data = await res.json()
 
-      const { data: inserted, error: insertError } = await db.from("chat_messages").insert(insertData).select().single()
-      if (insertError) {
-        alert("Failed to send GIF")
-        return
-      }
+    box.innerHTML = ""
 
-      displayMessage({
-        ...inserted,
-        _replyData: replyTo ? { ...replyTo } : null
-      })
-
-      clearReply()
-      overlay.remove()
+    if (!data.data.length) {
+      box.innerHTML = `<p style="color:#64748b;font-size:13px;width:100%;text-align:center;padding:20px;">No GIFs found</p>`
+      return
     }
 
-    box.appendChild(img)
+    data.data.forEach(gif => {
+      const img = document.createElement("img")
+      img.src = gif.images.fixed_height_small.url
+      img.style = "width:calc(33% - 4px);border-radius:8px;cursor:pointer;object-fit:cover;"
+
+      img.onclick = async () => {
+        const insertData = { user_id: userId, username, media_url: gif.images.fixed_height.url }
+        if (replyTo) insertData.reply_to = replyTo.id
+
+        const { data: inserted, error: insertError } = await db.from("chat_messages").insert(insertData).select().single()
+        if (insertError) {
+          alert("Failed to send GIF")
+          return
+        }
+
+        displayMessage({
+          ...inserted,
+          _replyData: replyTo ? { ...replyTo } : null
+        })
+
+        clearReply()
+        overlay.remove()
+      }
+
+      box.appendChild(img)
+    })
+  }
+
+  // Search with debounce
+  let searchTimer = null
+  document.getElementById("gifSearch").addEventListener("input", (e) => {
+    clearTimeout(searchTimer)
+    searchTimer = setTimeout(() => {
+      loadGifs(e.target.value.trim())
+    }, 500)
   })
 
-  overlay.onclick = () => overlay.remove()
-}
+  // Load trending on open
+  loadGifs()
 
+  // Close on backdrop tap
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) overlay.remove()
+  })
+}
 /* ========================= */
 /* EVENTS */
 /* ========================= */
