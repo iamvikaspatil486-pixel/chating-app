@@ -100,8 +100,10 @@ function showContextMenu(msg, bubble) {
   `
 
   menu.innerHTML = `
-    <button id="ctxEdit" style="display:block;width:100%;padding:14px 16px;background:none;border:none;color:white;font-size:15px;text-align:left;cursor:pointer;border-bottom:1px solid #334155;">✏️ Edit</button>
-    <button id="ctxDelete" style="display:block;width:100%;padding:14px 16px;background:none;border:none;color:#f87171;font-size:15px;text-align:left;cursor:pointer;">🗑️ Delete</button>
+    <button id="ctxEdit" style="display:block;width:100%;padding:14px 16px;background:none;border:none;color:white;font-size:15px;text-align:left;cursor:pointer;border-bottom:1px solid #334155;">
+      ${msg.media_url ? '💬 Add Caption' : '✏️ Edit'}
+    </button>
+    <button id="ctxDelete" style="display:block;width:100%;padding:
   `
 
   document.body.appendChild(menu)
@@ -121,8 +123,9 @@ function showContextMenu(msg, bubble) {
   document.getElementById("ctxEdit").onclick = (e) => {
     e.stopPropagation()
     menu.remove()
-    const newText = prompt("Edit message:", msg.message)
-    if (newText && newText.trim() !== msg.message) {
+    const promptText = msg.media_url ? "Add a caption:" : "Edit message:"
+    const newText = prompt(promptText, msg.message || "")
+    if (newText !== null && newText.trim() !== msg.message) {
       editMessage(msg.id, newText.trim(), bubble)
     }
   }
