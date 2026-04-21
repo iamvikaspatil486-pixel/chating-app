@@ -135,7 +135,6 @@ function showContextMenu(msg, bubble) {
     }
   }
 
-  // ✅ Close only on outside tap, not on menu buttons
   setTimeout(() => {
     const closeMenu = (e) => {
       if (!menu.contains(e.target)) {
@@ -156,7 +155,7 @@ function showContextMenu(msg, bubble) {
 async function editMessage(msgId, newText, bubble) {
   const { error } = await db
     .from("chat_messages")
-    .update({ message: newText, edited: true }) // ✅ add edited: true
+    .update({ message: newText, edited: true })
     .eq("id", msgId)
 
   if (error) {
@@ -225,7 +224,6 @@ fileInput.addEventListener("change", async (e) => {
   const insertData = { user_id: userId, username, media_url: publicUrl }
   if (replyTo) insertData.reply_to = replyTo.id
 
-  // ✅ Get real ID from Supabase
   const { data: inserted, error: insertError } = await db.from("chat_messages").insert(insertData).select().single()
   if (insertError) {
     alert("Failed to send image")
@@ -240,6 +238,24 @@ fileInput.addEventListener("change", async (e) => {
   clearReply()
   fileInput.value = ""
 })
+
+/* ========================= */
+/* INPUT UI */
+/* ========================= */
+
+function updateInputUI(){
+  try {
+    const hasText = input.value.trim().length > 0
+    sendBtn.style.display = hasText ? "inline-block" : "none"
+    if(voiceBtn) voiceBtn.style.display = hasText ? "none" : "inline-block"
+  } catch(e){
+    console.error("UI error:", e)
+  }
+}
+
+input.addEventListener("input", updateInputUI)
+updateInputUI()
+
 /* ========================= */
 /* DISPLAY MESSAGE */
 /* ========================= */
@@ -253,7 +269,6 @@ function displayMessage(msg){
   div.className = "mb-3"
   div.dataset.id = msg.id
 
-  // ✅ Use username to check ownership
   const isOwn = msg.username === username
 
   let replyHTML = ""
@@ -289,7 +304,6 @@ function displayMessage(msg){
     ? `<span class="editedLabel" style="font-size:10px;color:#64748b;margin-left:6px;">edited</span>`
     : ""
 
-  // ✅ 3 dots button on every message
   const dotsHTML = `
     <button class="dotsBtn" style="
       position:absolute;
@@ -329,7 +343,6 @@ function displayMessage(msg){
   const bubble = div.querySelector(".msgBubble")
   const dotsBtn = div.querySelector(".dotsBtn")
 
-  // ✅ 3 dots click
   dotsBtn.addEventListener("click", (e) => {
     e.stopPropagation()
     if (!isOwn) {
@@ -346,7 +359,6 @@ function displayMessage(msg){
     showContextMenu(msg, bubble)
   })
 
-  /* ---- HOLD TO SHOW MENU ---- */
   if (isOwn) {
     let holdTimer = null
     bubble.addEventListener("touchstart", () => {
@@ -359,7 +371,6 @@ function displayMessage(msg){
     bubble.addEventListener("touchmove", () => clearTimeout(holdTimer))
   }
 
-  /* ---- SWIPE TO REPLY ---- */
   let startX = 0
   let currentX = 0
   let isSwiping = false
@@ -408,7 +419,6 @@ async function sendMessage(){
   const msgData = { user_id: userId, username, message: text }
   if (replyTo) msgData.reply_to = replyTo.id
 
-  // ✅ Get real ID from Supabase first
   const { data, error } = await db.from("chat_messages").insert(msgData).select().single()
 
   if(error){
@@ -417,9 +427,8 @@ async function sendMessage(){
     return
   }
 
-  // ✅ Display with real ID
   displayMessage({
-    ...inserted,
+    ...data,
     _replyData: replyTo ? { ...replyTo } : null
   })
 
@@ -515,24 +524,30 @@ async function openGifPicker(){
     img.style = "width:100px;margin:5px;border-radius:10px"
 
     img.onclick = async () => {
-  const insertData = { user_id: userId, username, media_url: gif.images.fixed_height.url }
-  if (replyTo) insertData.reply_to = replyTo.id
+      const insertData = { user_id: userId, username, media_url: gif.images.fixed_height.url }
+      if (replyTo) insertData.reply_to = replyTo.id
 
-  // ✅ Get real ID from Supabase
-  const { data: inserted, error: insertError } = await db.from("chat_messages").insert(insertData).select().single()
-  if (insertError) {
-    alert("Failed to send GIF")
-    return
-  }
+      const { data: inserted, error: insertError } = await db.from("chat_messages").insert(insertData).select().single()
+      if (insertError) {
+        alert("Failed to send GIF")
+        return
+      }
 
-  displayMessage({
-    ...inserted,
-    _replyData: replyTo ? { ...replyTo } : null
+      displayMessage({
+        ...inserted,
+        _replyData: replyTo ? { ...replyTo } : null
+      })
+
+      clearReply()
+      overlay.remove()
+    }
+
+    box.appendChild(img)
   })
 
-  clearReply()
-  overlay.remove()
-    }
+  overlay.onclick = () => overlay.remove()
+}
+
 /* ========================= */
 /* EVENTS */
 /* ========================= */
