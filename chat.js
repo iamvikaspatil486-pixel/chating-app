@@ -135,11 +135,18 @@ function showContextMenu(msg, bubble) {
     }
   }
 
+  // ✅ Close only on outside tap, not on menu buttons
   setTimeout(() => {
-    const closeMenu = () => menu.remove()
-    window.addEventListener('click', closeMenu, { once: true })
-    window.addEventListener('touchstart', closeMenu, { once: true })
-  }, 100)
+    const closeMenu = (e) => {
+      if (!menu.contains(e.target)) {
+        menu.remove()
+        document.removeEventListener('click', closeMenu)
+        document.removeEventListener('touchstart', closeMenu)
+      }
+    }
+    document.addEventListener('click', closeMenu)
+    document.addEventListener('touchstart', closeMenu)
+  }, 300)
 }
 
 /* ========================= */
