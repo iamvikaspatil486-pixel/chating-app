@@ -350,8 +350,8 @@ function displayMessage(msg){
         "😂 Nice try!",
         "🚫 Not your message!",
         "👀 You can't touch this!",
-        "😏 Caught you!",
-        "🤣 Wrong message bro!"
+        "u cant edit or delete this🙂",
+        
       ]
       alert(jokes[Math.floor(Math.random() * jokes.length)])
       return
