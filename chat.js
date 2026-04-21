@@ -156,7 +156,7 @@ function showContextMenu(msg, bubble) {
 async function editMessage(msgId, newText, bubble) {
   const { error } = await db
     .from("chat_messages")
-    .update({ message: newText })
+    .update({ message: newText, edited: true }) // ✅ add edited: true
     .eq("id", msgId)
 
   if (error) {
@@ -176,7 +176,10 @@ async function editMessage(msgId, newText, bubble) {
     bubble.appendChild(editedLabel)
   }
 
-  if (messageMap[msgId]) messageMap[msgId].message = newText
+  if (messageMap[msgId]) {
+    messageMap[msgId].message = newText
+    messageMap[msgId].edited = true
+  }
 }
 
 /* ========================= */
@@ -290,7 +293,7 @@ function displayMessage(msg){
     ? `<img src="${msg.media_url}" style="max-width:200px;border-radius:10px;margin-top:5px;">`
     : ""
 
-  const editedHTML = msg.is_edited
+  const editedHTML = msg.edited
     ? `<span class="editedLabel" style="font-size:10px;color:#64748b;margin-left:6px;">edited</span>`
     : ""
 
