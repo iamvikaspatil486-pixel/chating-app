@@ -80,7 +80,6 @@ document.getElementById("cancelReply").addEventListener("click", clearReply)
 /* ========================= */
 /* CONTEXT MENU */
 /* ========================= */
-
 function showContextMenu(msg, bubble) {
   const existingMenu = document.getElementById("ctxMenu")
   if (existingMenu) existingMenu.remove()
@@ -94,7 +93,7 @@ function showContextMenu(msg, bubble) {
     border-radius: 12px;
     overflow: hidden;
     z-index: 10000;
-    min-width: 140px;
+    min-width: 160px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.6);
     pointer-events: auto;
   `
@@ -103,14 +102,15 @@ function showContextMenu(msg, bubble) {
     <button id="ctxEdit" style="display:block;width:100%;padding:14px 16px;background:none;border:none;color:white;font-size:15px;text-align:left;cursor:pointer;border-bottom:1px solid #334155;">
       ${msg.media_url ? '💬 Add Caption' : '✏️ Edit'}
     </button>
-    <button id="ctxDelete" style="display:block;width:100%;padding:
+    <button id="ctxDelete" style="display:block;width:100%;padding:14px 16px;background:none;border:none;color:#f87171;font-size:15px;text-align:left;cursor:pointer;">🗑️ Delete</button>
   `
 
   document.body.appendChild(menu)
 
+  // Position menu
   const rect = bubble.getBoundingClientRect()
-  const menuWidth = 140
-  const menuHeight = 100
+  const menuWidth = 160
+  const menuHeight = 110
   let top = rect.top + (rect.height / 2)
   let left = rect.left + (rect.width / 2)
   if (left + menuWidth > window.innerWidth) left = window.innerWidth - menuWidth - 20
@@ -120,7 +120,8 @@ function showContextMenu(msg, bubble) {
   menu.style.top = top + "px"
   menu.style.left = left + "px"
 
-  document.getElementById("ctxEdit").onclick = (e) => {
+  // Edit button
+  document.getElementById("ctxEdit").addEventListener("click", (e) => {
     e.stopPropagation()
     menu.remove()
     const promptText = msg.media_url ? "Add a caption:" : "Edit message:"
@@ -128,27 +129,32 @@ function showContextMenu(msg, bubble) {
     if (newText !== null && newText.trim() !== msg.message) {
       editMessage(msg.id, newText.trim(), bubble)
     }
-  }
+  })
 
-  document.getElementById("ctxDelete").onclick = (e) => {
+  // Delete button
+  document.getElementById("ctxDelete").addEventListener("click", (e) => {
     e.stopPropagation()
     menu.remove()
     if (confirm("Delete this message?")) {
       deleteMessage(msg.id)
     }
-  }
+  })
 
-  setTimeout(() => {
-    const closeMenu = (e) => {
-      if (!menu.contains(e.target)) {
-        menu.remove()
-        document.removeEventListener('click', closeMenu)
-        document.removeEventListener('touchstart', closeMenu)
-      }
-    }
-    document.addEventListener('click', closeMenu)
-    document.addEventListener('touchstart', closeMenu)
-  }, 300)
+  // Backdrop to close
+  const backdrop = document.createElement("div")
+  backdrop.style = "position:fixed;inset:0;z-index:9999;"
+  backdrop.id = "ctxBackdrop"
+  document.body.insertBefore(backdrop, menu)
+
+  backdrop.addEventListener("click", () => {
+    backdrop.remove()
+    menu.remove()
+  })
+
+  backdrop.addEventListener("touchstart", () => {
+    backdrop.remove()
+    menu.remove()
+  })
 }
 
 /* ========================= */
