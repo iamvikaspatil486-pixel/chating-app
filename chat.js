@@ -184,21 +184,17 @@ async function editMessage(msgId, newText, bubble) {
 /* ========================= */
 
 async function deleteMessage(msgId) {
-  alert('Deleting: ' + msgId + ' type: ' + typeof msgId)
-  
   const { error } = await db
     .from("chat_messages")
     .delete()
     .eq("id", msgId)
 
   if (error) {
-    alert("Delete failed: " + error.message)
+    alert("Delete failed")
     return
   }
 
-  alert('DB deleted, finding element...')
   const el = document.querySelector(`[data-id="${msgId}"]`)
-  alert('Element found: ' + (el ? 'yes' : 'no'))
   if (el) el.remove()
   delete messageMap[msgId]
 }
