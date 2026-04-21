@@ -225,29 +225,21 @@ fileInput.addEventListener("change", async (e) => {
   const insertData = { user_id: userId, username, media_url: publicUrl }
   if (replyTo) insertData.reply_to = replyTo.id
 
-  displayMessage({ id: Date.now(), username, media_url: publicUrl, reply_to: replyTo?.id, _replyData: replyTo })
-  await db.from("chat_messages").insert(insertData)
+  // ✅ Get real ID from Supabase
+  const { data: inserted, error: insertError } = await db.from("chat_messages").insert(insertData).select().single()
+  if (insertError) {
+    alert("Failed to send image")
+    return
+  }
+
+  displayMessage({
+    ...inserted,
+    _replyData: replyTo ? { ...replyTo } : null
+  })
+
   clearReply()
   fileInput.value = ""
 })
-
-/* ========================= */
-/* INPUT UI */
-/* ========================= */
-
-function updateInputUI(){
-  try {
-    const hasText = input.value.trim().length > 0
-    sendBtn.style.display = hasText ? "inline-block" : "none"
-    if(voiceBtn) voiceBtn.style.display = hasText ? "none" : "inline-block"
-  } catch(e){
-    console.error("UI error:", e)
-  }
-}
-
-input.addEventListener("input", updateInputUI)
-updateInputUI()
-
 /* ========================= */
 /* DISPLAY MESSAGE */
 /* ========================= */
@@ -523,28 +515,24 @@ async function openGifPicker(){
     img.style = "width:100px;margin:5px;border-radius:10px"
 
     img.onclick = async () => {
-      const insertData = { user_id: userId, username, media_url: gif.images.fixed_height.url }
-      if (replyTo) insertData.reply_to = replyTo.id
+  const insertData = { user_id: userId, username, media_url: gif.images.fixed_height.url }
+  if (replyTo) insertData.reply_to = replyTo.id
 
-      displayMessage({
-        id: Date.now(),
-        username,
-        media_url: gif.images.fixed_height.url,
-        reply_to: replyTo?.id,
-        _replyData: replyTo ? { ...replyTo } : null
-      })
+  // ✅ Get real ID from Supabase
+  const { data: inserted, error: insertError } = await db.from("chat_messages").insert(insertData).select().single()
+  if (insertError) {
+    alert("Failed to send GIF")
+    return
+  }
 
-      await db.from("chat_messages").insert(insertData)
-      clearReply()
-      overlay.remove()
-    }
-
-    box.appendChild(img)
+  displayMessage({
+    ...inserted,
+    _replyData: replyTo ? { ...replyTo } : null
   })
 
-  overlay.onclick = () => overlay.remove()
-}
-
+  clearReply()
+  overlay.remove()
+    }
 /* ========================= */
 /* EVENTS */
 /* ========================= */
