@@ -659,6 +659,9 @@ loadMessages()
 /* REALTIME - MESSAGES */
 /* ========================= */
 
+// Remove all old channels first to prevent duplicates
+db.removeAllChannels()
+
 db.channel("live-chat")
 .on("postgres_changes",
   { event: "INSERT", schema: "public", table: "chat_messages" },
@@ -700,9 +703,12 @@ db.channel("live-chat")
 /* REALTIME - REACTIONS */
 /* ========================= */
 
-db.channel("live-reactions")
+// Remove all old channels first to prevent duplicates
+db.removeAllChannels()
+
+db.channel("live-chat")
 .on("postgres_changes",
-  { event: "INSERT", schema: "public", table: "reactions" },
+  { event: "INSERT", schema: "public", table: "chat_messages" },
   (payload) => {
     const r = payload.new
     if (!reactionCache[r.message_id]) reactionCache[r.message_id] = []
