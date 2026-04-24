@@ -22,6 +22,13 @@ async function initFCM() {
       vapidKey: 'BN7Ir1MTxK7PwllwVyFt2OPtDKEBZk4dRHSj99CcVvYKYPx1PQ11cr1ZIxr-xMaAbIzhYVgyYi23-dtMVd5NkEE',
       serviceWorkerRegistration: sw
     });
+    // When app is open, FCM still fires — suppress it
+// because Supabase realtime already handles in-app updates
+onMessage(messaging, (payload) => {
+  console.log('FCM foreground message received — suppressed (app is open)')
+  // Do nothing — Supabase realtime handles in-app display
+  // Notifications only show when app is in background via service worker
+})
 
     if (token) {
       console.log('✅ FCM Token:', token);
