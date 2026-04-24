@@ -41,7 +41,6 @@ async function handleLogin(){
 
   if(!pass){ alert("Enter password"); return }
 
-  // Get student info
   const { data: student, error } = await db
     .from("students")
     .select("email, is_approved, full_name")
@@ -50,7 +49,6 @@ async function handleLogin(){
 
   if(error || !student){ alert("Roll number not registered"); return }
 
-  // Sign in with Supabase Auth
   const { data, error: loginError } = await db.auth.signInWithPassword({
     email: student.email,
     password: pass
@@ -64,20 +62,24 @@ async function handleLogin(){
     return
   }
 
-  // Generate a unique session token for this device
+  // Check if already logged in somewhere else
+  const { data: existingSession } = await db
+    .from("students")
+    .select("session_token")
+    .eq("roll_no", roll)
+    .single()
+
+  const wasLoggedInElsewhere = existingSession?.session_token !== null
+    && existingSession?.session_token !== undefined
+
+  // Generate and save new session token
   const sessionToken = crypto.randomUUID()
   localStorage.setItem("session_token", sessionToken)
 
-  // Save token to students table — this kicks any other logged-in device
-  const { error: tokenError } = await db
+  await db
     .from("students")
     .update({ session_token: sessionToken })
     .eq("roll_no", roll)
-
-  if(tokenError){
-    console.error("Token save failed:", tokenError)
-    // Don't block login for this, just continue
-  }
 
   // Save user info locally
   localStorage.setItem("anon_user", JSON.stringify({
@@ -85,6 +87,11 @@ async function handleLogin(){
     name: student.full_name || roll,
     roll: roll
   }))
+
+  // Alert only if was logged in elsewhere
+  if(wasLoggedInElsewhere){
+    alert("⚠️ Your account was logged out from another device.")
+  }
 
   window.location.href = "home.html"
 }
