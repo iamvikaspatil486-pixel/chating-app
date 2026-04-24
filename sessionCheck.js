@@ -3,50 +3,71 @@
 // <script src="sessionCheck.js"></script>
 // ================================================
 
-async function validateSession(){
-  const localToken = localStorage.getItem("session_token")
+let sessionCheckChannel = null
 
-  // No token = not logged in yet, just skip silently
+async function startSessionWatch(){
+  const localToken = localStorage.getItem("session_token")
   if(!localToken) return
 
   let user = {}
   try { user = JSON.parse(localStorage.getItem("anon_user") || "{}") } catch(e){}
 
-  // Try roll from different possible keys
   const roll = user?.roll || user?.roll_no || user?.rollNo
-
-  // If no roll found, skip check silently (don't logout)
   if(!roll) return
 
+  // First do an immediate check
   try {
     const { data, error } = await db
       .from("students")
-      .select("session_token")
+      .select("session_token, full_name")
       .eq("roll_no", roll)
       .single()
 
-    // If DB error (network issue etc), skip silently — don't logout
     if(error || !data) return
 
-    // Token mismatch = logged in from another device
     if(data.session_token && data.session_token !== localToken){
-      logout("⚠️ You were logged in from another device. This session has ended.")
+      forceLogout()
+      return
     }
 
+    // Watch for session_token changes in realtime
+    sessionCheckChannel = db
+      .channel("session-watch-" + roll)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "students",
+          filter: `roll_no=eq.${roll}`
+        },
+        (payload) => {
+          const newToken = payload.new?.session_token
+          if(newToken && newToken !== localToken){
+            forceLogout()
+          }
+        }
+      )
+      .subscribe()
+
   } catch(e){
-    // Network error — skip silently, don't logout
-    console.warn("Session check failed silently:", e)
+    console.warn("Session watch error:", e)
   }
 }
 
-function logout(message){
+function forceLogout(){
+  // Remove realtime channel
+  if(sessionCheckChannel){
+    db.removeChannel(sessionCheckChannel)
+    sessionCheckChannel = null
+  }
+
   localStorage.clear()
-  if(message) alert(message)
+
+  // Show alert then redirect
+  alert("⚠️ Your account was logged in from another device. You have been logged out.")
   window.location.href = "index.html"
 }
 
-// Small delay on page load to let DB connection settle
-setTimeout(validateSession, 2000)
-
-// Check every 30 seconds
-setInterval(validateSession, 30000)
+// Start watching after 2 seconds
+setTimeout(startSessionWatch, 2000)
