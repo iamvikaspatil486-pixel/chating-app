@@ -22,7 +22,7 @@ let storedUser = null
 try{ storedUser = JSON.parse(localStorage.getItem("anon_user")) }catch(e){}
 
 const username = storedUser?.name || "User_" + Math.floor(Math.random()*1000)
-const userId = storedUser?.id || crypto.randomUUID()
+let userId = storedUser?.id || crypto.randomUUID()
 // Always sync with real Supabase auth ID
 db.auth.getUser().then(function(res) {
   if (res.data?.user?.id) {
