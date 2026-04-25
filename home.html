@@ -140,7 +140,7 @@ content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable
 <div id="studentsModal"
   class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center px-4">
 
-  <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-sm max-h-[70vh] flex flex-col">
+  <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-sm max-h-[75vh] flex flex-col">
 
     <!-- Modal Header -->
     <div class="flex items-center justify-between p-4 border-b border-slate-700">
@@ -148,22 +148,63 @@ content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable
       <button onclick="closeStudents()" class="text-slate-400 text-xl">✕</button>
     </div>
 
+    <!-- My Profile Card -->
+    <div id="myProfileCard" class="mx-4 mt-3 mb-1 bg-slate-800 border border-cyan-500/30 rounded-2xl p-3 flex items-center gap-3">
+      <div id="myAvatar" class="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-lg font-bold flex-shrink-0">
+        ?
+      </div>
+      <div class="flex-1">
+        <div id="myName" class="text-sm font-bold text-white">Loading...</div>
+        <div id="myRoll" class="text-xs text-slate-400"></div>
+        <div id="myNickname" class="text-xs text-cyan-400 italic"></div>
+      </div>
+      <button onclick="openMyProfile()" class="text-xs bg-cyan-500/20 border border-cyan-500/40 text-cyan-400 px-2 py-1 rounded-lg">
+        Edit
+      </button>
+    </div>
+
     <!-- Search -->
-    <div class="px-4 pt-3">
+    <div class="px-4 pt-2 pb-1">
       <input id="studentSearch" type="text" placeholder="Search students..."
         oninput="filterStudents()"
         class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 text-sm text-white outline-none placeholder-slate-500" />
     </div>
 
     <!-- Student List -->
-    <div id="studentList"
-      class="overflow-y-auto flex-1 p-4 space-y-2">
+    <div id="studentList" class="overflow-y-auto flex-1 p-4 space-y-2">
       <p class="text-slate-500 text-sm text-center">Loading...</p>
     </div>
 
   </div>
-
 </div>
+
+<!-- PROFILE DETAIL MODAL -->
+<div id="profileModal" class="fixed inset-0 bg-black/80 z-[60] hidden flex items-center justify-center px-6">
+  <div class="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-xs p-6 flex flex-col items-center gap-3">
+    <div id="profileAvatar" class="w-20 h-20 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-3xl font-bold">
+      ?
+    </div>
+    <div id="profileName" class="text-xl font-bold text-white text-center"></div>
+    <div id="profileNickname" class="text-sm text-cyan-400 italic text-center"></div>
+    <div id="profileRoll" class="text-sm text-slate-400 text-center"></div>
+    <div id="profileStatus" class="text-xs px-3 py-1 rounded-full font-semibold"></div>
+    <button onclick="closeProfileModal()" class="mt-2 w-full py-2 bg-slate-800 border border-slate-700 rounded-xl text-slate-400 text-sm">Close</button>
+  </div>
+</div>
+
+<!-- EDIT MY PROFILE MODAL -->
+<div id="editProfileModal" class="fixed inset-0 bg-black/80 z-[60] hidden flex items-center justify-center px-6">
+  <div class="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-xs p-6">
+    <div class="text-lg font-bold text-white mb-4">✏️ Edit Nickname</div>
+    <input id="nicknameInput" type="text" placeholder="Enter your nickname..." maxlength="20"
+      class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-cyan-500 mb-4">
+    <div class="flex gap-3">
+      <button onclick="closeEditProfile()" class="flex-1 py-3 bg-slate-800 border border-slate-700 rounded-xl text-slate-400 text-sm">Cancel</button>
+      <button onclick="saveNickname()" class="flex-2 flex-1 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl text-white font-bold text-sm">Save</button>
+    </div>
+  </div>
+</div>
+
 
 <!-- FEED -->
 <main id="feed" class="max-w-md mx-auto px-3 pt-3 pb-28 space-y-4">
@@ -291,9 +332,34 @@ class="bg-cyan-500 p-3 rounded-full text-slate-900">
      ═══════════════════════════════════════ -->
 <script>
   let allStudents = [];
+  let currentProfileId = null;
 
+  // ── LOAD MY PROFILE ──────────────────────────────────────
+  async function loadMyProfile() {
+    const { data: { user } } = await db.auth.getUser();
+    if (!user) return;
+
+    const { data } = await db
+      .from('students')
+      .select('full_name, roll_no, nickname')
+      .eq('id', user.id)
+      .single();
+
+    if (!data) return;
+
+    const initial = data.full_name ? data.full_name[0].toUpperCase() : '?';
+    document.getElementById('myAvatar').textContent = initial;
+    document.getElementById('myName').textContent = data.full_name || 'Unknown';
+    document.getElementById('myRoll').textContent = data.roll_no || '';
+    document.getElementById('myNickname').textContent = data.nickname ? `"${data.nickname}"` : 'Tap Edit to add nickname';
+    document.getElementById('nicknameInput').value = data.nickname || '';
+    currentProfileId = user.id;
+  }
+
+  // ── OPEN / CLOSE STUDENTS MODAL ──────────────────────────
   async function openStudents() {
     document.getElementById('studentsModal').classList.remove('hidden');
+    loadMyProfile();
     await loadStudents();
   }
 
@@ -303,13 +369,14 @@ class="bg-cyan-500 p-3 rounded-full text-slate-900">
     filterStudents();
   }
 
+  // ── LOAD STUDENTS LIST ───────────────────────────────────
   async function loadStudents() {
     const list = document.getElementById('studentList');
     list.innerHTML = '<p class="text-slate-500 text-sm text-center">Loading...</p>';
 
     const { data, error } = await db
       .from('students')
-      .select('full_name, roll_no, is_approved')
+      .select('id, full_name, roll_no, is_approved, nickname')
       .order('full_name');
 
     if (error) {
@@ -318,14 +385,15 @@ class="bg-cyan-500 p-3 rounded-full text-slate-900">
     }
 
     if (!data || data.length === 0) {
-      list.innerHTML = '<p class="text-slate-500 text-sm text-center">No data returned</p>';
+      list.innerHTML = '<p class="text-slate-500 text-sm text-center">No students found</p>';
       return;
     }
 
     allStudents = data;
     renderStudents(allStudents);
   }
-  
+
+  // ── RENDER STUDENTS ──────────────────────────────────────
   function renderStudents(students) {
     const list = document.getElementById('studentList');
 
@@ -335,35 +403,107 @@ class="bg-cyan-500 p-3 rounded-full text-slate-900">
     }
 
     list.innerHTML = students.map(s => `
-      <div class="flex items-center gap-3 bg-slate-800 rounded-xl px-3 py-2">
-        <div class="w-9 h-9 rounded-full bg-cyan-500 flex items-center justify-center text-sm font-bold flex-shrink-0">
+      <div onclick="openProfileModal(${JSON.stringify(s).replace(/"/g, '&quot;')})"
+        class="flex items-center gap-3 bg-slate-800 hover:bg-slate-750 active:bg-slate-700 rounded-xl px-3 py-2 cursor-pointer transition-colors">
+
+        <!-- Avatar -->
+        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-sm font-bold flex-shrink-0">
           ${s.full_name ? s.full_name[0].toUpperCase() : 'S'}
         </div>
-        <div class="flex-1">
-          <div class="text-sm font-semibold">${s.full_name || 'Unknown'}</div>
-          <div class="text-xs text-slate-400">${s.roll_no || 'No roll no'}</div>
+
+        <!-- Info -->
+        <div class="flex-1 min-w-0">
+          <div class="text-sm font-semibold text-white truncate">${s.full_name || 'Unknown'}</div>
+          <div class="text-xs text-slate-400 truncate">
+            ${s.nickname ? `"${s.nickname}" · ` : ''}${s.roll_no || 'No roll no'}
+          </div>
         </div>
-        <div class="text-xs font-semibold px-2 py-1 rounded-full ${s.is_approved === 'true' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}">
-          ${s.is_approved === 'true' ? '✓ Approved' : 'Not Approved Yet'}
+
+        <!-- Status badge -->
+        <div class="text-xs font-semibold px-2 py-1 rounded-full flex-shrink-0 ${s.is_approved === 'true' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}">
+          ${s.is_approved === 'true' ? '✓' : '⏳'}
         </div>
+
       </div>
     `).join('');
   }
 
+  // ── FILTER STUDENTS ──────────────────────────────────────
   function filterStudents() {
     const q = document.getElementById('studentSearch').value.toLowerCase();
     const filtered = allStudents.filter(s =>
       (s.full_name || '').toLowerCase().includes(q) ||
-      (s.roll_no || '').toLowerCase().includes(q)
+      (s.roll_no || '').toLowerCase().includes(q) ||
+      (s.nickname || '').toLowerCase().includes(q)
     );
     renderStudents(filtered);
   }
 
-  // Close modal on backdrop click
+  // ── PROFILE DETAIL MODAL ─────────────────────────────────
+  function openProfileModal(student) {
+    const initial = student.full_name ? student.full_name[0].toUpperCase() : '?';
+    document.getElementById('profileAvatar').textContent = initial;
+    document.getElementById('profileName').textContent = student.full_name || 'Unknown';
+    document.getElementById('profileNickname').textContent = student.nickname ? `"${student.nickname}"` : '';
+    document.getElementById('profileRoll').textContent = student.roll_no ? `Roll No: ${student.roll_no}` : '';
+
+    const statusEl = document.getElementById('profileStatus');
+    if (student.is_approved === 'true') {
+      statusEl.textContent = '✓ Approved Student';
+      statusEl.className = 'text-xs px-3 py-1 rounded-full font-semibold bg-green-500/20 text-green-400';
+    } else {
+      statusEl.textContent = '⏳ Pending Approval';
+      statusEl.className = 'text-xs px-3 py-1 rounded-full font-semibold bg-red-500/20 text-red-400';
+    }
+
+    document.getElementById('profileModal').classList.remove('hidden');
+  }
+
+  function closeProfileModal() {
+    document.getElementById('profileModal').classList.add('hidden');
+  }
+
+  // ── EDIT MY PROFILE ──────────────────────────────────────
+  function openMyProfile() {
+    document.getElementById('editProfileModal').classList.remove('hidden');
+  }
+
+  function closeEditProfile() {
+    document.getElementById('editProfileModal').classList.add('hidden');
+  }
+
+  async function saveNickname() {
+    const nickname = document.getElementById('nicknameInput').value.trim();
+    if (!currentProfileId) return;
+
+    const { error } = await db
+      .from('students')
+      .update({ nickname })
+      .eq('id', currentProfileId);
+
+    if (error) { alert('Failed to save'); return; }
+
+    document.getElementById('myNickname').textContent = nickname ? `"${nickname}"` : 'Tap Edit to add nickname';
+    closeEditProfile();
+
+    // Refresh list to show updated nickname
+    await loadStudents();
+  }
+
+  // ── CLOSE ON BACKDROP ────────────────────────────────────
   document.getElementById('studentsModal').addEventListener('click', function(e) {
     if (e.target === this) closeStudents();
   });
+
+  document.getElementById('profileModal').addEventListener('click', function(e) {
+    if (e.target === this) closeProfileModal();
+  });
+
+  document.getElementById('editProfileModal').addEventListener('click', function(e) {
+    if (e.target === this) closeEditProfile();
+  });
 </script>
+
 
 <!-- ═══════════════════════════════════════
      NOTIFICATION PERMISSION LOGIC
