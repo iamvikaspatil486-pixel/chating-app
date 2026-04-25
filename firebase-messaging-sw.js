@@ -12,10 +12,29 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// FCM already shows notification automatically
-// onBackgroundMessage is only needed if you want to CUSTOMIZE it
-// Without showNotification here, FCM handles it once by itself
 messaging.onBackgroundMessage(function(payload) {
-  console.log('Background message received:', payload)
-  // Don't call showNotification — FCM does it automatically
+  // Close existing notifications first
+  self.registration.getNotifications({ tag: 'chat-message' }).then(function(notifications) {
+    notifications.forEach(function(n) { n.close() })
+  })
+
+  const title = payload.notification.title
+  const body = payload.notification.body
+
+  self.registration.showNotification(title, {
+    body: body,
+    icon: '/icon-192.png',
+    tag: 'chat-message',        // ← same tag = replaces old notification
+    renotify: true,             // ← still vibrates/sounds on update
+    badge: '/icon-192.png',
+    data: { url: '/chat.html' }
+  })
+})
+
+// Click notification → open chat
+self.addEventListener('notificationclick', function(event) {
+  event.notification.close()
+  event.waitUntil(
+    clients.openWindow('/chat.html')
+  )
 })
