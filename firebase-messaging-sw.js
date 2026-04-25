@@ -12,11 +12,10 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
+// FCM already shows notification automatically
+// onBackgroundMessage is only needed if you want to CUSTOMIZE it
+// Without showNotification here, FCM handles it once by itself
 messaging.onBackgroundMessage(function(payload) {
-  const notificationTitle = payload.notification.title;
-  const notificationOptions = {
-    body: payload.notification.body,
-    icon: '/icon-192.png'
-  };
-  self.registration.showNotification(notificationTitle, notificationOptions);
-});
+  console.log('Background message received:', payload)
+  // Don't call showNotification — FCM does it automatically
+})
