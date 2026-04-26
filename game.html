@@ -3,8 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>RPS · AGASTYANS</title>
+<title>RPS Battle · AGASTYANS</title>
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
 <style>
   :root {
     --bg: #060610;
@@ -33,7 +35,6 @@
     overflow: hidden;
   }
 
-  /* Animated background */
   body::before {
     content: '';
     position: fixed;
@@ -54,8 +55,9 @@
     justify-content: space-between;
     padding: 14px 16px;
     border-bottom: 1px solid var(--border);
-    background: rgba(6,6,16,0.9);
+    background: rgba(6,6,16,0.95);
     backdrop-filter: blur(10px);
+    flex-shrink: 0;
   }
 
   .back-btn {
@@ -78,29 +80,340 @@
     -webkit-text-fill-color: transparent;
   }
 
-  .score-display {
+  .score-pill {
     display: flex;
     gap: 6px;
     align-items: center;
     font-size: 13px;
     font-weight: 700;
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 4px 12px;
+    border-radius: 20px;
   }
 
   .score-you { color: var(--green); }
   .score-sep { color: var(--muted); }
   .score-ai  { color: var(--red); }
 
-  /* MAIN */
-  .main {
-    position: relative;
+  /* SCREENS */
+  .screen {
+    position: absolute;
+    inset: 0;
     z-index: 10;
-    flex: 1;
     display: flex;
     flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .screen.hidden { display: none !important; }
+
+  /* ── HOME SCREEN ── */
+  #homeScreen {
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    padding: 30px 24px;
+    background: var(--bg);
+  }
+
+  .game-logo {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 48px;
+    letter-spacing: 4px;
+    background: linear-gradient(135deg, var(--cyan), var(--purple), var(--pink));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-align: center;
+    line-height: 1;
+  }
+
+  .game-subtitle {
+    font-size: 12px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    text-align: center;
+    margin-top: -10px;
+  }
+
+  .gestures-preview {
+    display: flex;
+    gap: 24px;
+    font-size: 44px;
+    justify-content: center;
+    margin: 10px 0;
+  }
+
+  .mode-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: 100%;
+  }
+
+  .mode-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    position: relative;
     overflow: hidden;
   }
 
-  /* CAMERA SECTION */
+  .mode-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .mode-card.random::before { background: linear-gradient(135deg, rgba(0,229,255,0.08), transparent); }
+  .mode-card.custom::before { background: linear-gradient(135deg, rgba(124,58,237,0.08), transparent); }
+
+  .mode-card:active { transform: scale(0.97); }
+  .mode-card:active::before { opacity: 1; }
+
+  .mode-icon {
+    font-size: 36px;
+    flex-shrink: 0;
+  }
+
+  .mode-info { flex: 1; }
+
+  .mode-title {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 20px;
+    letter-spacing: 2px;
+    margin-bottom: 3px;
+  }
+
+  .mode-card.random .mode-title { color: var(--cyan); }
+  .mode-card.custom .mode-title { color: var(--purple); }
+
+  .mode-desc {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+
+  .mode-arrow {
+    font-size: 20px;
+    color: var(--muted);
+  }
+
+  /* ── WAITING SCREEN ── */
+  #waitingScreen {
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    padding: 30px 24px;
+    background: var(--bg);
+  }
+
+  .waiting-title {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 24px;
+    letter-spacing: 3px;
+    color: var(--cyan);
+    text-align: center;
+  }
+
+  .waiting-dots {
+    display: flex;
+    gap: 8px;
+  }
+
+  .dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--cyan);
+    animation: dotPulse 1.2s ease-in-out infinite;
+  }
+
+  .dot:nth-child(2) { animation-delay: 0.2s; }
+  .dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes dotPulse {
+    0%, 100% { opacity: 0.3; transform: scale(0.8); }
+    50% { opacity: 1; transform: scale(1.2); }
+  }
+
+  .waiting-sub {
+    font-size: 13px;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  .cancel-btn {
+    padding: 12px 32px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .cancel-btn:hover { border-color: var(--red); color: var(--red); }
+
+  /* ── CUSTOM ROOM SCREEN ── */
+  #customScreen {
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    padding: 30px 24px;
+    background: var(--bg);
+  }
+
+  .custom-title {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 22px;
+    letter-spacing: 3px;
+    color: var(--purple);
+    text-align: center;
+  }
+
+  .room-code-display {
+    background: var(--card);
+    border: 2px solid var(--purple);
+    border-radius: 20px;
+    padding: 20px 40px;
+    text-align: center;
+    box-shadow: 0 0 30px rgba(124,58,237,0.2);
+  }
+
+  .room-code-label {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+  }
+
+  .room-code-value {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 48px;
+    letter-spacing: 8px;
+    color: var(--purple);
+    text-shadow: 0 0 20px rgba(124,58,237,0.5);
+  }
+
+  .or-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    color: var(--muted);
+    font-size: 12px;
+    letter-spacing: 2px;
+  }
+
+  .or-divider::before, .or-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .join-section {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .join-label {
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .code-input {
+    width: 100%;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 16px;
+    color: var(--text);
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 28px;
+    letter-spacing: 6px;
+    outline: none;
+    text-align: center;
+    text-transform: uppercase;
+    transition: border-color 0.2s;
+  }
+
+  .code-input:focus { border-color: var(--purple); }
+  .code-input::placeholder { color: var(--muted); font-size: 20px; letter-spacing: 4px; }
+
+  .join-btn {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, var(--purple), #9333ea);
+    border: none;
+    border-radius: 14px;
+    color: white;
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 18px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+
+  .join-btn:active { transform: scale(0.97); }
+
+  /* ── GAME SCREEN ── */
+  #gameScreen {
+    flex-direction: column;
+    background: var(--bg);
+  }
+
+  .players-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .player-tag {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .player-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .player-you-badge {
+    font-size: 9px;
+    color: var(--cyan);
+    letter-spacing: 1px;
+  }
+
+  .vs-text {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 18px;
+    color: var(--muted);
+    letter-spacing: 2px;
+  }
+
+  /* Camera section */
   .camera-section {
     position: relative;
     flex: 1;
@@ -108,6 +421,7 @@
     align-items: center;
     justify-content: center;
     overflow: hidden;
+    min-height: 0;
   }
 
   #videoEl {
@@ -127,31 +441,25 @@
     pointer-events: none;
   }
 
-  /* Camera overlay gradient */
   .camera-section::after {
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(to bottom,
-      rgba(6,6,16,0.3) 0%,
-      transparent 30%,
-      transparent 60%,
-      rgba(6,6,16,0.8) 100%);
+    background: linear-gradient(to bottom, rgba(6,6,16,0.2) 0%, transparent 30%, transparent 60%, rgba(6,6,16,0.8) 100%);
     pointer-events: none;
   }
 
-  /* GESTURE INDICATOR */
   .gesture-indicator {
     position: absolute;
-    top: 14px;
+    top: 12px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 20;
     background: rgba(6,6,16,0.85);
     border: 1px solid var(--border);
     border-radius: 30px;
-    padding: 6px 18px;
-    font-size: 13px;
+    padding: 5px 16px;
+    font-size: 12px;
     font-weight: 700;
     color: var(--cyan);
     backdrop-filter: blur(10px);
@@ -165,22 +473,45 @@
     box-shadow: 0 0 20px rgba(0,229,255,0.3);
   }
 
-  /* BOTTOM GAME UI */
-  .game-ui {
-    position: relative;
-    z-index: 20;
-    background: rgba(6,6,16,0.95);
-    border-top: 1px solid var(--border);
-    padding: 14px 16px 20px;
-    backdrop-filter: blur(20px);
+  /* Countdown overlay */
+  .countdown-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 90px;
+    color: white;
+    text-shadow: 0 0 40px rgba(0,229,255,0.8);
+    z-index: 30;
+    background: rgba(6,6,16,0.5);
+    backdrop-filter: blur(2px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
   }
 
-  /* BATTLE DISPLAY */
+  .countdown-overlay.visible { opacity: 1; }
+
+  .count-num { animation: countPop 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+  @keyframes countPop { 0%{transform:scale(0.2);opacity:0} 100%{transform:scale(1);opacity:1} }
+
+  /* Game bottom UI */
+  .game-bottom {
+    position: relative;
+    z-index: 20;
+    background: rgba(6,6,16,0.97);
+    border-top: 1px solid var(--border);
+    padding: 12px 16px 18px;
+    flex-shrink: 0;
+  }
+
   .battle-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 14px;
+    margin-bottom: 10px;
     gap: 10px;
   }
 
@@ -189,11 +520,11 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
+    gap: 3px;
   }
 
   .fighter-label {
-    font-size: 10px;
+    font-size: 9px;
     font-weight: 700;
     letter-spacing: 1px;
     color: var(--muted);
@@ -201,45 +532,104 @@
   }
 
   .fighter-gesture {
-    font-size: 44px;
+    font-size: 42px;
     line-height: 1;
-    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-    filter: drop-shadow(0 0 10px rgba(0,229,255,0.3));
+    transition: transform 0.3s;
   }
 
-  .fighter-gesture.bounce {
-    animation: bounceGesture 0.4s cubic-bezier(0.34,1.56,0.64,1);
-  }
-
-  @keyframes bounceGesture {
-    0% { transform: scale(0.5); }
-    100% { transform: scale(1); }
-  }
+  .fighter-gesture.bounce { animation: bounceG 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+  @keyframes bounceG { 0%{transform:scale(0.4)} 100%{transform:scale(1)} }
 
   .vs-badge {
     font-family: 'Black Han Sans', sans-serif;
-    font-size: 22px;
+    font-size: 20px;
     color: var(--border);
     letter-spacing: 2px;
   }
 
-  /* RESULT */
   .result-text {
     text-align: center;
     font-family: 'Black Han Sans', sans-serif;
-    font-size: 26px;
+    font-size: 24px;
     letter-spacing: 3px;
-    margin-bottom: 12px;
-    min-height: 36px;
+    margin-bottom: 10px;
+    min-height: 32px;
     transition: all 0.3s;
   }
 
   .result-text.win  { color: var(--green); text-shadow: 0 0 20px rgba(0,255,136,0.5); }
   .result-text.lose { color: var(--red);   text-shadow: 0 0 20px rgba(255,68,68,0.5); }
-  .result-text.draw { color: var(--yellow); text-shadow: 0 0 20px rgba(255,215,0,0.4); }
+  .result-text.draw { color: var(--yellow); }
 
-  /* PLAY BUTTON */
   .play-btn {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, var(--cyan), var(--purple));
+    border: none;
+    border-radius: 16px;
+    color: white;
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 18px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(0,229,255,0.25);
+    transition: transform 0.15s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .play-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+  }
+
+  .play-btn:active { transform: scale(0.97); }
+  .play-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  .opponent-status {
+    text-align: center;
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 8px;
+    min-height: 16px;
+  }
+
+  /* RESULT SCREEN */
+  #resultScreen {
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    padding: 30px 24px;
+    background: var(--bg);
+  }
+
+  .result-big {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 56px;
+    letter-spacing: 4px;
+    text-align: center;
+  }
+
+  .result-big.win  { color: var(--green); text-shadow: 0 0 40px rgba(0,255,136,0.5); }
+  .result-big.lose { color: var(--red);   text-shadow: 0 0 40px rgba(255,68,68,0.5); }
+  .result-big.draw { color: var(--yellow); }
+
+  .gestures-result {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    font-size: 13px;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  .gesture-result-item { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .gesture-result-emoji { font-size: 50px; }
+  .gesture-result-name { font-weight: 700; color: var(--text); font-size: 13px; }
+
+  .play-again-btn {
     width: 100%;
     padding: 15px;
     background: linear-gradient(135deg, var(--cyan), var(--purple));
@@ -250,168 +640,30 @@
     font-size: 18px;
     letter-spacing: 2px;
     cursor: pointer;
-    position: relative;
-    overflow: hidden;
-    transition: transform 0.15s, box-shadow 0.15s;
-    box-shadow: 0 4px 20px rgba(0,229,255,0.3);
-  }
-
-  .play-btn:active { transform: scale(0.97); }
-  .play-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-  .play-btn::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
-  }
-
-  /* COUNTDOWN */
-  .countdown {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: 'Black Han Sans', sans-serif;
-    font-size: 80px;
-    color: white;
-    text-shadow: 0 0 40px rgba(0,229,255,0.8);
-    z-index: 30;
-    background: rgba(6,6,16,0.6);
-    backdrop-filter: blur(4px);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s;
-  }
-
-  .countdown.visible { opacity: 1; pointer-events: auto; }
-
-  .countdown-num {
-    animation: countPop 0.5s cubic-bezier(0.34,1.56,0.64,1);
-  }
-
-  @keyframes countPop {
-    0% { transform: scale(0.3); opacity: 0; }
-    100% { transform: scale(1); opacity: 1; }
-  }
-
-  /* START SCREEN */
-  .start-screen {
-    position: absolute;
-    inset: 0;
-    z-index: 25;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-    background: rgba(6,6,16,0.92);
-    backdrop-filter: blur(10px);
-  }
-
-  .start-title {
-    font-family: 'Black Han Sans', sans-serif;
-    font-size: 32px;
-    letter-spacing: 4px;
-    background: linear-gradient(135deg, var(--cyan), var(--purple), var(--pink));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    text-align: center;
-  }
-
-  .gestures-guide {
-    display: flex;
-    gap: 20px;
-    font-size: 13px;
-    color: var(--muted);
-    text-align: center;
-  }
-
-  .guide-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-  .guide-emoji { font-size: 32px; }
-  .guide-label { font-weight: 700; color: var(--text); font-size: 12px; }
-
-  .start-btn {
-    margin-top: 8px;
-    padding: 14px 40px;
-    background: linear-gradient(135deg, var(--cyan), var(--purple));
-    border: none;
-    border-radius: 30px;
-    color: white;
-    font-family: 'Black Han Sans', sans-serif;
-    font-size: 20px;
-    letter-spacing: 3px;
-    cursor: pointer;
-    box-shadow: 0 4px 30px rgba(0,229,255,0.4);
+    box-shadow: 0 4px 20px rgba(0,229,255,0.25);
     transition: transform 0.15s;
   }
-  .start-btn:active { transform: scale(0.95); }
 
-  .hint-text {
-    font-size: 11px;
-    color: var(--muted);
-    text-align: center;
-    padding: 0 20px;
-    line-height: 1.6;
-  }
+  .play-again-btn:active { transform: scale(0.97); }
 
-  /* LOADING */
-  .loading-overlay {
-    position: absolute;
-    inset: 0;
-    z-index: 40;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-    background: var(--bg);
-  }
-
-  .loading-spinner {
-    width: 40px; height: 40px;
-    border: 3px solid var(--border);
-    border-top-color: var(--cyan);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  .loading-text {
-    font-size: 13px;
-    color: var(--muted);
-    font-weight: 700;
-    letter-spacing: 1px;
-  }
-
-  /* STREAK */
-  .streak-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    background: rgba(255,215,0,0.1);
-    border: 1px solid rgba(255,215,0,0.3);
-    color: var(--yellow);
-    font-size: 11px;
-    font-weight: 700;
-    padding: 3px 10px;
-    border-radius: 20px;
-    margin-bottom: 8px;
-    text-align: center;
+  .home-btn {
     width: 100%;
-    justify-content: center;
+    padding: 13px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
   }
 
   /* CONFETTI */
   .confetti-piece {
     position: fixed;
-    width: 8px;
-    height: 8px;
-    border-radius: 2px;
     pointer-events: none;
     z-index: 9999;
+    border-radius: 2px;
     animation: confettiFall linear forwards;
   }
 
@@ -419,70 +671,155 @@
     0%   { transform: translateY(-20px) rotate(0deg); opacity: 1; }
     100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
   }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 20px;
+    border-radius: 30px;
+    font-size: 13px;
+    font-weight: 700;
+    z-index: 9999;
+    white-space: nowrap;
+    animation: toastIn 0.3s ease;
+  }
+
+  @keyframes toastIn { from{opacity:0;transform:translateX(-50%) translateY(10px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+
+  /* LOADING */
+  .cam-loading {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background: var(--surface);
+  }
+
+  .cam-spinner {
+    width: 36px; height: 36px;
+    border: 3px solid var(--border);
+    border-top-color: var(--cyan);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .cam-loading-text { font-size: 12px; color: var(--muted); letter-spacing: 1px; font-weight: 700; }
 </style>
 </head>
 <body>
 
 <!-- HEADER -->
 <div class="header">
-  <button class="back-btn" onclick="history.back()">←</button>
+  <button class="back-btn" id="backBtn" onclick="goBack()">←</button>
   <div class="header-title">RPS BATTLE</div>
-  <div class="score-display">
+  <div class="score-pill">
     <span class="score-you" id="scoreYou">0</span>
     <span class="score-sep">:</span>
-    <span class="score-ai" id="scoreAi">0</span>
+    <span class="score-ai" id="scoreOpp">0</span>
   </div>
 </div>
 
-<!-- MAIN -->
-<div class="main">
+<!-- ── HOME SCREEN ── -->
+<div class="screen" id="homeScreen">
+  <div class="game-logo">ROCK<br>PAPER<br>SCISSORS</div>
+  <div class="game-subtitle">MULTIPLAYER BATTLE</div>
+  <div class="gestures-preview">✊ 🖐 ✌️</div>
+  <div class="mode-cards">
+    <div class="mode-card random" onclick="startRandom()">
+      <div class="mode-icon">🎲</div>
+      <div class="mode-info">
+        <div class="mode-title">RANDOM</div>
+        <div class="mode-desc">Match with any student online right now</div>
+      </div>
+      <div class="mode-arrow">›</div>
+    </div>
+    <div class="mode-card custom" onclick="showCustomScreen()">
+      <div class="mode-icon">🔑</div>
+      <div class="mode-info">
+        <div class="mode-title">CUSTOM</div>
+        <div class="mode-desc">Create a room or join with a code</div>
+      </div>
+      <div class="mode-arrow">›</div>
+    </div>
+  </div>
+</div>
 
-  <!-- LOADING -->
-  <div class="loading-overlay" id="loadingOverlay">
-    <div class="loading-spinner"></div>
-    <div class="loading-text">LOADING AI...</div>
+<!-- ── WAITING SCREEN ── -->
+<div class="screen hidden" id="waitingScreen">
+  <div class="waiting-title">FINDING OPPONENT</div>
+  <div class="waiting-dots">
+    <div class="dot"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+  </div>
+  <div class="waiting-sub" id="waitingSub">Searching for a student to battle...</div>
+  <button class="cancel-btn" onclick="cancelMatchmaking()">Cancel</button>
+</div>
+
+<!-- ── CUSTOM ROOM SCREEN ── -->
+<div class="screen hidden" id="customScreen">
+  <div class="custom-title">CUSTOM ROOM</div>
+
+  <div class="room-code-display">
+    <div class="room-code-label">YOUR ROOM CODE</div>
+    <div class="room-code-value" id="myRoomCode">----</div>
   </div>
 
-  <!-- CAMERA -->
+  <button onclick="copyRoomCode()" style="background:var(--card);border:1px solid var(--border);color:var(--cyan);padding:10px 24px;border-radius:12px;font-weight:700;font-size:13px;cursor:pointer;letter-spacing:1px;">📋 COPY CODE</button>
+
+  <div class="or-divider">OR JOIN</div>
+
+  <div class="join-section">
+    <div class="join-label">Enter friend's code</div>
+    <input class="code-input" id="joinCodeInput" type="text" maxlength="4" placeholder="----" oninput="this.value=this.value.toUpperCase()">
+    <button class="join-btn" onclick="joinCustomRoom()">JOIN ROOM →</button>
+  </div>
+
+  <button class="cancel-btn" onclick="cancelCustom()">← Back</button>
+</div>
+
+<!-- ── GAME SCREEN ── -->
+<div class="screen hidden" id="gameScreen">
+
+  <!-- Players bar -->
+  <div class="players-bar">
+    <div class="player-tag">
+      <div class="player-name" id="p1Name">You</div>
+      <div class="player-you-badge">YOU</div>
+    </div>
+    <div class="vs-text">VS</div>
+    <div class="player-tag">
+      <div class="player-name" id="p2Name">Opponent</div>
+      <div class="player-you-badge" id="p2Badge">OPPONENT</div>
+    </div>
+  </div>
+
+  <!-- Camera -->
   <div class="camera-section">
+    <div class="cam-loading" id="camLoading">
+      <div class="cam-spinner"></div>
+      <div class="cam-loading-text">STARTING CAMERA...</div>
+    </div>
     <video id="videoEl" playsinline autoplay muted></video>
     <canvas id="canvasEl"></canvas>
-
     <div class="gesture-indicator" id="gestureIndicator">SHOW YOUR HAND</div>
-
-    <div class="countdown" id="countdown"></div>
-
-    <!-- START SCREEN -->
-    <div class="start-screen" id="startScreen">
-      <div class="start-title">ROCK<br>PAPER<br>SCISSORS</div>
-      <div class="gestures-guide">
-        <div class="guide-item">
-          <div class="guide-emoji">✊</div>
-          <div class="guide-label">ROCK</div>
-          <div>closed fist</div>
-        </div>
-        <div class="guide-item">
-          <div class="guide-emoji">🖐</div>
-          <div class="guide-label">PAPER</div>
-          <div>open hand</div>
-        </div>
-        <div class="guide-item">
-          <div class="guide-emoji">✌️</div>
-          <div class="guide-label">SCISSORS</div>
-          <div>two fingers</div>
-        </div>
-      </div>
-      <button class="start-btn" id="startBtn">START</button>
-      <div class="hint-text">Show your hand gesture to the camera when the countdown ends</div>
-    </div>
-
+    <div class="countdown-overlay" id="countdownOverlay"></div>
   </div>
 
-  <!-- GAME UI -->
-  <div class="game-ui">
-
-    <div class="streak-badge" id="streakBadge" style="display:none;">🔥 <span id="streakCount">0</span> WIN STREAK!</div>
-
+  <!-- Game Bottom -->
+  <div class="game-bottom">
+    <div class="opponent-status" id="opponentStatus"></div>
     <div class="battle-row">
       <div class="fighter">
         <div class="fighter-label">YOU</div>
@@ -490,120 +827,378 @@
       </div>
       <div class="vs-badge">VS</div>
       <div class="fighter">
-        <div class="fighter-label">AI</div>
-        <div class="fighter-gesture" id="aiGesture">🤖</div>
+        <div class="fighter-label">OPPONENT</div>
+        <div class="fighter-gesture" id="oppGesture">🤔</div>
       </div>
     </div>
-
     <div class="result-text" id="resultText"></div>
-
-    <button class="play-btn" id="playBtn" disabled>PLAY</button>
-
+    <button class="play-btn" id="playBtn" disabled onclick="startRound()">PLAY</button>
   </div>
 
 </div>
 
+<!-- ── RESULT SCREEN ── -->
+<div class="screen hidden" id="resultScreen">
+  <div class="result-big" id="resultBig">WIN!</div>
+  <div class="gestures-result">
+    <div class="gesture-result-item">
+      <div class="gesture-result-emoji" id="resYourGesture">✊</div>
+      <div class="gesture-result-name" id="resYourName">You</div>
+    </div>
+    <div style="font-family:'Black Han Sans',sans-serif;font-size:20px;color:var(--muted);">VS</div>
+    <div class="gesture-result-item">
+      <div class="gesture-result-emoji" id="resOppGesture">🖐</div>
+      <div class="gesture-result-name" id="resOppName">Opponent</div>
+    </div>
+  </div>
+  <button class="play-again-btn" onclick="playAgain()">PLAY AGAIN</button>
+  <button class="home-btn" onclick="goHome()">🏠 Home</button>
+</div>
+
 <script>
-// ── GAME STATE ─────────────────────────────────────────────
+// ── USER ──────────────────────────────────────────────────
+let storedUser = null
+try { storedUser = JSON.parse(localStorage.getItem('anon_user')) } catch(e) {}
+const myUsername = storedUser?.name || 'Player_' + Math.floor(Math.random()*999)
+let myUserId = storedUser?.id || crypto.randomUUID()
+
+// Sync real auth ID
+db.auth.getUser().then(res => {
+  if (res.data?.user?.id) myUserId = res.data.user.id
+})
+
+// ── GAME STATE ────────────────────────────────────────────
 const GESTURES = { rock: '✊', paper: '🖐', scissors: '✌️' }
 const GESTURE_NAMES = ['rock', 'paper', 'scissors']
-let scores = { you: 0, ai: 0 }
-let streak = 0
+
+let currentRoomCode = null
+let currentRoomId = null
+let isPlayer1 = false
+let opponentName = ''
 let currentGesture = null
+let scores = { me: 0, opp: 0 }
 let isPlaying = false
+let gameChannel = null
+let queueChannel = null
+let myMoveForRound = null
+let opponentMoveForRound = null
 let hands = null
-let camera = null
-let lastGestureTime = 0
+let cameraStarted = false
 
-// ── DOM ────────────────────────────────────────────────────
-const videoEl = document.getElementById('videoEl')
-const canvasEl = document.getElementById('canvasEl')
-const ctx = canvasEl.getContext('2d')
-const gestureIndicator = document.getElementById('gestureIndicator')
-const yourGesture = document.getElementById('yourGesture')
-const aiGesture = document.getElementById('aiGesture')
-const resultText = document.getElementById('resultText')
-const playBtn = document.getElementById('playBtn')
-const startBtn = document.getElementById('startBtn')
-const startScreen = document.getElementById('startScreen')
-const countdown = document.getElementById('countdown')
-const loadingOverlay = document.getElementById('loadingOverlay')
-const streakBadge = document.getElementById('streakBadge')
-const streakCount = document.getElementById('streakCount')
-
-// ── GESTURE DETECTION ─────────────────────────────────────
-function detectGesture(landmarks) {
-  const fingertips = [8, 12, 16, 20]  // index, middle, ring, pinky
-  const bases = [6, 10, 14, 18]
-
-  const thumbTip = landmarks[4]
-  const thumbBase = landmarks[2]
-  const wrist = landmarks[0]
-
-  // Check each finger if extended
-  const fingerExtended = fingertips.map((tip, i) => {
-    return landmarks[tip].y < landmarks[bases[i]].y
-  })
-
-  const extendedCount = fingerExtended.filter(Boolean).length
-  const thumbExtended = thumbTip.x < thumbBase.x  // mirrored camera
-
-  // ROCK: all fingers curled
-  if (extendedCount === 0 && !thumbExtended) return 'rock'
-
-  // SCISSORS: only index + middle extended
-  if (fingerExtended[0] && fingerExtended[1] && !fingerExtended[2] && !fingerExtended[3]) return 'scissors'
-
-  // PAPER: all fingers extended
-  if (extendedCount >= 3) return 'paper'
-
-  return null
+// ── SCREENS ───────────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'))
+  document.getElementById(id).classList.remove('hidden')
 }
 
-// ── DRAW HAND LANDMARKS ───────────────────────────────────
-function drawHand(landmarks) {
-  const connections = [
-    [0,1],[1,2],[2,3],[3,4],      // thumb
-    [0,5],[5,6],[6,7],[7,8],      // index
-    [0,9],[9,10],[10,11],[11,12], // middle
-    [0,13],[13,14],[14,15],[15,16],// ring
-    [0,17],[17,18],[18,19],[19,20],// pinky
-    [5,9],[9,13],[13,17]          // palm
-  ]
+// ── RANDOM MATCHMAKING ────────────────────────────────────
+async function startRandom() {
+  showScreen('waitingScreen')
+  document.getElementById('waitingSub').textContent = 'Searching for a student to battle...'
 
-  const w = canvasEl.width
-  const h = canvasEl.height
+  // Clean up old queue entry
+  await db.from('matchmaking_queue').delete().eq('user_id', myUserId)
 
-  ctx.clearRect(0, 0, w, h)
+  // Check if anyone is waiting
+  const { data: waiting } = await db
+    .from('matchmaking_queue')
+    .select('*')
+    .neq('user_id', myUserId)
+    .order('created_at', { ascending: true })
+    .limit(1)
 
-  // Draw connections
-  ctx.strokeStyle = 'rgba(0,229,255,0.6)'
-  ctx.lineWidth = 2
-  connections.forEach(([a, b]) => {
-    ctx.beginPath()
-    ctx.moveTo(landmarks[a].x * w, landmarks[a].y * h)
-    ctx.lineTo(landmarks[b].x * w, landmarks[b].y * h)
-    ctx.stroke()
-  })
+  if (waiting && waiting.length > 0) {
+    // Found someone! Create a room
+    const opponent = waiting[0]
+    const roomCode = generateCode()
 
-  // Draw points
-  landmarks.forEach((lm, i) => {
-    ctx.beginPath()
-    ctx.arc(lm.x * w, lm.y * h, i === 0 ? 5 : 3, 0, Math.PI * 2)
-    ctx.fillStyle = i === 0 ? 'rgba(124,58,237,0.9)' : 'rgba(0,229,255,0.9)'
-    ctx.fill()
-  })
+    const { data: room } = await db.from('game_rooms').insert({
+      room_code: roomCode,
+      player1_id: opponent.user_id,
+      player1_name: opponent.username,
+      player2_id: myUserId,
+      player2_name: myUsername,
+      status: 'active'
+    }).select().single()
+
+    // Remove opponent from queue
+    await db.from('matchmaking_queue').delete().eq('user_id', opponent.user_id)
+
+    isPlayer1 = false
+    opponentName = opponent.username
+    currentRoomCode = roomCode
+    currentRoomId = room.id
+
+    startGame(room)
+  } else {
+    // Add myself to queue and wait
+    await db.from('matchmaking_queue').insert({
+      user_id: myUserId,
+      username: myUsername
+    })
+
+    // Watch for a room to be created for me
+    queueChannel = db.channel('queue-watch-' + myUserId)
+      .on('postgres_changes', {
+        event: 'INSERT', schema: 'public', table: 'game_rooms'
+      }, async (payload) => {
+        const room = payload.new
+        if (room.player1_id === myUserId || room.player2_id === myUserId) {
+          isPlayer1 = room.player1_id === myUserId
+          opponentName = isPlayer1 ? room.player2_name : room.player1_name
+          currentRoomCode = room.room_code
+          currentRoomId = room.id
+          db.removeChannel(queueChannel)
+          startGame(room)
+        }
+      })
+      .subscribe()
+  }
 }
 
-// ── MEDIAPIPE INIT ────────────────────────────────────────
-async function initMediaPipe() {
+async function cancelMatchmaking() {
+  await db.from('matchmaking_queue').delete().eq('user_id', myUserId)
+  if (queueChannel) db.removeChannel(queueChannel)
+  showScreen('homeScreen')
+}
+
+// ── CUSTOM ROOM ───────────────────────────────────────────
+async function showCustomScreen() {
+  showScreen('customScreen')
+  const code = generateCode()
+  currentRoomCode = code
+  document.getElementById('myRoomCode').textContent = code
+
+  // Create room waiting for player 2
+  const { data: room } = await db.from('game_rooms').insert({
+    room_code: code,
+    player1_id: myUserId,
+    player1_name: myUsername,
+    status: 'waiting'
+  }).select().single()
+
+  currentRoomId = room.id
+  isPlayer1 = true
+
+  // Watch for player 2 to join
+  queueChannel = db.channel('custom-wait-' + code)
+    .on('postgres_changes', {
+      event: 'UPDATE', schema: 'public', table: 'game_rooms',
+      filter: `room_code=eq.${code}`
+    }, (payload) => {
+      const room = payload.new
+      if (room.status === 'active' && room.player2_id) {
+        opponentName = room.player2_name
+        db.removeChannel(queueChannel)
+        startGame(room)
+      }
+    })
+    .subscribe()
+}
+
+async function joinCustomRoom() {
+  const code = document.getElementById('joinCodeInput').value.trim().toUpperCase()
+  if (code.length !== 4) { showToast('Enter a 4-digit code'); return }
+
+  const { data: room } = await db.from('game_rooms')
+    .select('*')
+    .eq('room_code', code)
+    .eq('status', 'waiting')
+    .single()
+
+  if (!room) { showToast('Room not found or already started'); return }
+
+  // Join the room
+  const { data: updated } = await db.from('game_rooms')
+    .update({
+      player2_id: myUserId,
+      player2_name: myUsername,
+      status: 'active'
+    })
+    .eq('room_code', code)
+    .select().single()
+
+  isPlayer1 = false
+  opponentName = room.player1_name
+  currentRoomCode = code
+  currentRoomId = room.id
+  if (queueChannel) db.removeChannel(queueChannel)
+  startGame(updated)
+}
+
+async function cancelCustom() {
+  if (currentRoomId) await db.from('game_rooms').delete().eq('id', currentRoomId)
+  if (queueChannel) db.removeChannel(queueChannel)
+  currentRoomId = null
+  currentRoomCode = null
+  showScreen('homeScreen')
+}
+
+function copyRoomCode() {
+  navigator.clipboard.writeText(currentRoomCode).then(() => showToast('Code copied: ' + currentRoomCode))
+}
+
+// ── START GAME ────────────────────────────────────────────
+async function startGame(room) {
+  document.getElementById('p1Name').textContent = myUsername
+  document.getElementById('p2Name').textContent = opponentName
+  showScreen('gameScreen')
+
+  // Subscribe to room changes for realtime moves
+  gameChannel = db.channel('game-room-' + currentRoomCode)
+    .on('postgres_changes', {
+      event: 'UPDATE', schema: 'public', table: 'game_rooms',
+      filter: `room_code=eq.${currentRoomCode}`
+    }, (payload) => {
+      handleRoomUpdate(payload.new)
+    })
+    .subscribe()
+
+  // Start camera
+  if (!cameraStarted) await initCamera()
+  document.getElementById('playBtn').disabled = false
+}
+
+function handleRoomUpdate(room) {
+  const myMoveField = isPlayer1 ? 'player1_move' : 'player2_move'
+  const oppMoveField = isPlayer1 ? 'player2_move' : 'player1_move'
+
+  const myMove = room[myMoveField]
+  const oppMove = room[oppMoveField]
+
+  if (oppMove && !opponentMoveForRound) {
+    opponentMoveForRound = oppMove
+    document.getElementById('opponentStatus').textContent = '✅ Opponent locked in!'
+  }
+
+  // Both moved — resolve
+  if (myMoveForRound && opponentMoveForRound) {
+    resolveRound(myMoveForRound, opponentMoveForRound)
+  }
+
+  // Opponent disconnected
+  if (room.status === 'abandoned') {
+    showToast('Opponent left the game')
+    setTimeout(goHome, 2000)
+  }
+}
+
+// ── ROUND LOGIC ───────────────────────────────────────────
+async function startRound() {
+  if (isPlaying) return
+  isPlaying = true
+  myMoveForRound = null
+  opponentMoveForRound = null
+  document.getElementById('playBtn').disabled = true
+  document.getElementById('resultText').textContent = ''
+  document.getElementById('yourGesture').textContent = '🤔'
+  document.getElementById('oppGesture').textContent = '🤔'
+  document.getElementById('opponentStatus').textContent = 'Waiting for opponent...'
+
+  // Reset moves in DB
+  const resetData = {}
+  resetData[isPlayer1 ? 'player1_move' : 'player2_move'] = null
+  resetData[isPlayer1 ? 'player2_move' : 'player1_move'] = null
+  await db.from('game_rooms').update(resetData).eq('id', currentRoomId)
+
+  // Countdown
+  const nums = ['3', '2', '1', 'GO!']
+  const overlay = document.getElementById('countdownOverlay')
+
+  for (let i = 0; i < nums.length; i++) {
+    overlay.innerHTML = `<span class="count-num" style="color:${i===3?'#00ff88':'white'}">${nums[i]}</span>`
+    overlay.classList.add('visible')
+    await sleep(650)
+    overlay.classList.remove('visible')
+    await sleep(100)
+  }
+
+  // Lock in current gesture
+  const move = currentGesture || GESTURE_NAMES[Math.floor(Math.random() * 3)]
+  myMoveForRound = move
+
+  // Show my move
+  document.getElementById('yourGesture').textContent = GESTURES[move]
+  document.getElementById('yourGesture').classList.add('bounce')
+  setTimeout(() => document.getElementById('yourGesture').classList.remove('bounce'), 400)
+
+  // Save to DB
+  const updateData = {}
+  updateData[isPlayer1 ? 'player1_move' : 'player2_move'] = move
+  await db.from('game_rooms').update(updateData).eq('id', currentRoomId)
+
+  // Check if opponent already moved
+  const { data: room } = await db.from('game_rooms').select('*').eq('id', currentRoomId).single()
+  const oppMove = isPlayer1 ? room.player2_move : room.player1_move
+  if (oppMove) {
+    opponentMoveForRound = oppMove
+    resolveRound(myMoveForRound, opponentMoveForRound)
+  }
+}
+
+async function resolveRound(myMove, oppMove) {
+  // Animate opponent gesture
+  const oppEl = document.getElementById('oppGesture')
+  let ticks = 0
+  const think = setInterval(() => {
+    oppEl.textContent = GESTURES[GESTURE_NAMES[ticks % 3]]
+    ticks++
+  }, 100)
+  await sleep(500)
+  clearInterval(think)
+  oppEl.textContent = GESTURES[oppMove]
+  oppEl.classList.add('bounce')
+  setTimeout(() => oppEl.classList.remove('bounce'), 400)
+
+  await sleep(200)
+
+  const result = getResult(myMove, oppMove)
+  const resultEl = document.getElementById('resultText')
+
+  if (result === 'win') {
+    resultEl.textContent = 'YOU WIN! 🎉'
+    resultEl.className = 'result-text win'
+    scores.me++
+    confetti()
+  } else if (result === 'lose') {
+    resultEl.textContent = 'YOU LOSE 😈'
+    resultEl.className = 'result-text lose'
+    scores.opp++
+  } else {
+    resultEl.textContent = "DRAW 🤝"
+    resultEl.className = 'result-text draw'
+  }
+
+  document.getElementById('scoreYou').textContent = scores.me
+  document.getElementById('scoreOpp').textContent = scores.opp
+  document.getElementById('opponentStatus').textContent = ''
+
+  isPlaying = false
+  document.getElementById('playBtn').disabled = false
+}
+
+function getResult(player, opp) {
+  if (player === opp) return 'draw'
+  if (
+    (player === 'rock'     && opp === 'scissors') ||
+    (player === 'scissors' && opp === 'paper')    ||
+    (player === 'paper'    && opp === 'rock')
+  ) return 'win'
+  return 'lose'
+}
+
+// ── CAMERA & GESTURE ──────────────────────────────────────
+async function initCamera() {
   try {
-    // Dynamically load MediaPipe
     await loadScript('https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js')
     await loadScript('https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js')
 
+    const videoEl = document.getElementById('videoEl')
+    const canvasEl = document.getElementById('canvasEl')
+    const ctx = canvasEl.getContext('2d')
+
     hands = new Hands({
-      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+      locateFile: file => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
     })
 
     hands.setOptions({
@@ -613,62 +1208,159 @@ async function initMediaPipe() {
       minTrackingConfidence: 0.5
     })
 
-    hands.onResults((results) => {
+    hands.onResults(results => {
       canvasEl.width = videoEl.videoWidth || canvasEl.offsetWidth
       canvasEl.height = videoEl.videoHeight || canvasEl.offsetHeight
+      ctx.clearRect(0, 0, canvasEl.width, canvasEl.height)
 
-      if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-        const landmarks = results.multiHandLandmarks[0]
-        drawHand(landmarks)
-
-        const gesture = detectGesture(landmarks)
-        if (gesture) {
-          currentGesture = gesture
-          gestureIndicator.textContent = GESTURES[gesture] + ' ' + gesture.toUpperCase()
-          gestureIndicator.classList.add('detected')
+      if (results.multiHandLandmarks?.length > 0) {
+        const lm = results.multiHandLandmarks[0]
+        drawHand(lm, ctx, canvasEl)
+        const g = detectGesture(lm)
+        currentGesture = g
+        const ind = document.getElementById('gestureIndicator')
+        if (g) {
+          ind.textContent = GESTURES[g] + ' ' + g.toUpperCase()
+          ind.classList.add('detected')
         } else {
-          currentGesture = null
-          gestureIndicator.textContent = 'SHOW YOUR HAND'
-          gestureIndicator.classList.remove('detected')
+          ind.textContent = 'SHOW YOUR HAND'
+          ind.classList.remove('detected')
         }
       } else {
-        ctx.clearRect(0, 0, canvasEl.width, canvasEl.height)
         currentGesture = null
-        gestureIndicator.textContent = 'SHOW YOUR HAND'
-        gestureIndicator.classList.remove('detected')
+        const ind = document.getElementById('gestureIndicator')
+        ind.textContent = 'SHOW YOUR HAND'
+        ind.classList.remove('detected')
       }
     })
 
-    // Start camera
     const stream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }
     })
     videoEl.srcObject = stream
 
-    camera = new Camera(videoEl, {
+    const cam = new Camera(videoEl, {
       onFrame: async () => { await hands.send({ image: videoEl }) },
       width: 640, height: 480
     })
 
-    await camera.start()
-    loadingOverlay.style.display = 'none'
+    await cam.start()
+    cameraStarted = true
+    document.getElementById('camLoading').style.display = 'none'
 
-  } catch (err) {
-    loadingOverlay.innerHTML = `
-      <div style="text-align:center;padding:20px;color:#ff4444;">
-        <div style="font-size:40px;margin-bottom:12px;">📷</div>
-        <div style="font-weight:700;margin-bottom:6px;">Camera access needed</div>
-        <div style="font-size:12px;color:#5a5a8a;">Allow camera permission and reload</div>
-        <button onclick="location.reload()" style="margin-top:16px;padding:10px 24px;background:#00e5ff;border:none;border-radius:10px;color:#000;font-weight:700;cursor:pointer;">Retry</button>
+  } catch(err) {
+    document.getElementById('camLoading').innerHTML = `
+      <div style="text-align:center;padding:16px;color:var(--red);">
+        <div style="font-size:32px;margin-bottom:8px;">📷</div>
+        <div style="font-size:12px;">Camera access denied.<br>Hand detection unavailable.</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:8px;">Random gesture will be used on PLAY</div>
       </div>
     `
   }
 }
 
+function detectGesture(lm) {
+  const tips = [8,12,16,20]
+  const bases = [6,10,14,18]
+  const extended = tips.map((t,i) => lm[t].y < lm[bases[i]].y)
+  const count = extended.filter(Boolean).length
+  if (count === 0) return 'rock'
+  if (extended[0] && extended[1] && !extended[2] && !extended[3]) return 'scissors'
+  if (count >= 3) return 'paper'
+  return null
+}
+
+function drawHand(lm, ctx, canvas) {
+  const w = canvas.width, h = canvas.height
+  const conns = [[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[0,9],[9,10],[10,11],[11,12],[0,13],[13,14],[14,15],[15,16],[0,17],[17,18],[18,19],[19,20],[5,9],[9,13],[13,17]]
+  ctx.strokeStyle = 'rgba(0,229,255,0.6)'
+  ctx.lineWidth = 2
+  conns.forEach(([a,b]) => {
+    ctx.beginPath()
+    ctx.moveTo(lm[a].x*w, lm[a].y*h)
+    ctx.lineTo(lm[b].x*w, lm[b].y*h)
+    ctx.stroke()
+  })
+  lm.forEach((p,i) => {
+    ctx.beginPath()
+    ctx.arc(p.x*w, p.y*h, i===0?5:3, 0, Math.PI*2)
+    ctx.fillStyle = i===0?'rgba(124,58,237,0.9)':'rgba(0,229,255,0.9)'
+    ctx.fill()
+  })
+}
+
+// ── NAVIGATION ────────────────────────────────────────────
+function goBack() {
+  const visible = document.querySelector('.screen:not(.hidden)')?.id
+  if (visible === 'homeScreen') history.back()
+  else if (visible === 'waitingScreen') cancelMatchmaking()
+  else if (visible === 'customScreen') cancelCustom()
+  else if (visible === 'gameScreen') leaveGame()
+  else goHome()
+}
+
+async function leaveGame() {
+  if (currentRoomId) {
+    await db.from('game_rooms').update({ status: 'abandoned' }).eq('id', currentRoomId)
+  }
+  if (gameChannel) db.removeChannel(gameChannel)
+  goHome()
+}
+
+function goHome() {
+  if (gameChannel) db.removeChannel(gameChannel)
+  currentRoomCode = null
+  currentRoomId = null
+  myMoveForRound = null
+  opponentMoveForRound = null
+  isPlaying = false
+  scores = { me: 0, opp: 0 }
+  document.getElementById('scoreYou').textContent = '0'
+  document.getElementById('scoreOpp').textContent = '0'
+  showScreen('homeScreen')
+}
+
+function playAgain() {
+  showScreen('gameScreen')
+}
+
+// ── UTILS ─────────────────────────────────────────────────
+function generateCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  let code = ''
+  for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random() * chars.length)]
+  return code
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)) }
+
+function showToast(msg) {
+  const t = document.createElement('div')
+  t.className = 'toast'
+  t.textContent = msg
+  document.body.appendChild(t)
+  setTimeout(() => t.remove(), 2500)
+}
+
+function confetti() {
+  const colors = ['#00e5ff','#7c3aed','#f472b6','#00ff88','#ffd700']
+  for (let i = 0; i < 20; i++) {
+    setTimeout(() => {
+      const p = document.createElement('div')
+      p.className = 'confetti-piece'
+      p.style.left = Math.random() * 100 + 'vw'
+      p.style.background = colors[Math.floor(Math.random() * colors.length)]
+      p.style.animationDuration = (Math.random() * 1.5 + 1) + 's'
+      p.style.width = p.style.height = (Math.random() * 8 + 4) + 'px'
+      document.body.appendChild(p)
+      setTimeout(() => p.remove(), 2500)
+    }, i * 70)
+  }
+}
+
 function loadScript(src) {
   return new Promise((resolve, reject) => {
-    const existing = document.querySelector(`script[src="${src}"]`)
-    if (existing) { resolve(); return }
+    if (document.querySelector(`script[src="${src}"]`)) { resolve(); return }
     const s = document.createElement('script')
     s.src = src
     s.onload = resolve
@@ -677,135 +1369,15 @@ function loadScript(src) {
   })
 }
 
-// ── GAME LOGIC ─────────────────────────────────────────────
-function getAIMove() {
-  return GESTURE_NAMES[Math.floor(Math.random() * 3)]
-}
-
-function getResult(player, ai) {
-  if (player === ai) return 'draw'
-  if (
-    (player === 'rock'     && ai === 'scissors') ||
-    (player === 'scissors' && ai === 'paper')    ||
-    (player === 'paper'    && ai === 'rock')
-  ) return 'win'
-  return 'lose'
-}
-
-async function startCountdown() {
-  isPlaying = true
-  playBtn.disabled = true
-  const nums = ['3', '2', '1', 'GO!']
-
-  for (let i = 0; i < nums.length; i++) {
-    countdown.innerHTML = `<span class="countdown-num" style="color:${i===3?'#00ff88':'white'}">${nums[i]}</span>`
-    countdown.classList.add('visible')
-    await sleep(700)
-    if (i < nums.length - 1) countdown.classList.remove('visible')
-    await sleep(100)
+// Clean up on page leave
+window.addEventListener('beforeunload', () => {
+  if (currentRoomId) {
+    navigator.sendBeacon('/api/abandon', JSON.stringify({ roomId: currentRoomId }))
+    db.from('game_rooms').update({ status: 'abandoned' }).eq('id', currentRoomId)
   }
-
-  countdown.classList.remove('visible')
-  resolveRound()
-}
-
-async function resolveRound() {
-  const playerMove = currentGesture
-
-  if (!playerMove) {
-    resultText.textContent = 'NO HAND DETECTED'
-    resultText.className = 'result-text lose'
-    isPlaying = false
-    playBtn.disabled = false
-    return
-  }
-
-  const aiMove = getAIMove()
-  const result = getResult(playerMove, aiMove)
-
-  // Animate gestures
-  yourGesture.textContent = GESTURES[playerMove]
-  yourGesture.classList.add('bounce')
-  setTimeout(() => yourGesture.classList.remove('bounce'), 400)
-
-  // AI "thinking" animation
-  let ticks = 0
-  const thinkInterval = setInterval(() => {
-    aiGesture.textContent = GESTURES[GESTURE_NAMES[ticks % 3]]
-    ticks++
-  }, 120)
-
-  await sleep(600)
-  clearInterval(thinkInterval)
-  aiGesture.textContent = GESTURES[aiMove]
-  aiGesture.classList.add('bounce')
-  setTimeout(() => aiGesture.classList.remove('bounce'), 400)
-
-  await sleep(200)
-
-  // Show result
-  if (result === 'win') {
-    resultText.textContent = 'YOU WIN! 🎉'
-    resultText.className = 'result-text win'
-    scores.you++
-    streak++
-    if (streak >= 2) {
-      streakBadge.style.display = 'flex'
-      streakCount.textContent = streak
-    }
-    confetti()
-  } else if (result === 'lose') {
-    resultText.textContent = 'AI WINS 😈'
-    resultText.className = 'result-text lose'
-    scores.ai++
-    streak = 0
-    streakBadge.style.display = 'none'
-  } else {
-    resultText.textContent = "IT'S A DRAW 🤝"
-    resultText.className = 'result-text draw'
-    streak = 0
-    streakBadge.style.display = 'none'
-  }
-
-  document.getElementById('scoreYou').textContent = scores.you
-  document.getElementById('scoreAi').textContent = scores.ai
-
-  isPlaying = false
-  playBtn.disabled = false
-}
-
-// ── CONFETTI ───────────────────────────────────────────────
-function confetti() {
-  const colors = ['#00e5ff', '#7c3aed', '#f472b6', '#00ff88', '#ffd700']
-  for (let i = 0; i < 25; i++) {
-    setTimeout(() => {
-      const piece = document.createElement('div')
-      piece.className = 'confetti-piece'
-      piece.style.left = Math.random() * 100 + 'vw'
-      piece.style.background = colors[Math.floor(Math.random() * colors.length)]
-      piece.style.animationDuration = (Math.random() * 1.5 + 1) + 's'
-      piece.style.width = piece.style.height = (Math.random() * 8 + 4) + 'px'
-      document.body.appendChild(piece)
-      setTimeout(() => piece.remove(), 2500)
-    }, i * 60)
-  }
-}
-
-// ── UTILS ──────────────────────────────────────────────────
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)) }
-
-// ── EVENTS ─────────────────────────────────────────────────
-startBtn.addEventListener('click', () => {
-  startScreen.style.display = 'none'
-  playBtn.disabled = false
+  db.from('matchmaking_queue').delete().eq('user_id', myUserId)
 })
-
-playBtn.addEventListener('click', () => {
-  if (!isPlaying) startCountdown()
-})
-
-// ── INIT ───────────────────────────────────────────────────
-initMediaPipe()
 </script>
 </body>
 </html>
+
