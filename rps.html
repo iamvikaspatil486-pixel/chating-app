@@ -548,6 +548,127 @@
   .confetti-piece { position: fixed; pointer-events: none; z-index: 9999; border-radius: 2px; animation: confettiFall linear forwards; }
   @keyframes confettiFall { 0%{transform:translateY(-20px) rotate(0deg);opacity:1} 100%{transform:translateY(100vh) rotate(720deg);opacity:0} }
 
+  /* NEXT ROUND POPUP */
+  .next-round-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    z-index: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    backdrop-filter: blur(4px);
+  }
+
+  .next-round-popup {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 28px;
+    padding: 28px 24px;
+    width: 100%;
+    max-width: 320px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    animation: popIn 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  }
+
+  @keyframes popIn { from{transform:scale(0.7);opacity:0} to{transform:scale(1);opacity:1} }
+
+  .nr-round-badge {
+    background: rgba(0,229,255,0.1);
+    border: 1px solid rgba(0,229,255,0.3);
+    color: var(--cyan);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    padding: 4px 14px;
+    border-radius: 20px;
+  }
+
+  .nr-result-big {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 32px;
+    letter-spacing: 3px;
+    text-align: center;
+  }
+
+  .nr-result-big.win  { color: var(--green); text-shadow: 0 0 20px rgba(0,255,136,0.4); }
+  .nr-result-big.lose { color: var(--red); }
+  .nr-result-big.draw { color: var(--yellow); }
+
+  .nr-gestures {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 36px;
+  }
+
+  .nr-vs { font-family: 'Black Han Sans', sans-serif; font-size: 14px; color: var(--muted); }
+
+  .nr-score {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 28px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .nr-score .me { color: var(--cyan); }
+  .nr-score .sep { color: var(--muted); font-size: 18px; }
+  .nr-score .opp { color: var(--red); }
+
+  .nr-question {
+    font-size: 14px;
+    color: var(--muted);
+    text-align: center;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+
+  .nr-waiting {
+    font-size: 12px;
+    color: var(--muted);
+    text-align: center;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .nr-waiting-dots {
+    display: flex;
+    gap: 4px;
+  }
+
+  .nr-waiting-dots span {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--muted);
+    animation: dotPulse 1.2s ease-in-out infinite;
+  }
+
+  .nr-waiting-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .nr-waiting-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+  .nr-yes-btn {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, var(--cyan), var(--purple));
+    border: none;
+    border-radius: 14px;
+    color: white;
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 17px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+
+  .nr-yes-btn:active { transform: scale(0.97); }
+  .nr-yes-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
   /* TOAST */
   .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: var(--card); border: 1px solid var(--border); color: var(--text); padding: 10px 20px; border-radius: 30px; font-size: 13px; font-weight: 700; z-index: 9999; white-space: nowrap; animation: toastIn 0.3s ease; }
   @keyframes toastIn { from{opacity:0;transform:translateX(-50%) translateY(10px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
@@ -559,8 +680,6 @@
 <div class="header">
   <button class="back-btn" onclick="goBack()">←</button>
   <div class="header-title">RPS BATTLE</div>
-  
-<button onclick="showInfo()" style="background:var(--card);border:1px solid var(--border);color:var(--muted);width:36px;height:36px;border-radius:10px;font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;">ℹ</button>
   <div class="round-tracker" id="roundTracker">
     <div class="round-dot active" id="rd0"></div>
     <div class="round-dot" id="rd1"></div>
@@ -895,6 +1014,9 @@ function handleRoomUpdate(room) {
 }
 
 // ── ROUND ─────────────────────────────────────────────────
+let lockedGesture = null       // first-sign lock during countdown
+let roundResolving = false     // prevent double resolve
+
 function updatePlayBtn() {
   document.getElementById('playBtn').textContent = `PLAY ROUND ${currentRound + 1}`
   document.getElementById('roundInfo').textContent = `ROUND ${currentRound + 1} / ${TOTAL_ROUNDS}`
@@ -908,92 +1030,264 @@ function updateScoreDisplay() {
 async function startRound() {
   if (isPlaying) return
   isPlaying = true
+  roundResolving = false
   myMoveForRound = null
   opponentMoveForRound = null
+  lockedGesture = null
   document.getElementById('playBtn').disabled = true
   document.getElementById('roundResult').textContent = ''
   document.getElementById('yourGesture').textContent = '🤔'
   document.getElementById('oppGesture').textContent = '🤔'
   document.getElementById('opponentStatus').textContent = 'Waiting for opponent...'
 
-  // Reset moves in DB
-  const resetData = { player1_move: null, player2_move: null }
-  await db.from('game_rooms').update(resetData).eq('id', currentRoomId)
+  // Reset moves + ready flags in DB
+  await db.from('game_rooms').update({
+    player1_move: null,
+    player2_move: null,
+    p1_ready: false,
+    p2_ready: false
+  }).eq('id', currentRoomId)
 
-  // Countdown
+  // Countdown — lock FIRST valid gesture detected
   const nums = ['3', '2', '1', 'GO!']
   const overlay = document.getElementById('countdownOverlay')
+
   for (let i = 0; i < nums.length; i++) {
     overlay.innerHTML = `<span class="count-num" style="color:${i===3?'#00ff88':'white'}">${nums[i]}</span>`
     overlay.classList.add('visible')
-    await sleep(650)
+
+    // During countdown, lock first valid gesture seen
+    if (i < 3) {
+      const checkGesture = setInterval(() => {
+        if (!lockedGesture && currentGesture) {
+          lockedGesture = currentGesture
+          // Show locked indicator
+          const ind = document.getElementById('gestureIndicator')
+          ind.textContent = '🔒 ' + GESTURES[lockedGesture] + ' LOCKED'
+          ind.style.borderColor = 'var(--green)'
+          ind.style.color = 'var(--green)'
+        }
+      }, 50)
+      await sleep(650)
+      clearInterval(checkGesture)
+    } else {
+      await sleep(650)
+    }
+
     overlay.classList.remove('visible')
     await sleep(100)
   }
 
-  // Lock move
-  const move = currentGesture || GESTURE_NAMES[Math.floor(Math.random() * 3)]
+  // Reset indicator style
+  const ind = document.getElementById('gestureIndicator')
+  ind.style.borderColor = ''
+  ind.style.color = ''
+
+  // Use locked gesture or current or random fallback
+  const move = lockedGesture || currentGesture || GESTURE_NAMES[Math.floor(Math.random() * 3)]
   myMoveForRound = move
 
+  // Show MY gesture immediately
   document.getElementById('yourGesture').textContent = GESTURES[move]
   document.getElementById('yourGesture').classList.add('bounce')
   setTimeout(() => document.getElementById('yourGesture').classList.remove('bounce'), 400)
 
+  // Keep opponent hidden until both submitted
+  document.getElementById('oppGesture').textContent = '❓'
+  document.getElementById('opponentStatus').textContent = 'Waiting for opponent move...'
+
+  // Submit my move to DB
   const updateData = {}
   updateData[isPlayer1 ? 'player1_move' : 'player2_move'] = move
   await db.from('game_rooms').update(updateData).eq('id', currentRoomId)
 
-  // Check if opp already moved
+  // Check if opponent already submitted
   const { data: room } = await db.from('game_rooms').select('*').eq('id', currentRoomId).single()
   const oppMove = isPlayer1 ? room.player2_move : room.player1_move
-  if (oppMove) { opponentMoveForRound = oppMove; resolveRound(myMoveForRound, opponentMoveForRound) }
+  if (oppMove && !roundResolving) {
+    opponentMoveForRound = oppMove
+    roundResolving = true
+    resolveRound(myMoveForRound, opponentMoveForRound)
+  }
+}
+
+function handleRoomUpdate(room) {
+  const oppMoveField = isPlayer1 ? 'player2_move' : 'player1_move'
+  const oppMove = room[oppMoveField]
+  const myMoveField = isPlayer1 ? 'player1_move' : 'player2_move'
+  const myMove = room[myMoveField]
+
+  // Both moves submitted → reveal and resolve
+  if (oppMove && myMove && !opponentMoveForRound && !roundResolving) {
+    opponentMoveForRound = oppMove
+    roundResolving = true
+    resolveRound(myMove, oppMove)
+    return
+  }
+
+  // Opponent submitted but we haven't yet — just update status
+  if (oppMove && !myMoveForRound) {
+    document.getElementById('opponentStatus').textContent = '✅ Opponent locked in!'
+  }
+
+  // Handle ready flags for next round handshake
+  const myReadyField = isPlayer1 ? 'p1_ready' : 'p2_ready'
+  const oppReadyField = isPlayer1 ? 'p2_ready' : 'p1_ready'
+
+  if (room[oppReadyField] && !room[myReadyField]) {
+    // Opponent is ready, update waiting popup
+    const waitMsg = document.getElementById('nrWaitMsg')
+    if (waitMsg) waitMsg.style.display = 'none'
+    const readyMsg = document.getElementById('nrOppReady')
+    if (readyMsg) readyMsg.style.display = 'flex'
+  }
+
+  // Both ready → proceed to next round
+  if (room[myReadyField] && room[oppReadyField]) {
+    closeNextRoundPopup()
+    proceedNextRound()
+  }
+
+  if (room.status === 'abandoned') {
+    showToast('Opponent left the game')
+    closeNextRoundPopup()
+    setTimeout(goHome, 2000)
+  }
 }
 
 async function resolveRound(myMove, oppMove) {
-  // Animate opp gesture
+  await sleep(300)
+
+  // Reveal opponent gesture with animation
   const oppEl = document.getElementById('oppGesture')
   let ticks = 0
   const think = setInterval(() => { oppEl.textContent = GESTURES[GESTURE_NAMES[ticks % 3]]; ticks++ }, 100)
-  await sleep(500)
+  await sleep(600)
   clearInterval(think)
   oppEl.textContent = GESTURES[oppMove]
   oppEl.classList.add('bounce')
   setTimeout(() => oppEl.classList.remove('bounce'), 400)
-  await sleep(200)
+  await sleep(300)
 
   const result = getResult(myMove, oppMove)
   const resultEl = document.getElementById('roundResult')
 
+  let resultLabel = ''
   if (result === 'win') {
     resultEl.textContent = 'ROUND WIN! 🎉'
     resultEl.className = 'round-result win'
     scores.me++
-    roundHistory.push('win')
+    roundHistory.push({ result: 'win', myMove, oppMove })
+    resultLabel = 'WIN'
   } else if (result === 'lose') {
     resultEl.textContent = 'ROUND LOST 😈'
     resultEl.className = 'round-result lose'
     scores.opp++
-    roundHistory.push('lose')
+    roundHistory.push({ result: 'lose', myMove, oppMove })
+    resultLabel = 'LOSE'
   } else {
     resultEl.textContent = 'DRAW 🤝'
     resultEl.className = 'round-result draw'
-    roundHistory.push('draw')
+    roundHistory.push({ result: 'draw', myMove, oppMove })
+    resultLabel = 'DRAW'
   }
 
   updateScoreDisplay()
   currentRound++
   updateRoundTracker()
   document.getElementById('opponentStatus').textContent = ''
+  lockedGesture = null
 
-  // Check if game over
-  const maxWins = Math.ceil(TOTAL_ROUNDS / 2) // 3 wins = game over early
-  if (scores.me >= maxWins || scores.opp >= maxWins || currentRound >= TOTAL_ROUNDS) {
-    await sleep(800)
+  await sleep(600)
+
+  // After last round → show final
+  if (currentRound >= TOTAL_ROUNDS) {
     showFinalResult()
     return
   }
 
+  // Show next round popup
+  showNextRoundPopup(result, myMove, oppMove, resultLabel)
+}
+
+// ── NEXT ROUND POPUP ──────────────────────────────────────
+function showNextRoundPopup(result, myMove, oppMove, resultLabel) {
+  const overlay = document.createElement('div')
+  overlay.className = 'next-round-overlay'
+  overlay.id = 'nextRoundOverlay'
+
+  overlay.innerHTML = `
+    <div class="next-round-popup">
+      <div class="nr-round-badge">ROUND ${currentRound} COMPLETE</div>
+
+      <div class="nr-result-big ${result}">${resultLabel === 'WIN' ? 'YOU WIN! 🎉' : resultLabel === 'LOSE' ? 'YOU LOSE 😈' : "DRAW 🤝"}</div>
+
+      <div class="nr-gestures">
+        <span title="Your move">${GESTURES[myMove]}</span>
+        <span class="nr-vs">VS</span>
+        <span title="Opponent move">${GESTURES[oppMove]}</span>
+      </div>
+
+      <div class="nr-score">
+        <span class="me">${scores.me}</span>
+        <span class="sep">:</span>
+        <span class="opp">${scores.opp}</span>
+      </div>
+
+      <div class="nr-question">Move to Round ${currentRound + 1}?</div>
+
+      <div class="nr-waiting" id="nrWaitMsg" style="display:none;">
+        <span>Waiting for opponent</span>
+        <div class="nr-waiting-dots"><span></span><span></span><span></span></div>
+      </div>
+
+      <div class="nr-waiting" id="nrOppReady" style="display:none;">
+        ✅ Opponent is ready!
+      </div>
+
+      <button class="nr-yes-btn" id="nrYesBtn" onclick="confirmNextRound()">
+        ✅ READY FOR NEXT ROUND
+      </button>
+    </div>
+  `
+
+  document.body.appendChild(overlay)
+}
+
+async function confirmNextRound() {
+  const btn = document.getElementById('nrYesBtn')
+  btn.disabled = true
+  btn.textContent = '⏳ Waiting...'
+
+  document.getElementById('nrWaitMsg').style.display = 'flex'
+
+  // Set my ready flag
+  const readyData = {}
+  readyData[isPlayer1 ? 'p1_ready' : 'p2_ready'] = true
+  await db.from('game_rooms').update(readyData).eq('id', currentRoomId)
+
+  // Check if opponent already ready
+  const { data: room } = await db.from('game_rooms').select('*').eq('id', currentRoomId).single()
+  const oppReadyField = isPlayer1 ? 'p2_ready' : 'p1_ready'
+  if (room[oppReadyField]) {
+    closeNextRoundPopup()
+    proceedNextRound()
+  }
+}
+
+function closeNextRoundPopup() {
+  const overlay = document.getElementById('nextRoundOverlay')
+  if (overlay) overlay.remove()
+}
+
+async function proceedNextRound() {
   isPlaying = false
+  roundResolving = false
+  myMoveForRound = null
+  opponentMoveForRound = null
+  document.getElementById('yourGesture').textContent = '🤔'
+  document.getElementById('oppGesture').textContent = '🤔'
+  document.getElementById('roundResult').textContent = ''
   document.getElementById('playBtn').disabled = false
   updatePlayBtn()
 }
@@ -1024,15 +1318,17 @@ function showFinalResult() {
 
   // Round history
   const list = document.getElementById('roundHistoryList')
-  list.innerHTML = roundHistory.map((r, i) => {
-    const myGesture = '?' // stored if needed
-    return `
-      <div class="round-history-row">
-        <span class="rh-round">ROUND ${i+1}</span>
-        <span class="rh-result ${r}">${r === 'win' ? '✅ WIN' : r === 'lose' ? '❌ LOSE' : '🤝 DRAW'}</span>
+  list.innerHTML = roundHistory.map((r, i) => `
+    <div class="round-history-row">
+      <span class="rh-round">ROUND ${i+1}</span>
+      <div class="rh-gestures">
+        <span>${GESTURES[r.myMove] || '?'}</span>
+        <span style="font-size:12px;color:var(--muted);">vs</span>
+        <span>${GESTURES[r.oppMove] || '?'}</span>
       </div>
-    `
-  }).join('')
+      <span class="rh-result ${r.result}">${r.result === 'win' ? '✅ WIN' : r.result === 'lose' ? '❌ LOSE' : '🤝 DRAW'}</span>
+    </div>
+  `).join('')
 
   showScreen('finalScreen')
 }
@@ -1065,15 +1361,21 @@ function goHome() {
 }
 
 async function playAgain() {
-  // Reset room
   if (currentRoomId) {
     await db.from('game_rooms').update({
-      player1_move: null, player2_move: null, status: 'active'
+      player1_move: null, player2_move: null,
+      p1_ready: false, p2_ready: false,
+      status: 'active'
     }).eq('id', currentRoomId)
   }
   currentRound = 0
   scores = { me: 0, opp: 0 }
   roundHistory = []
+  lockedGesture = null
+  roundResolving = false
+  isPlaying = false
+  myMoveForRound = null
+  opponentMoveForRound = null
   updateRoundTracker()
   updateScoreDisplay()
   document.getElementById('yourGesture').textContent = '🤔'
@@ -1184,41 +1486,6 @@ window.addEventListener('beforeunload', () => {
   if (currentRoomId) db.from('game_rooms').update({ status: 'abandoned' }).eq('id', currentRoomId)
   db.from('matchmaking_queue').delete().eq('user_id', myUserId)
 })
-function showInfo() {
-  const existing = document.getElementById('infoPopup')
-  if (existing) { existing.remove(); return }
-
-  const popup = document.createElement('div')
-  popup.id = 'infoPopup'
-  popup.style = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px;'
-  popup.innerHTML = `
-    <div style="background:#141428;border:1px solid #1e1e3a;border-radius:24px;padding:24px;max-width:320px;width:100%;">
-      <div style="font-family:Black Han Sans,sans-serif;font-size:20px;letter-spacing:2px;color:#00e5ff;margin-bottom:16px;text-align:center;">HOW TO PLAY</div>
-      <div style="display:flex;flex-direction:column;gap:14px;">
-        <div style="display:flex;gap:12px;align-items:flex-start;">
-          <span style="font-size:24px;flex-shrink:0;">🤚</span>
-          <span style="font-size:13px;color:#a0a0c0;line-height:1.5;">Show your hand gesture to the camera <b style="color:white;">before</b> pressing PLAY. Whatever gesture is detected when the round ends — that's your move.</span>
-        </div>
-        <div style="display:flex;gap:12px;align-items:flex-start;">
-          <span style="font-size:24px;flex-shrink:0;">🔄</span>
-          <span style="font-size:13px;color:#a0a0c0;line-height:1.5;">You can use a <b style="color:white;">different gesture</b> each round!</span>
-        </div>
-        <div style="display:flex;gap:12px;align-items:flex-start;">
-          <span style="font-size:24px;flex-shrink:0;">🏆</span>
-          <span style="font-size:13px;color:#a0a0c0;line-height:1.5;">First to win <b style="color:white;">3 rounds</b> wins the match. Best of 5!</span>
-        </div>
-        <div style="background:#0f0f1e;border-radius:14px;padding:12px;display:flex;justify-content:space-around;">
-          <div style="text-align:center;"><div style="font-size:28px;">✊</div><div style="font-size:11px;color:#5a5a8a;margin-top:4px;">ROCK</div></div>
-          <div style="text-align:center;"><div style="font-size:28px;">🖐</div><div style="font-size:11px;color:#5a5a8a;margin-top:4px;">PAPER</div></div>
-          <div style="text-align:center;"><div style="font-size:28px;">✌️</div><div style="font-size:11px;color:#5a5a8a;margin-top:4px;">SCISSORS</div></div>
-        </div>
-      </div>
-      <button onclick="document.getElementById('infoPopup').remove()" style="width:100%;margin-top:18px;padding:12px;background:#1e1e3a;border:none;border-radius:12px;color:#5a5a8a;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:1px;">GOT IT</button>
-    </div>
-  `
-  popup.addEventListener('click', e => { if (e.target === popup) popup.remove() })
-  document.body.appendChild(popup)
-}
 </script>
 </body>
 </html>
