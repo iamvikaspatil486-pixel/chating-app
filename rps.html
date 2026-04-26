@@ -855,7 +855,7 @@ function updateRoundTracker() {
     const dot = document.getElementById('rd' + i)
     dot.className = 'round-dot'
     if (i < roundHistory.length) {
-      const r = roundHistory[i]
+      const r = roundHistory[i].result
       if (r === 'win') dot.classList.add('win')
       else if (r === 'lose') dot.classList.add('lose')
       else dot.classList.add('draw')
@@ -1014,8 +1014,10 @@ function handleRoomUpdate(room) {
 }
 
 // ── ROUND ─────────────────────────────────────────────────
-let lockedGesture = null       // first-sign lock during countdown
-let roundResolving = false     // prevent double resolve
+let lockedGesture = null        // first-sign lock during countdown
+let roundResolving = false      // prevent double resolve
+let proceedingNextRound = false // prevent double proceedNextRound
+let countdownActive = false     // true only while countdown is running
 
 function updatePlayBtn() {
   document.getElementById('playBtn').textContent = `PLAY ROUND ${currentRound + 1}`
@@ -1031,9 +1033,11 @@ async function startRound() {
   if (isPlaying) return
   isPlaying = true
   roundResolving = false
+  proceedingNextRound = false
   myMoveForRound = null
   opponentMoveForRound = null
   lockedGesture = null
+  countdownActive = false
   document.getElementById('playBtn').disabled = true
   document.getElementById('roundResult').textContent = ''
   document.getElementById('yourGesture').textContent = '🤔'
@@ -1048,20 +1052,21 @@ async function startRound() {
     p2_ready: false
   }).eq('id', currentRoomId)
 
-  // Countdown — lock FIRST valid gesture detected
+  // Countdown — only lock gesture AFTER countdown starts
   const nums = ['3', '2', '1', 'GO!']
   const overlay = document.getElementById('countdownOverlay')
+
+  countdownActive = true // gesture locking now allowed
 
   for (let i = 0; i < nums.length; i++) {
     overlay.innerHTML = `<span class="count-num" style="color:${i===3?'#00ff88':'white'}">${nums[i]}</span>`
     overlay.classList.add('visible')
 
-    // During countdown, lock first valid gesture seen
+    // During 3, 2, 1 — lock first valid gesture seen
     if (i < 3) {
       const checkGesture = setInterval(() => {
-        if (!lockedGesture && currentGesture) {
+        if (countdownActive && !lockedGesture && currentGesture) {
           lockedGesture = currentGesture
-          // Show locked indicator
           const ind = document.getElementById('gestureIndicator')
           ind.textContent = '🔒 ' + GESTURES[lockedGesture] + ' LOCKED'
           ind.style.borderColor = 'var(--green)'
@@ -1078,16 +1083,35 @@ async function startRound() {
     await sleep(100)
   }
 
+  countdownActive = false // stop locking after GO!
+
   // Reset indicator style
   const ind = document.getElementById('gestureIndicator')
   ind.style.borderColor = ''
   ind.style.color = ''
 
-  // Use locked gesture or current or random fallback
-  const move = lockedGesture || currentGesture || GESTURE_NAMES[Math.floor(Math.random() * 3)]
+  // MUST have a gesture — no random fallback
+  if (!lockedGesture) {
+    // Show "not played" message and reset round
+    document.getElementById('roundResult').textContent = '⚠️ No gesture detected!'
+    document.getElementById('roundResult').className = 'round-result draw'
+    document.getElementById('opponentStatus').textContent = 'Show your hand next time!'
+    isPlaying = false
+    document.getElementById('playBtn').disabled = false
+    // Reset DB so opponent doesn't get stuck
+    await db.from('game_rooms').update({
+      player1_move: null,
+      player2_move: null,
+      p1_ready: false,
+      p2_ready: false
+    }).eq('id', currentRoomId)
+    return
+  }
+
+  const move = lockedGesture
   myMoveForRound = move
 
-  // Show MY gesture immediately
+  // Show MY gesture
   document.getElementById('yourGesture').textContent = GESTURES[move]
   document.getElementById('yourGesture').classList.add('bounce')
   setTimeout(() => document.getElementById('yourGesture').classList.remove('bounce'), 400)
@@ -1113,37 +1137,37 @@ async function startRound() {
 
 function handleRoomUpdate(room) {
   const oppMoveField = isPlayer1 ? 'player2_move' : 'player1_move'
+  const myMoveField  = isPlayer1 ? 'player1_move' : 'player2_move'
   const oppMove = room[oppMoveField]
-  const myMoveField = isPlayer1 ? 'player1_move' : 'player2_move'
-  const myMove = room[myMoveField]
+  const myMove  = room[myMoveField]
 
-  // Both moves submitted → reveal and resolve
-  if (oppMove && myMove && !opponentMoveForRound && !roundResolving) {
+  // Both moves submitted → reveal and resolve (only if we haven't started resolving)
+  if (oppMove && myMove && myMoveForRound && !roundResolving) {
     opponentMoveForRound = oppMove
     roundResolving = true
     resolveRound(myMove, oppMove)
     return
   }
 
-  // Opponent submitted but we haven't yet — just update status
+  // Opponent submitted but we haven't yet
   if (oppMove && !myMoveForRound) {
     document.getElementById('opponentStatus').textContent = '✅ Opponent locked in!'
   }
 
-  // Handle ready flags for next round handshake
-  const myReadyField = isPlayer1 ? 'p1_ready' : 'p2_ready'
+  // Ready flags for next round handshake
+  const myReadyField  = isPlayer1 ? 'p1_ready' : 'p2_ready'
   const oppReadyField = isPlayer1 ? 'p2_ready' : 'p1_ready'
 
   if (room[oppReadyField] && !room[myReadyField]) {
-    // Opponent is ready, update waiting popup
     const waitMsg = document.getElementById('nrWaitMsg')
     if (waitMsg) waitMsg.style.display = 'none'
     const readyMsg = document.getElementById('nrOppReady')
     if (readyMsg) readyMsg.style.display = 'flex'
   }
 
-  // Both ready → proceed to next round
-  if (room[myReadyField] && room[oppReadyField]) {
+  // Both ready → proceed — guarded by proceedingNextRound flag
+  if (room[myReadyField] && room[oppReadyField] && !proceedingNextRound) {
+    proceedingNextRound = true
     closeNextRoundPopup()
     proceedNextRound()
   }
@@ -1283,8 +1307,11 @@ function closeNextRoundPopup() {
 async function proceedNextRound() {
   isPlaying = false
   roundResolving = false
+  proceedingNextRound = false
+  countdownActive = false
   myMoveForRound = null
   opponentMoveForRound = null
+  lockedGesture = null
   document.getElementById('yourGesture').textContent = '🤔'
   document.getElementById('oppGesture').textContent = '🤔'
   document.getElementById('roundResult').textContent = ''
