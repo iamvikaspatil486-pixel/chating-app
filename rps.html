@@ -559,6 +559,8 @@
 <div class="header">
   <button class="back-btn" onclick="goBack()">←</button>
   <div class="header-title">RPS BATTLE</div>
+  
+<button onclick="showInfo()" style="background:var(--card);border:1px solid var(--border);color:var(--muted);width:36px;height:36px;border-radius:10px;font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;">ℹ</button>
   <div class="round-tracker" id="roundTracker">
     <div class="round-dot active" id="rd0"></div>
     <div class="round-dot" id="rd1"></div>
@@ -1182,6 +1184,41 @@ window.addEventListener('beforeunload', () => {
   if (currentRoomId) db.from('game_rooms').update({ status: 'abandoned' }).eq('id', currentRoomId)
   db.from('matchmaking_queue').delete().eq('user_id', myUserId)
 })
+function showInfo() {
+  const existing = document.getElementById('infoPopup')
+  if (existing) { existing.remove(); return }
+
+  const popup = document.createElement('div')
+  popup.id = 'infoPopup'
+  popup.style = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px;'
+  popup.innerHTML = `
+    <div style="background:#141428;border:1px solid #1e1e3a;border-radius:24px;padding:24px;max-width:320px;width:100%;">
+      <div style="font-family:Black Han Sans,sans-serif;font-size:20px;letter-spacing:2px;color:#00e5ff;margin-bottom:16px;text-align:center;">HOW TO PLAY</div>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <span style="font-size:24px;flex-shrink:0;">🤚</span>
+          <span style="font-size:13px;color:#a0a0c0;line-height:1.5;">Show your hand gesture to the camera <b style="color:white;">before</b> pressing PLAY. Whatever gesture is detected when the round ends — that's your move.</span>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <span style="font-size:24px;flex-shrink:0;">🔄</span>
+          <span style="font-size:13px;color:#a0a0c0;line-height:1.5;">You can use a <b style="color:white;">different gesture</b> each round!</span>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <span style="font-size:24px;flex-shrink:0;">🏆</span>
+          <span style="font-size:13px;color:#a0a0c0;line-height:1.5;">First to win <b style="color:white;">3 rounds</b> wins the match. Best of 5!</span>
+        </div>
+        <div style="background:#0f0f1e;border-radius:14px;padding:12px;display:flex;justify-content:space-around;">
+          <div style="text-align:center;"><div style="font-size:28px;">✊</div><div style="font-size:11px;color:#5a5a8a;margin-top:4px;">ROCK</div></div>
+          <div style="text-align:center;"><div style="font-size:28px;">🖐</div><div style="font-size:11px;color:#5a5a8a;margin-top:4px;">PAPER</div></div>
+          <div style="text-align:center;"><div style="font-size:28px;">✌️</div><div style="font-size:11px;color:#5a5a8a;margin-top:4px;">SCISSORS</div></div>
+        </div>
+      </div>
+      <button onclick="document.getElementById('infoPopup').remove()" style="width:100%;margin-top:18px;padding:12px;background:#1e1e3a;border:none;border-radius:12px;color:#5a5a8a;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:1px;">GOT IT</button>
+    </div>
+  `
+  popup.addEventListener('click', e => { if (e.target === popup) popup.remove() })
+  document.body.appendChild(popup)
+}
 </script>
 </body>
 </html>
