@@ -33,12 +33,12 @@
 
         <div>
           <input id="rollNo" type="text" placeholder="Roll Number" class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-cyan-400" required />
-          <p class="text-xs text-slate-500 mt-1 ml-1">You can update your roll number later.</p>
+          <p class="text-xs text-slate-500 mt-1 ml-1">Note: You can update your roll number later.</p>
         </div>
 
         <input id="email" type="email" placeholder="College Email" class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-cyan-400" required />
 
-        <button type="submit" id="sendLinkBtn" class="w-full py-3 rounded-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-900 shadow-lg transition">
+        <button type="submit" id="sendLinkBtn" class="w-full py-3 rounded-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-900 shadow-lg transition hover:opacity-90">
           Send Magic Link
         </button>
 
@@ -46,8 +46,11 @@
 
         <div id="checkEmailMsg" class="hidden text-center p-6 bg-slate-800/50 border border-slate-700 rounded-xl space-y-3">
           <div class="text-cyan-400 flex justify-center"><i data-lucide="mail" size="40"></i></div>
-          <h3 class="font-bold">Check your inbox!</h3>
-          <p class="text-sm text-slate-400">Click the link in your email. Once verified, this page will update automatically.</p>
+          <h3 class="font-bold">Check your email!</h3>
+          <p class="text-sm text-slate-400">We've sent a magic link to your inbox. Click it to verify. Once done, this page will move to Step 2.</p>
+          <div class="flex items-center justify-center space-x-2 text-cyan-400 text-xs">
+            <span class="animate-pulse">Waiting for verification...</span>
+          </div>
         </div>
       </form>
     </div>
@@ -55,7 +58,7 @@
     <div id="step2" class="space-y-6">
       <div class="text-center mb-8">
         <h1 class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-2">Batch Setup</h1>
-        <p class="text-slate-400 text-sm" id="welcomeBackMsg">Step 2: Security & Batch Info</p>
+        <p class="text-slate-400 text-sm">Step 2: Security & Batch Info</p>
       </div>
 
       <form id="batchDetailsForm" class="space-y-4">
@@ -92,35 +95,26 @@
 </div>
 
 <script>
-// --- GLOBAL STATE ---
 let userData = JSON.parse(localStorage.getItem('pendingUser')) || null;
 
 window.addEventListener('load', async () => {
   lucide.createIcons();
-  checkSession();
-});
-
-// Continuously check for session in case they verify in another tab
-const sessionInterval = setInterval(async () => {
-    const { data: { session } } = await db.auth.getSession();
-    if (session && userData) {
-        showStep2(session.user.email);
-        clearInterval(sessionInterval);
+  
+  // Listen for the auth state change (happens when they click the email link)
+  db.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_IN' && userData) {
+      document.getElementById("step1").classList.add("hidden");
+      document.getElementById("step2").classList.add("active");
     }
-}, 3000);
+  });
 
-async function checkSession() {
+  // Initial check in case they were already signed in
   const { data: { session } } = await db.auth.getSession();
   if (session && userData) {
-    showStep2(session.user.email);
-  }
-}
-
-function showStep2(email) {
     document.getElementById("step1").classList.add("hidden");
     document.getElementById("step2").classList.add("active");
-    document.getElementById("welcomeBackMsg").innerText = `Email verified: ${email}. Complete your batch setup below.`;
-}
+  }
+});
 
 function togglePassword(id) {
   const input = document.getElementById(id);
@@ -142,18 +136,17 @@ document.getElementById("personalDetailsForm").addEventListener("submit", async 
   const email = document.getElementById("email").value.trim();
 
   errorDiv.classList.add("hidden");
-  btn.innerText = "Sending Link...";
+  btn.innerText = "Sending...";
   btn.disabled = true;
 
   try {
-    // Store user data so we remember them when they come back
     userData = { name, rollNo, email };
     localStorage.setItem('pendingUser', JSON.stringify(userData));
 
     const { error } = await db.auth.signInWithOtp({ 
       email: email,
       options: {
-        // Change this to your verify.html path
+        // This MUST be the URL of your site (or the verify.html)
         emailRedirectTo: window.location.origin + '/verify.html' 
       }
     });
@@ -170,7 +163,7 @@ document.getElementById("personalDetailsForm").addEventListener("submit", async 
   }
 });
 
-// --- STEP 2: COMPLETE REGISTRATION ---
+// --- STEP 2: FINALIZE REGISTRATION ---
 document.getElementById("batchDetailsForm").addEventListener("submit", async (e) => {
   e.preventDefault();
   const pass = document.getElementById("password").value;
@@ -184,20 +177,19 @@ document.getElementById("batchDetailsForm").addEventListener("submit", async (e)
   }
 
   const btn = document.getElementById("createBatchBtn");
-  btn.innerText = "Saving...";
+  btn.innerText = "Finishing...";
   btn.disabled = true;
 
   try {
     const { data: { user } } = await db.auth.getUser();
-    if (!user) throw new Error("Session not found. Try refreshing.");
+    if (!user) throw new Error("Verification session not found.");
 
     // Update password
-    const { error: passError } = await db.auth.updateUser({ password: pass });
-    if (passError) throw passError;
+    await db.auth.updateUser({ password: pass });
 
     const batchCode = Math.random().toString(36).substring(2, 8).toUpperCase();
 
-    // profile
+    // Student profile
     await db.from("students").insert([{
       id: user.id,
       full_name: userData.name,
@@ -206,7 +198,7 @@ document.getElementById("batchDetailsForm").addEventListener("submit", async (e)
       is_approved: true 
     }]);
 
-    // batch
+    // Batch creation
     await db.from("batches").insert([{
       batch_name: document.getElementById("batchName").value,
       college_name: document.getElementById("collegeName").value,
