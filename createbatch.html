@@ -29,35 +29,32 @@
       </div>
 
       <form id="personalDetailsForm" class="space-y-4">
-        <input id="fullName" type="text" placeholder="Full Name" class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400" required />
+        <input id="fullName" type="text" placeholder="Full Name" class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-cyan-400" required />
 
         <div>
-          <input id="rollNo" type="text" placeholder="Roll Number" class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400" required />
-          <p class="text-xs text-slate-500 mt-1 ml-1">You can update your roll number later in settings.</p>
+          <input id="rollNo" type="text" placeholder="Roll Number" class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-cyan-400" required />
+          <p class="text-xs text-slate-500 mt-1 ml-1">You can update your roll number later.</p>
         </div>
 
-        <input id="email" type="email" placeholder="Email" class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400" required />
+        <input id="email" type="email" placeholder="College Email" class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-cyan-400" required />
 
-        <button type="submit" id="sendLinkBtn" class="w-full py-3 rounded-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-900 shadow-lg hover:shadow-xl transition">
-          Send Verification Link
+        <button type="submit" id="sendLinkBtn" class="w-full py-3 rounded-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-900 shadow-lg transition">
+          Send Magic Link
         </button>
 
         <div id="step1-error" class="hidden px-4 py-3 bg-red-900/30 border border-red-700 rounded-lg text-red-300 text-sm"></div>
 
         <div id="checkEmailMsg" class="hidden text-center p-6 bg-slate-800/50 border border-slate-700 rounded-xl space-y-3">
           <div class="text-cyan-400 flex justify-center"><i data-lucide="mail" size="40"></i></div>
-          <h3 class="font-bold">Check your email!</h3>
-          <p class="text-sm text-slate-400">We've sent a magic link to your inbox. Click the link to verify and continue creating your batch.</p>
-          <p class="text-xs text-slate-500 italic">Note: Keep this tab open or return here after clicking the link.</p>
+          <h3 class="font-bold">Check your inbox!</h3>
+          <p class="text-sm text-slate-400">We've sent a magic link to your email. Click it to continue.</p>
         </div>
       </form>
     </div>
 
     <div id="step2" class="space-y-6">
       <div class="text-center mb-8">
-        <h1 class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-2">
-          Batch Setup
-        </h1>
+        <h1 class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-2">Batch Setup</h1>
         <p class="text-slate-400 text-sm">Step 2: Security & Batch Info</p>
       </div>
 
@@ -75,10 +72,7 @@
           <button type="button" onclick="togglePassword('confirmPassword')" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400"><i id="confirmPassword-icon" data-lucide="eye"></i></button>
         </div>
 
-        <button type="submit" id="createBatchBtn" class="w-full py-3 rounded-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-900 shadow-lg transition">
-          Complete Registration
-        </button>
-
+        <button type="submit" id="createBatchBtn" class="w-full py-3 rounded-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-900 shadow-lg">Complete Registration</button>
         <div id="step2-error" class="hidden px-4 py-3 bg-red-900/30 border border-red-700 rounded-lg text-red-300 text-sm"></div>
       </form>
     </div>
@@ -87,31 +81,25 @@
       <div class="text-5xl">🎉</div>
       <h2 class="text-2xl font-bold text-cyan-400">Batch Created!</h2>
       <div class="bg-slate-800 border border-slate-700 rounded-lg p-6 space-y-3">
-        <p class="text-slate-400 text-sm">Share this code with students:</p>
-        <p class="text-4xl font-mono font-bold text-white tracking-widest" id="batchCodeDisplay"></p>
-        <button onclick="copyBatchCode()" id="copyBtn" class="w-full py-2 text-sm bg-cyan-500/10 text-cyan-400 rounded-lg border border-cyan-500/20 hover:bg-cyan-500/20 transition">
-          Copy Batch Code
-        </button>
+        <p class="text-slate-400 text-sm text-center">Batch Code:</p>
+        <p class="text-4xl font-mono font-bold text-white tracking-widest text-center" id="batchCodeDisplay"></p>
+        <button onclick="copyBatchCode()" id="copyBtn" class="w-full py-2 text-sm bg-cyan-500/10 text-cyan-400 rounded-lg border border-cyan-500/20 hover:bg-cyan-500/20 transition">Copy Code</button>
       </div>
-      <button onclick="goHome()" class="w-full py-3 rounded-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-900">
-        Enter Dashboard
-      </button>
+      <button onclick="goHome()" class="w-full py-3 rounded-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-900">Go Home</button>
     </div>
 
   </div>
 </div>
 
 <script>
-// Load saved user data if returning from email link
 let userData = JSON.parse(localStorage.getItem('pendingUser')) || { name: '', rollNo: '', email: '' };
 
 window.addEventListener('load', async () => {
   lucide.createIcons();
   
-  // Check if we just returned from a Magic Link click
+  // Check if we returned with a session
   const { data: { session } } = await db.auth.getSession();
-  if (session && userData.email === session.user.email) {
-    // If logged in via link, skip to Step 2
+  if (session) {
     document.getElementById("step1").classList.add("hidden");
     document.getElementById("step2").classList.add("active");
   }
@@ -137,23 +125,17 @@ document.getElementById("personalDetailsForm").addEventListener("submit", async 
   const email = document.getElementById("email").value.trim();
 
   errorDiv.classList.add("hidden");
-  btn.innerText = "Sending Link...";
+  btn.innerText = "Processing...";
   btn.disabled = true;
 
   try {
-    // Check if user exists in DB
-    const { data: existing } = await db.from("students").select("email").eq("email", email).maybeSingle();
-    if (existing) throw new Error("Email already registered");
-
-    // Save data to localStorage so it's there when they come back from email
     userData = { name, rollNo, email };
     localStorage.setItem('pendingUser', JSON.stringify(userData));
 
     const { error } = await db.auth.signInWithOtp({ 
       email: email,
       options: {
-        // Redirect back to this exact page
-        emailRedirectTo: window.location.href 
+        emailRedirectTo: window.location.href // Redirects back here
       }
     });
     
@@ -164,8 +146,8 @@ document.getElementById("personalDetailsForm").addEventListener("submit", async 
   } catch (err) {
     errorDiv.textContent = err.message;
     errorDiv.classList.remove("hidden");
-    btn.innerText = "Send Verification Link";
     btn.disabled = false;
+    btn.innerText = "Send Magic Link";
   }
 });
 
@@ -183,39 +165,36 @@ document.getElementById("batchDetailsForm").addEventListener("submit", async (e)
   }
 
   const btn = document.getElementById("createBatchBtn");
-  btn.innerText = "Finalizing...";
+  btn.innerText = "Finishing...";
   btn.disabled = true;
 
   try {
     const { data: { user } } = await db.auth.getUser();
-    if (!user) throw new Error("Session expired. Please start again.");
+    if (!user) throw new Error("Please check your email and click the link first!");
 
-    // Update the user's password (since Magic Link sign-in has no password initially)
+    // Update password
     const { error: passError } = await db.auth.updateUser({ password: pass });
     if (passError) throw passError;
 
     const batchCode = Math.random().toString(36).substring(2, 8).toUpperCase();
 
-    // Insert Student Profile
-    const { error: profileErr } = await db.from("students").insert([{
+    // Profile insert
+    await db.from("students").insert([{
       id: user.id,
       full_name: userData.name,
       roll_no: userData.rollNo,
       email: user.email,
       is_approved: true 
     }]);
-    if (profileErr) throw profileErr;
 
-    // Insert Batch
-    const { error: batchErr } = await db.from("batches").insert([{
+    // Batch insert
+    await db.from("batches").insert([{
       batch_name: document.getElementById("batchName").value,
       college_name: document.getElementById("collegeName").value,
       batch_code: batchCode,
       created_by: user.id
     }]);
-    if (batchErr) throw batchErr;
 
-    // Cleanup and show success
     localStorage.removeItem('pendingUser');
     document.getElementById("step2").classList.remove("active");
     document.getElementById("step3").classList.remove("hidden");
