@@ -47,7 +47,7 @@
         <div id="checkEmailMsg" class="hidden text-center p-6 bg-slate-800/50 border border-slate-700 rounded-xl space-y-3">
           <div class="text-cyan-400 flex justify-center"><i data-lucide="mail" size="40"></i></div>
           <h3 class="font-bold">Check your inbox!</h3>
-          <p class="text-sm text-slate-400">We've sent a magic link to your email. Click it to continue.</p>
+          <p class="text-sm text-slate-400">Click the link in your email. Once verified, this page will update automatically.</p>
         </div>
       </form>
     </div>
@@ -55,7 +55,7 @@
     <div id="step2" class="space-y-6">
       <div class="text-center mb-8">
         <h1 class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-2">Batch Setup</h1>
-        <p class="text-slate-400 text-sm">Step 2: Security & Batch Info</p>
+        <p class="text-slate-400 text-sm" id="welcomeBackMsg">Step 2: Security & Batch Info</p>
       </div>
 
       <form id="batchDetailsForm" class="space-y-4">
@@ -92,18 +92,35 @@
 </div>
 
 <script>
-let userData = JSON.parse(localStorage.getItem('pendingUser')) || { name: '', rollNo: '', email: '' };
+// --- GLOBAL STATE ---
+let userData = JSON.parse(localStorage.getItem('pendingUser')) || null;
 
 window.addEventListener('load', async () => {
   lucide.createIcons();
-  
-  // Check if we returned with a session
+  checkSession();
+});
+
+// Continuously check for session in case they verify in another tab
+const sessionInterval = setInterval(async () => {
+    const { data: { session } } = await db.auth.getSession();
+    if (session && userData) {
+        showStep2(session.user.email);
+        clearInterval(sessionInterval);
+    }
+}, 3000);
+
+async function checkSession() {
   const { data: { session } } = await db.auth.getSession();
-  if (session) {
+  if (session && userData) {
+    showStep2(session.user.email);
+  }
+}
+
+function showStep2(email) {
     document.getElementById("step1").classList.add("hidden");
     document.getElementById("step2").classList.add("active");
-  }
-});
+    document.getElementById("welcomeBackMsg").innerText = `Email verified: ${email}. Complete your batch setup below.`;
+}
 
 function togglePassword(id) {
   const input = document.getElementById(id);
@@ -125,17 +142,19 @@ document.getElementById("personalDetailsForm").addEventListener("submit", async 
   const email = document.getElementById("email").value.trim();
 
   errorDiv.classList.add("hidden");
-  btn.innerText = "Processing...";
+  btn.innerText = "Sending Link...";
   btn.disabled = true;
 
   try {
+    // Store user data so we remember them when they come back
     userData = { name, rollNo, email };
     localStorage.setItem('pendingUser', JSON.stringify(userData));
 
     const { error } = await db.auth.signInWithOtp({ 
       email: email,
       options: {
-        emailRedirectTo: window.location.href // Redirects back here
+        // Change this to your verify.html path
+        emailRedirectTo: window.location.origin + '/verify.html' 
       }
     });
     
@@ -151,7 +170,7 @@ document.getElementById("personalDetailsForm").addEventListener("submit", async 
   }
 });
 
-// --- STEP 2: COMPLETE BATCH DETAILS ---
+// --- STEP 2: COMPLETE REGISTRATION ---
 document.getElementById("batchDetailsForm").addEventListener("submit", async (e) => {
   e.preventDefault();
   const pass = document.getElementById("password").value;
@@ -165,12 +184,12 @@ document.getElementById("batchDetailsForm").addEventListener("submit", async (e)
   }
 
   const btn = document.getElementById("createBatchBtn");
-  btn.innerText = "Finishing...";
+  btn.innerText = "Saving...";
   btn.disabled = true;
 
   try {
     const { data: { user } } = await db.auth.getUser();
-    if (!user) throw new Error("Please check your email and click the link first!");
+    if (!user) throw new Error("Session not found. Try refreshing.");
 
     // Update password
     const { error: passError } = await db.auth.updateUser({ password: pass });
@@ -178,7 +197,7 @@ document.getElementById("batchDetailsForm").addEventListener("submit", async (e)
 
     const batchCode = Math.random().toString(36).substring(2, 8).toUpperCase();
 
-    // Profile insert
+    // profile
     await db.from("students").insert([{
       id: user.id,
       full_name: userData.name,
@@ -187,7 +206,7 @@ document.getElementById("batchDetailsForm").addEventListener("submit", async (e)
       is_approved: true 
     }]);
 
-    // Batch insert
+    // batch
     await db.from("batches").insert([{
       batch_name: document.getElementById("batchName").value,
       college_name: document.getElementById("collegeName").value,
