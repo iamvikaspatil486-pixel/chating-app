@@ -17,164 +17,84 @@
 </head>
 <body class="bg-slate-900 text-white">
 
-<!-- ── CONTAINER ── -->
 <div class="min-h-screen flex items-center justify-center px-6 py-12">
   <div class="w-full max-w-md">
 
-    <!-- ── STEP 1: EMAIL VERIFICATION ── -->
     <div id="step1" class="space-y-6">
       <div class="text-center mb-8">
         <h1 class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-2">
           Create Your Batch
         </h1>
-        <p class="text-slate-400 text-sm">Step 1: Email Verification</p>
+        <p class="text-slate-400 text-sm">Step 1: Your Information</p>
       </div>
 
-      <form id="emailVerificationForm" class="space-y-4">
-        <input
-          id="email"
-          type="email"
-          placeholder="Enter your email"
-          class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
-          required
-        />
+      <form id="personalDetailsForm" class="space-y-4">
+        <input id="fullName" type="text" placeholder="Full Name" class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400" required />
 
-        <button
-          type="submit"
-          id="sendVerifyBtn"
-          class="w-full py-3 rounded-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-900 shadow-lg hover:shadow-xl transition">
-          Send Verification Code
+        <div>
+          <input id="rollNo" type="text" placeholder="Roll Number" class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400" required />
+          <p class="text-xs text-slate-500 mt-1 ml-1">You can update your roll number later in settings.</p>
+        </div>
+
+        <input id="email" type="email" placeholder="College Email" class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400" required />
+
+        <button type="submit" id="sendLinkBtn" class="w-full py-3 rounded-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-900 shadow-lg hover:shadow-xl transition">
+          Send Verification Link
         </button>
 
         <div id="step1-error" class="hidden px-4 py-3 bg-red-900/30 border border-red-700 rounded-lg text-red-300 text-sm"></div>
 
-        <!-- Verification Code Input (shown after sending) -->
-        <div id="verifyCodeSection" class="hidden space-y-4 mt-6 pt-6 border-t border-slate-700">
-          <p class="text-slate-400 text-sm text-center">Check your email for the verification code</p>
-          
-          <input
-            id="verifyCode"
-            type="text"
-            placeholder="Enter 6-digit code"
-            maxlength="6"
-            class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 text-center text-2xl tracking-widest"
-          />
-
-          <button
-            type="button"
-            onclick="verifyEmail()"
-            id="verifyBtn"
-            class="w-full py-3 rounded-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-900 shadow-lg hover:shadow-xl transition">
-            Verify & Continue
-          </button>
-
-          <button
-            type="button"
-            onclick="resendCode()"
-            class="w-full py-3 rounded-xl font-bold bg-slate-800 border border-slate-700 text-slate-400 hover:bg-slate-700">
-            Resend Code
-          </button>
+        <div id="checkEmailMsg" class="hidden text-center p-6 bg-slate-800/50 border border-slate-700 rounded-xl space-y-3">
+          <div class="text-cyan-400 flex justify-center"><i data-lucide="mail" size="40"></i></div>
+          <h3 class="font-bold">Check your email!</h3>
+          <p class="text-sm text-slate-400">We've sent a magic link to your inbox. Click the link to verify and continue creating your batch.</p>
+          <p class="text-xs text-slate-500 italic">Note: Keep this tab open or return here after clicking the link.</p>
         </div>
       </form>
     </div>
 
-    <!-- ── STEP 2: BATCH DETAILS ── -->
     <div id="step2" class="space-y-6">
       <div class="text-center mb-8">
         <h1 class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-2">
-          Create Your Batch
+          Batch Setup
         </h1>
-        <p class="text-slate-400 text-sm">Step 2: Batch Details</p>
+        <p class="text-slate-400 text-sm">Step 2: Security & Batch Info</p>
       </div>
 
       <form id="batchDetailsForm" class="space-y-4">
-        <!-- College Name -->
-        <input
-          id="collegeName"
-          type="text"
-          placeholder="College Name"
-          class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
-          required
-        />
+        <input id="collegeName" type="text" placeholder="College Name" class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-cyan-400" required />
+        <input id="batchName" type="text" placeholder="Batch Name (e.g., CSE 2024)" class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-cyan-400" required />
 
-        <!-- Batch Name -->
-        <input
-          id="batchName"
-          type="text"
-          placeholder="Batch Name (e.g., CSE 2024)"
-          class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
-          required
-        />
-
-        <!-- Batch Password -->
         <div class="relative">
-          <input
-            id="batchPassword"
-            type="password"
-            placeholder="Set Batch Password"
-            class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 pr-12"
-            required
-          />
-          <button
-            type="button"
-            onclick="togglePassword('batchPassword')"
-            class="absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-cyan-400">
-            <i id="batchPassword-icon" data-lucide="eye" width="20" height="20"></i>
-          </button>
+          <input id="password" type="password" placeholder="Set Password" class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-cyan-400 pr-12" required />
+          <button type="button" onclick="togglePassword('password')" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400"><i id="password-icon" data-lucide="eye"></i></button>
         </div>
 
-        <!-- Confirm Batch Password -->
         <div class="relative">
-          <input
-            id="confirmBatchPassword"
-            type="password"
-            placeholder="Confirm Batch Password"
-            class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 pr-12"
-            required
-          />
-          <button
-            type="button"
-            onclick="togglePassword('confirmBatchPassword')"
-            class="absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-cyan-400">
-            <i id="confirmBatchPassword-icon" data-lucide="eye" width="20" height="20"></i>
-          </button>
+          <input id="confirmPassword" type="password" placeholder="Confirm Password" class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-cyan-400 pr-12" required />
+          <button type="button" onclick="togglePassword('confirmPassword')" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400"><i id="confirmPassword-icon" data-lucide="eye"></i></button>
         </div>
 
-        <button
-          type="submit"
-          id="createBatchBtn"
-          class="w-full py-3 rounded-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-900 shadow-lg hover:shadow-xl transition">
-          Create Batch
+        <button type="submit" id="createBatchBtn" class="w-full py-3 rounded-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-900 shadow-lg transition">
+          Complete Registration
         </button>
 
         <div id="step2-error" class="hidden px-4 py-3 bg-red-900/30 border border-red-700 rounded-lg text-red-300 text-sm"></div>
       </form>
-
-      <button
-        onclick="prevStep()"
-        class="w-full py-3 rounded-xl font-bold bg-slate-800 border border-slate-700 text-slate-400 hover:bg-slate-700">
-        Back
-      </button>
     </div>
 
-    <!-- ── STEP 3: SUCCESS ── -->
     <div id="step3" class="hidden text-center space-y-6">
-      <div class="text-5xl">✅</div>
-      <h2 class="text-2xl font-bold">Batch Created!</h2>
-      <div class="bg-slate-800 border border-slate-700 rounded-lg p-4 text-left space-y-2">
-        <p class="text-slate-400 text-sm">Share this code with students to join:</p>
-        <p class="text-2xl font-mono font-bold text-cyan-400 text-center" id="batchCodeDisplay"></p>
-        <button
-          onclick="copyBatchCode()"
-          class="w-full py-2 text-sm bg-slate-700 hover:bg-slate-600 rounded text-cyan-400">
-          Copy Code
+      <div class="text-5xl">🎉</div>
+      <h2 class="text-2xl font-bold text-cyan-400">Batch Created!</h2>
+      <div class="bg-slate-800 border border-slate-700 rounded-lg p-6 space-y-3">
+        <p class="text-slate-400 text-sm">Share this code with students:</p>
+        <p class="text-4xl font-mono font-bold text-white tracking-widest" id="batchCodeDisplay"></p>
+        <button onclick="copyBatchCode()" id="copyBtn" class="w-full py-2 text-sm bg-cyan-500/10 text-cyan-400 rounded-lg border border-cyan-500/20 hover:bg-cyan-500/20 transition">
+          Copy Batch Code
         </button>
       </div>
-
-      <button
-        onclick="goHome()"
-        class="w-full py-3 rounded-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-900 shadow-lg hover:shadow-xl transition">
-        Go to Home
+      <button onclick="goHome()" class="w-full py-3 rounded-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-900">
+        Enter Dashboard
       </button>
     </div>
 
@@ -182,293 +102,141 @@
 </div>
 
 <script>
+// Load saved user data if returning from email link
+let userData = JSON.parse(localStorage.getItem('pendingUser')) || { name: '', rollNo: '', email: '' };
 
-// ── Check if already logged in ──
 window.addEventListener('load', async () => {
-  const { data } = await db.auth.getSession();
-  if (data.session) {
-    window.location.href = 'home.html';
-  }
   lucide.createIcons();
+  
+  // Check if we just returned from a Magic Link click
+  const { data: { session } } = await db.auth.getSession();
+  if (session && userData.email === session.user.email) {
+    // If logged in via link, skip to Step 2
+    document.getElementById("step1").classList.add("hidden");
+    document.getElementById("step2").classList.add("active");
+  }
 });
 
-let verifiedEmail = null;
-let verificationSent = false;
-
-// ── STEP NAVIGATION ──
-function nextStep() {
-  document.getElementById("step1").classList.remove("active");
-  document.getElementById("step2").classList.add("active");
-}
-
-function prevStep() {
-  document.getElementById("step2").classList.remove("active");
-  document.getElementById("step1").classList.add("active");
-}
-
-// ── PASSWORD VISIBILITY ──
 function togglePassword(id) {
   const input = document.getElementById(id);
   const icon = document.getElementById(id + "-icon");
-
-  if (input.type === "password") {
-    input.type = "text";
-    icon.setAttribute("data-lucide", "eye-off");
-  } else {
-    input.type = "password";
-    icon.setAttribute("data-lucide", "eye");
-  }
-
+  const isPass = input.type === "password";
+  input.type = isPass ? "text" : "password";
+  icon.setAttribute("data-lucide", isPass ? "eye-off" : "eye");
   lucide.createIcons();
 }
 
-// ── SEND VERIFICATION CODE ──
-document.getElementById("emailVerificationForm").addEventListener("submit", async (e) => {
+// --- STEP 1: SEND MAGIC LINK ---
+document.getElementById("personalDetailsForm").addEventListener("submit", async (e) => {
   e.preventDefault();
-
-  const email = document.getElementById("email").value.trim();
   const errorDiv = document.getElementById("step1-error");
-  const btn = document.getElementById("sendVerifyBtn");
+  const btn = document.getElementById("sendLinkBtn");
+  
+  const name = document.getElementById("fullName").value.trim();
+  const rollNo = document.getElementById("rollNo").value.trim();
+  const email = document.getElementById("email").value.trim();
 
   errorDiv.classList.add("hidden");
-
-  if (!email) {
-    errorDiv.textContent = "Email is required";
-    errorDiv.classList.remove("hidden");
-    return;
-  }
-
-  btn.innerText = "Sending...";
+  btn.innerText = "Sending Link...";
   btn.disabled = true;
 
   try {
-    // Check if email already exists
-    const { data: existing } = await db
-      .from("students")
-      .select("email")
-      .eq("email", email)
-      .maybeSingle();
+    // Check if user exists in DB
+    const { data: existing } = await db.from("students").select("email").eq("email", email).maybeSingle();
+    if (existing) throw new Error("Email already registered");
 
-    if (existing) {
-      errorDiv.textContent = "Email already registered";
-      errorDiv.classList.remove("hidden");
-      btn.innerText = "Send Verification Code";
-      btn.disabled = false;
-      return;
-    }
+    // Save data to localStorage so it's there when they come back from email
+    userData = { name, rollNo, email };
+    localStorage.setItem('pendingUser', JSON.stringify(userData));
 
-    // Send verification code via Supabase
-    const { error } = await db.auth.signInWithOtp({
+    const { error } = await db.auth.signInWithOtp({ 
       email: email,
       options: {
-        shouldCreateUser: false,
-      },
+        // Redirect back to this exact page
+        emailRedirectTo: window.location.href 
+      }
     });
+    
+    if (error) throw error;
 
-    if (error) throw new Error("Failed to send verification code");
-
-    verifiedEmail = email;
-    verificationSent = true;
-    document.getElementById("verifyCodeSection").classList.remove("hidden");
-    btn.innerText = "Code Sent!";
-    btn.disabled = true;
-
+    btn.classList.add("hidden");
+    document.getElementById("checkEmailMsg").classList.remove("hidden");
   } catch (err) {
-    errorDiv.textContent = err.message || "Failed to send code";
+    errorDiv.textContent = err.message;
     errorDiv.classList.remove("hidden");
-    btn.innerText = "Send Verification Code";
+    btn.innerText = "Send Verification Link";
     btn.disabled = false;
   }
 });
 
-// ── VERIFY EMAIL ──
-async function verifyEmail() {
-  const code = document.getElementById("verifyCode").value.trim();
-  const errorDiv = document.getElementById("step1-error");
-  const btn = document.getElementById("verifyBtn");
-
-  errorDiv.classList.add("hidden");
-
-  if (!code || code.length !== 6) {
-    errorDiv.textContent = "Enter a valid 6-digit code";
-    errorDiv.classList.remove("hidden");
-    return;
-  }
-
-  btn.innerText = "Verifying...";
-  btn.disabled = true;
-
-  try {
-    const { data, error } = await db.auth.verifyOtp({
-      email: verifiedEmail,
-      token: code,
-      type: "email",
-    });
-
-    if (error) throw new Error("Invalid verification code");
-
-    // Email verified successfully
-    nextStep();
-    btn.innerText = "Verify & Continue";
-    btn.disabled = false;
-
-  } catch (err) {
-    errorDiv.textContent = err.message || "Verification failed";
-    errorDiv.classList.remove("hidden");
-    btn.innerText = "Verify & Continue";
-    btn.disabled = false;
-  }
-}
-
-// ── RESEND CODE ──
-async function resendCode() {
-  const btn = document.querySelector("#verifyCodeSection button:nth-of-type(2)");
-  btn.innerText = "Resending...";
-  btn.disabled = true;
-
-  try {
-    await db.auth.signInWithOtp({
-      email: verifiedEmail,
-      options: {
-        shouldCreateUser: false,
-      },
-    });
-
-    btn.innerText = "Code Resent!";
-    setTimeout(() => {
-      btn.innerText = "Resend Code";
-      btn.disabled = false;
-    }, 2000);
-
-  } catch (err) {
-    btn.innerText = "Resend Code";
-    btn.disabled = false;
-    alert(err.message);
-  }
-}
-
-// ── CREATE BATCH ──
+// --- STEP 2: COMPLETE BATCH DETAILS ---
 document.getElementById("batchDetailsForm").addEventListener("submit", async (e) => {
   e.preventDefault();
-
-  const collegeName = document.getElementById("collegeName").value.trim();
-  const batchName = document.getElementById("batchName").value.trim();
-  const batchPassword = document.getElementById("batchPassword").value;
-  const confirmPassword = document.getElementById("confirmBatchPassword").value;
+  const pass = document.getElementById("password").value;
+  const conf = document.getElementById("confirmPassword").value;
   const errorDiv = document.getElementById("step2-error");
+
+  if (pass !== conf) {
+    errorDiv.textContent = "Passwords do not match";
+    errorDiv.classList.remove("hidden");
+    return;
+  }
+
   const btn = document.getElementById("createBatchBtn");
-
-  errorDiv.classList.add("hidden");
-
-  // Validate
-  if (!collegeName || !batchName || !batchPassword || !confirmPassword) {
-    errorDiv.textContent = "All fields are required";
-    errorDiv.classList.remove("hidden");
-    return;
-  }
-
-  if (batchPassword !== confirmPassword) {
-    errorDiv.textContent = "Batch passwords do not match";
-    errorDiv.classList.remove("hidden");
-    return;
-  }
-
-  if (batchPassword.length < 6) {
-    errorDiv.textContent = "Batch password must be at least 6 characters";
-    errorDiv.classList.remove("hidden");
-    return;
-  }
-
-  btn.innerText = "Creating...";
+  btn.innerText = "Finalizing...";
   btn.disabled = true;
 
   try {
-    // Create auth user with verified email
-    const { data: authData, error: authError } = await db.auth.signUp({
-      email: verifiedEmail,
-      password: batchPassword,
-      options: {
-        emailRedirectTo: "https://students-harate.vercel.app/home.html"
-      }
-    });
+    const { data: { user } } = await db.auth.getUser();
+    if (!user) throw new Error("Session expired. Please start again.");
 
-    if (authError) throw new Error(authError.message);
+    // Update the user's password (since Magic Link sign-in has no password initially)
+    const { error: passError } = await db.auth.updateUser({ password: pass });
+    if (passError) throw passError;
 
-    const userId = authData.user.id;
+    const batchCode = Math.random().toString(36).substring(2, 8).toUpperCase();
 
-    // Generate unique batch code
-    const batchCode = generateBatchCode();
+    // Insert Student Profile
+    const { error: profileErr } = await db.from("students").insert([{
+      id: user.id,
+      full_name: userData.name,
+      roll_no: userData.rollNo,
+      email: user.email,
+      is_approved: true 
+    }]);
+    if (profileErr) throw profileErr;
 
-    // Insert into students table
-    const { error: studentError } = await db
-      .from("students")
-      .insert([{
-        id: userId,
-        email: verifiedEmail,
-        is_approved: true, // Batch creator is auto-approved
-      }]);
+    // Insert Batch
+    const { error: batchErr } = await db.from("batches").insert([{
+      batch_name: document.getElementById("batchName").value,
+      college_name: document.getElementById("collegeName").value,
+      batch_code: batchCode,
+      created_by: user.id
+    }]);
+    if (batchErr) throw batchErr;
 
-    if (studentError) throw new Error(studentError.message);
-
-    // Create batch
-    const { data: batchData, error: batchError } = await db
-      .from("batches")
-      .insert([{
-        batch_name: batchName,
-        college_name: collegeName,
-        batch_code: batchCode,
-        created_by: userId,
-        batch_password: batchPassword, // Store hashed in production
-      }])
-      .select()
-      .single();
-
-    if (batchError) throw new Error(batchError.message);
-
-    // Show success
+    // Cleanup and show success
+    localStorage.removeItem('pendingUser');
     document.getElementById("step2").classList.remove("active");
     document.getElementById("step3").classList.remove("hidden");
     document.getElementById("batchCodeDisplay").innerText = batchCode;
 
-    btn.innerText = "Create Batch";
-    btn.disabled = false;
-
   } catch (err) {
-    errorDiv.textContent = err.message || "Failed to create batch";
+    errorDiv.textContent = err.message;
     errorDiv.classList.remove("hidden");
-    btn.innerText = "Create Batch";
     btn.disabled = false;
+    btn.innerText = "Complete Registration";
   }
 });
 
-// ── GENERATE UNIQUE BATCH CODE ──
-function generateBatchCode() {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  let code = "";
-  for (let i = 0; i < 6; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return code;
-}
-
-// ── COPY BATCH CODE ──
 function copyBatchCode() {
   const code = document.getElementById("batchCodeDisplay").innerText;
-  navigator.clipboard.writeText(code).then(() => {
-    const btn = event.target;
-    btn.innerText = "Copied!";
-    setTimeout(() => {
-      btn.innerText = "Copy Code";
-    }, 2000);
-  });
+  navigator.clipboard.writeText(code);
+  document.getElementById("copyBtn").innerText = "Copied!";
 }
 
-// ── GO HOME ──
-function goHome() {
-  window.location.href = "home.html";
-}
-
+function goHome() { window.location.href = "home.html"; }
 </script>
-
 </body>
 </html>
+
