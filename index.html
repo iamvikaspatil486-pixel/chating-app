@@ -82,6 +82,13 @@
     Join Now
   </button>
 
+  <!-- CREATE BATCH BUTTON -->
+  <button
+    onclick="openCreateBatch()"
+    class="w-full py-4 rounded-2xl font-bold bg-slate-800 border border-slate-700 hover:bg-slate-700 mt-3">
+    Create Your Batch
+  </button>
+
   <p class="text-slate-500 text-xs mt-14">
     © 2026 Students Harate
   </p>
@@ -185,8 +192,9 @@ window.addEventListener('load', async function() {
   }
 });
 
-function openLogin()    { window.location.href = "login.html";    }
-function openRegister() { window.location.href = "register.html"; }
+function openLogin()        { window.location.href = "login.html";        }
+function openRegister()     { window.location.href = "register.html";     }
+function openCreateBatch()  { window.location.href = "createbatch.html";  }
 
 
 // ── PWA Install popup ────────────────────────────────
@@ -255,3 +263,4 @@ window.addEventListener("load", () => {
 
 </body>
 </html>
+
