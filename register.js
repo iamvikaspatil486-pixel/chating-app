@@ -72,7 +72,7 @@ const {data,error}=await db.auth.signUp({
 email:email,
 password:password,
 options:{
-emailRedirectTo:"https://students-harate.vercel.app/verified.html"
+emailRedirectTo:"https://studentsharate.me/verified.html"
 }
 });
 
