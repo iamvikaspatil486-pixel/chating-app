@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Verifying Email - Students Harate</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
+</head>
+<body class="bg-slate-900 text-white">
+
+<!-- ── CONTAINER ── -->
+<div class="min-h-screen flex items-center justify-center px-6">
+  <div class="w-full max-w-md text-center space-y-6">
+
+    <!-- Loading State -->
+    <div id="verifyingState" class="space-y-4">
+      <div class="flex justify-center mb-6">
+        <div class="relative w-16 h-16">
+          <div class="absolute inset-0 rounded-full border-4 border-slate-700"></div>
+          <div class="absolute inset-0 rounded-full border-4 border-transparent border-t-cyan-400 border-r-cyan-400 animate-spin"></div>
+        </div>
+      </div>
+
+      <h1 class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">
+        Verifying Email
+      </h1>
+      <p class="text-slate-400">Please wait while we verify your email...</p>
+    </div>
+
+    <!-- Success State -->
+    <div id="successState" class="hidden space-y-4">
+      <div class="text-6xl">✅</div>
+      <h1 class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">
+        Email Verified!
+      </h1>
+      <p class="text-slate-400">Redirecting to batch creation...</p>
+    </div>
+
+    <!-- Error State -->
+    <div id="errorState" class="hidden space-y-4">
+      <div class="text-6xl">❌</div>
+      <h1 class="text-2xl font-bold">Verification Failed</h1>
+      <p id="errorMessage" class="text-slate-400"></p>
+      
+      <button
+        onclick="goBack()"
+        class="w-full py-3 rounded-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-900 shadow-lg hover:shadow-xl transition">
+        Try Again
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+
+async function verifyEmail() {
+  try {
+    // Supabase automatically handles the magic link token from URL hash
+    const { data, error } = await db.auth.getSession();
+
+    if (error) {
+      throw new Error("Verification failed: " + error.message);
+    }
+
+    if (!data.session) {
+      // Try to refresh session
+      const { data: refreshData, error: refreshError } = await db.auth.refreshSession();
+      
+      if (refreshError || !refreshData.session) {
+        throw new Error("Invalid or expired verification link");
+      }
+    }
+
+    // Verification successful - show success state
+    document.getElementById("verifyingState").classList.add("hidden");
+    document.getElementById("successState").classList.remove("hidden");
+
+    // Redirect back to createbatch.html after 2 seconds
+    setTimeout(() => {
+      window.location.href = "createbatch.html";
+    }, 2000);
+
+  } catch (err) {
+    // Show error state
+    document.getElementById("verifyingState").classList.add("hidden");
+    document.getElementById("errorState").classList.remove("hidden");
+    document.getElementById("errorMessage").innerText = err.message || "Something went wrong";
+  }
+}
+
+function goBack() {
+  window.location.href = "createbatch.html";
+}
+
+// Start verification on page load
+window.addEventListener('load', verifyEmail);
+
+</script>
+
+</body>
+</html>
+
