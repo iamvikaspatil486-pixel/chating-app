@@ -21,80 +21,16 @@
 <div class="min-h-screen flex items-center justify-center px-6 py-12">
   <div class="w-full max-w-md">
 
-    <!-- ── STEP 1: EMAIL VERIFICATION ── -->
+    <!-- ── STEP 1: NAME, ROLL, EMAIL, PASSWORD ── -->
     <div id="step1" class="space-y-6">
       <div class="text-center mb-8">
         <h1 class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-2">
           Create Your Batch
         </h1>
-        <p class="text-slate-400 text-sm">Step 1: Email Verification</p>
+        <p class="text-slate-400 text-sm">Step 1: Your Info</p>
       </div>
 
-      <form id="emailForm" class="space-y-4">
-        <input
-          id="email"
-          type="email"
-          placeholder="Enter your email"
-          class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
-          required
-        />
-
-        <button
-          type="submit"
-          id="sendLinkBtn"
-          class="w-full py-3 rounded-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-900 shadow-lg hover:shadow-xl transition">
-          Send Verification Link
-        </button>
-
-        <div id="step1-error" class="hidden px-4 py-3 bg-red-900/30 border border-red-700 rounded-lg text-red-300 text-sm"></div>
-
-        <!-- After link sent -->
-        <div id="linkSentSection" class="hidden space-y-4 mt-6 pt-6 border-t border-slate-700">
-          <div class="flex items-start gap-3 p-4 bg-cyan-500/10 border border-cyan-700/30 rounded-lg">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0 mt-0.5">
-              <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
-              <path d="m9 12 2 2 4-4"/>
-            </svg>
-            <div>
-              <p class="text-cyan-400 text-sm font-semibold">Link sent!</p>
-              <p class="text-slate-400 text-xs mt-1">Check your email and click the verification link</p>
-            </div>
-          </div>
-
-          <div class="bg-slate-700/50 border border-slate-600 rounded-lg p-3 text-center">
-            <p class="text-slate-400 text-xs">Sent to:</p>
-            <p class="text-cyan-400 text-sm font-mono break-all" id="emailDisplay"></p>
-          </div>
-
-          <button
-            type="button"
-            onclick="resendLink()"
-            id="resendBtn"
-            class="w-full py-3 rounded-xl font-bold bg-slate-800 border border-slate-700 text-slate-400 hover:bg-slate-700">
-            Resend Link
-          </button>
-
-          <p class="text-slate-500 text-xs text-center leading-relaxed">
-            Verified? <a href="javascript:checkVerification()" class="text-cyan-400 hover:text-cyan-300 font-semibold">Continue →</a>
-          </p>
-        </div>
-      </form>
-
-      <p class="text-slate-400 text-xs text-center">
-        Already have an account? <a href="login.html" class="text-cyan-400 hover:text-cyan-300">Login</a>
-      </p>
-    </div>
-
-    <!-- ── STEP 2: STUDENT INFO & BATCH PASSWORD ── -->
-    <div id="step2" class="space-y-6">
-      <div class="text-center mb-8">
-        <h1 class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-2">
-          Create Your Batch
-        </h1>
-        <p class="text-slate-400 text-sm">Step 2: Your Info & Batch Details</p>
-      </div>
-
-      <form id="batchForm" class="space-y-4">
+      <form id="step1Form" class="space-y-4">
         <!-- Full Name -->
         <input
           id="fullName"
@@ -105,14 +41,128 @@
         />
 
         <!-- Roll Number -->
+        <div class="flex items-center gap-2">
+          <input
+            id="rollNo"
+            type="text"
+            placeholder="Roll Number"
+            class="flex-1 px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
+            required
+          />
+          <p class="text-slate-400 text-xs whitespace-nowrap">(can change later)</p>
+        </div>
+
+        <!-- Email -->
         <input
-          id="rollNo"
-          type="text"
-          placeholder="Roll Number"
+          id="email"
+          type="email"
+          placeholder="Email"
           class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
           required
         />
 
+        <!-- Verify Email Button -->
+        <button
+          type="button"
+          id="verifyEmailBtn"
+          onclick="sendVerificationLink()"
+          class="w-full py-3 rounded-xl font-bold bg-slate-800 border border-slate-700 text-slate-400 hover:bg-slate-700 transition">
+          Verify Email
+        </button>
+
+        <!-- Email Verified Status (hidden initially) -->
+        <div id="emailVerifiedStatus" class="hidden flex items-center gap-2 p-3 bg-green-500/10 border border-green-700/30 rounded-lg">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
+            <path d="m9 12 2 2 4-4"/>
+          </svg>
+          <p class="text-green-400 text-sm font-semibold">Email Verified ✓</p>
+        </div>
+
+        <!-- Verification Link Sent Message (shown after sending) -->
+        <div id="linkSentMessage" class="hidden space-y-3">
+          <div class="flex items-start gap-3 p-4 bg-cyan-500/10 border border-cyan-700/30 rounded-lg">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0 mt-0.5">
+              <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
+              <path d="m9 12 2 2 4-4"/>
+            </svg>
+            <div>
+              <p class="text-cyan-400 text-sm font-semibold">Link sent to your email</p>
+              <p class="text-slate-400 text-xs mt-1">Click the link to verify, then continue</p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onclick="resendLink()"
+            id="resendBtn"
+            class="w-full py-2 text-sm bg-slate-800 border border-slate-700 text-slate-400 hover:bg-slate-700 rounded">
+            Resend Link
+          </button>
+        </div>
+
+        <!-- Password Fields (shown after email verified) -->
+        <div id="passwordSection" class="hidden space-y-4 pt-4 border-t border-slate-700">
+          <!-- Password -->
+          <div class="relative">
+            <input
+              id="password"
+              type="password"
+              placeholder="Set Password"
+              class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 pr-12"
+              required
+            />
+            <button
+              type="button"
+              onclick="togglePassword('password')"
+              class="absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-cyan-400">
+              <i id="password-icon" data-lucide="eye" width="20" height="20"></i>
+            </button>
+          </div>
+
+          <!-- Confirm Password -->
+          <div class="relative">
+            <input
+              id="confirmPassword"
+              type="password"
+              placeholder="Confirm Password"
+              class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 pr-12"
+              required
+            />
+            <button
+              type="button"
+              onclick="togglePassword('confirmPassword')"
+              class="absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-cyan-400">
+              <i id="confirmPassword-icon" data-lucide="eye" width="20" height="20"></i>
+            </button>
+          </div>
+
+          <button
+            type="submit"
+            id="nextBtn"
+            class="w-full py-3 rounded-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-900 shadow-lg hover:shadow-xl transition">
+            Next Step
+          </button>
+        </div>
+
+        <div id="step1-error" class="hidden px-4 py-3 bg-red-900/30 border border-red-700 rounded-lg text-red-300 text-sm"></div>
+      </form>
+
+      <p class="text-slate-400 text-xs text-center">
+        Already have an account? <a href="login.html" class="text-cyan-400 hover:text-cyan-300">Login</a>
+      </p>
+    </div>
+
+    <!-- ── STEP 2: BATCH NAME & PASSWORD ── -->
+    <div id="step2" class="space-y-6">
+      <div class="text-center mb-8">
+        <h1 class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-2">
+          Create Your Batch
+        </h1>
+        <p class="text-slate-400 text-sm">Step 2: Batch Details</p>
+      </div>
+
+      <form id="step2Form" class="space-y-4">
         <!-- College Name -->
         <input
           id="collegeName"
@@ -136,7 +186,7 @@
           <input
             id="batchPassword"
             type="password"
-            placeholder="Set Batch Password"
+            placeholder="Set Batch Password (for joining students)"
             class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 pr-12"
             required
           />
@@ -184,19 +234,26 @@
 
     <!-- ── STEP 3: SUCCESS ── -->
     <div id="step3" class="hidden text-center space-y-6">
-      <div class="text-5xl">✅</div>
+      <div class="text-5xl">🎉</div>
       <h2 class="text-2xl font-bold">Batch Created!</h2>
-      <div class="bg-slate-800 border border-slate-700 rounded-lg p-4 text-left space-y-3">
+      
+      <div class="bg-slate-800 border border-slate-700 rounded-lg p-6 space-y-4 text-left">
         <div>
-          <p class="text-slate-400 text-xs uppercase tracking-wide mb-1">Batch Code</p>
-          <p class="text-2xl font-mono font-bold text-cyan-400 text-center" id="batchCodeDisplay"></p>
+          <p class="text-slate-400 text-sm uppercase tracking-wide mb-2">Your Batch Code</p>
+          <p class="text-3xl font-mono font-bold text-cyan-400 text-center" id="batchCodeDisplay"></p>
         </div>
+
         <button
           onclick="copyBatchCode()"
-          class="w-full py-2 text-sm bg-slate-700 hover:bg-slate-600 rounded text-cyan-400">
+          id="copyBtn"
+          class="w-full py-3 bg-slate-700 hover:bg-slate-600 rounded-lg text-cyan-400 font-semibold transition">
           📋 Copy Code
         </button>
-        <p class="text-slate-400 text-xs text-center">Share this code with students to join your batch</p>
+
+        <p class="text-slate-400 text-sm text-center leading-relaxed">
+          <span class="block font-semibold text-white mb-2">Share this code with your friends!</span>
+          They can use it to join your batch
+        </p>
       </div>
 
       <button
@@ -215,21 +272,21 @@
 window.addEventListener('load', async () => {
   const { data } = await db.auth.getSession();
   if (data.session) {
-    window.location.href = 'home.html';
+    // They came back from adminverify.html, show step 2
+    showStep2();
   }
   lucide.createIcons();
 });
 
 let verifiedEmail = null;
 let verifiedUserId = null;
+let emailVerified = false;
 
-// ── SEND MAGIC LINK ──
-document.getElementById("emailForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-
+// ── SEND VERIFICATION LINK ──
+async function sendVerificationLink() {
   const email = document.getElementById("email").value.trim();
   const errorDiv = document.getElementById("step1-error");
-  const btn = document.getElementById("sendLinkBtn");
+  const btn = document.getElementById("verifyEmailBtn");
 
   errorDiv.classList.add("hidden");
 
@@ -246,25 +303,25 @@ document.getElementById("emailForm").addEventListener("submit", async (e) => {
     const { error } = await db.auth.signInWithOtp({
       email: email,
       options: {
-        emailRedirectTo: "https://studentsharate.me/createbatch.html", // Change to your domain
+        emailRedirectTo: "https://studentsharate.me/adminverify.html", // Redirect to adminverify.html
       },
     });
 
     if (error) throw new Error("Failed to send verification link");
 
     verifiedEmail = email;
-    document.getElementById("emailDisplay").innerText = email;
-    document.getElementById("linkSentSection").classList.remove("hidden");
-    btn.innerText = "Link Sent!";
-    btn.disabled = true;
+    document.getElementById("verifyEmailBtn").style.display = "none";
+    document.getElementById("linkSentMessage").classList.remove("hidden");
+    btn.innerText = "Verify Email";
+    btn.disabled = false;
 
   } catch (err) {
     errorDiv.textContent = err.message || "Failed to send link";
     errorDiv.classList.remove("hidden");
-    btn.innerText = "Send Verification Link";
+    btn.innerText = "Verify Email";
     btn.disabled = false;
   }
-});
+}
 
 // ── RESEND LINK ──
 async function resendLink() {
@@ -276,7 +333,7 @@ async function resendLink() {
     await db.auth.signInWithOtp({
       email: verifiedEmail,
       options: {
-        emailRedirectTo: "https://studentsharate.me/createbatch.html",
+        emailRedirectTo: "https://studentsharate.me/adminverify.html",
       },
     });
 
@@ -293,22 +350,20 @@ async function resendLink() {
   }
 }
 
-// ── CHECK EMAIL VERIFIED ──
-async function checkVerification() {
-  const { data: session, error } = await db.auth.getSession();
+// ── SHOW STEP 2 (called after email verification) ──
+async function showStep2() {
+  const { data: session } = await db.auth.getSession();
 
-  if (error || !session.session) {
-    alert("Email not verified yet. Please click the link in your email first.");
-    return;
+  if (session.session) {
+    verifiedUserId = session.session.user.id;
+    verifiedEmail = session.session.user.email;
+    emailVerified = true;
+
+    // Hide step 1, show step 2
+    document.getElementById("step1").style.display = "none";
+    document.getElementById("step2").style.display = "block";
+    lucide.createIcons();
   }
-
-  // Email verified! Move to next step
-  verifiedUserId = session.session.user.id;
-  verifiedEmail = session.session.user.email;
-  
-  document.getElementById("step1").style.display = "none";
-  document.getElementById("step2").style.display = "block";
-  lucide.createIcons();
 }
 
 // ── TOGGLE PASSWORD VISIBILITY ──
@@ -327,29 +382,120 @@ function togglePassword(id) {
   lucide.createIcons();
 }
 
-// ── CREATE BATCH ──
-document.getElementById("batchForm").addEventListener("submit", async (e) => {
+// ── STEP 1: SUBMIT ──
+document.getElementById("step1Form").addEventListener("submit", async (e) => {
   e.preventDefault();
 
   const fullName = document.getElementById("fullName").value.trim();
   const rollNo = document.getElementById("rollNo").value.trim();
+  const password = document.getElementById("password").value;
+  const confirmPassword = document.getElementById("confirmPassword").value;
+  const errorDiv = document.getElementById("step1-error");
+
+  errorDiv.classList.add("hidden");
+
+  // Check if email verified
+  if (!emailVerified) {
+    errorDiv.textContent = "Please verify your email first";
+    errorDiv.classList.remove("hidden");
+    return;
+  }
+
+  // Validate
+  if (!fullName || !rollNo) {
+    errorDiv.textContent = "Full name and roll number are required";
+    errorDiv.classList.remove("hidden");
+    return;
+  }
+
+  if (!password || !confirmPassword) {
+    errorDiv.textContent = "Password fields are required";
+    errorDiv.classList.remove("hidden");
+    return;
+  }
+
+  if (password !== confirmPassword) {
+    errorDiv.textContent = "Passwords do not match";
+    errorDiv.classList.remove("hidden");
+    return;
+  }
+
+  if (password.length < 6) {
+    errorDiv.textContent = "Password must be at least 6 characters";
+    errorDiv.classList.remove("hidden");
+    return;
+  }
+
+  try {
+    // Get current session
+    const { data: sessionData } = await db.auth.getSession();
+    if (!sessionData.session) {
+      errorDiv.textContent = "Session expired. Verify email again.";
+      errorDiv.classList.remove("hidden");
+      return;
+    }
+
+    verifiedUserId = sessionData.session.user.id;
+
+    // Update auth password
+    const { error: updateError } = await db.auth.updateUser({
+      password: password
+    });
+
+    if (updateError) throw new Error(updateError.message);
+
+    // Upsert student record
+    const { error: studentError } = await db
+      .from("students")
+      .upsert([{
+        id: verifiedUserId,
+        email: verifiedEmail,
+        full_name: fullName,
+        roll_no: rollNo,
+      }], {
+        onConflict: "id"
+      });
+
+    if (studentError) throw new Error(studentError.message);
+
+    // Move to step 2
+    document.getElementById("step1").style.display = "none";
+    document.getElementById("step2").style.display = "block";
+    lucide.createIcons();
+
+  } catch (err) {
+    errorDiv.textContent = err.message || "Failed to proceed";
+    errorDiv.classList.remove("hidden");
+  }
+});
+
+// ── STEP 2: CREATE BATCH ──
+document.getElementById("step2Form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
   const collegeName = document.getElementById("collegeName").value.trim();
   const batchName = document.getElementById("batchName").value.trim();
   const batchPassword = document.getElementById("batchPassword").value;
-  const confirmPassword = document.getElementById("confirmBatchPassword").value;
+  const confirmBatchPassword = document.getElementById("confirmBatchPassword").value;
   const errorDiv = document.getElementById("step2-error");
   const btn = document.getElementById("createBtn");
 
   errorDiv.classList.add("hidden");
 
   // Validate
-  if (!fullName || !rollNo || !collegeName || !batchName || !batchPassword || !confirmPassword) {
-    errorDiv.textContent = "All fields are required";
+  if (!collegeName || !batchName) {
+    errorDiv.textContent = "College name and batch name are required";
     errorDiv.classList.remove("hidden");
     return;
   }
 
-  if (batchPassword !== confirmPassword) {
+  if (!batchPassword || !confirmBatchPassword) {
+    errorDiv.textContent = "Batch password fields are required";
+    errorDiv.classList.remove("hidden");
+    return;
+  }
+
+  if (batchPassword !== confirmBatchPassword) {
     errorDiv.textContent = "Batch passwords do not match";
     errorDiv.classList.remove("hidden");
     return;
@@ -365,27 +511,16 @@ document.getElementById("batchForm").addEventListener("submit", async (e) => {
   btn.disabled = true;
 
   try {
-    // Get current session
-    const { data: sessionData } = await db.auth.getSession();
-    if (!sessionData.session) {
-      errorDiv.textContent = "Session expired. Please verify your email again.";
-      errorDiv.classList.remove("hidden");
-      btn.innerText = "Create Batch";
-      btn.disabled = false;
-      return;
-    }
-
-    const userId = sessionData.session.user.id;
     const batchCode = generateBatchCode();
 
-    // 1. Create batch first
+    // Create batch
     const { data: batchData, error: batchError } = await db
       .from("batches")
       .insert([{
         batch_name: batchName,
         college_name: collegeName,
         batch_code: batchCode,
-        created_by: userId,
+        created_by: verifiedUserId,
         batch_password: batchPassword,
       }])
       .select()
@@ -395,21 +530,16 @@ document.getElementById("batchForm").addEventListener("submit", async (e) => {
 
     const batchId = batchData.id;
 
-    // 2. Upsert student record (insert or update if exists)
-    const { error: studentError } = await db
+    // Update student with batch_id
+    const { error: updateError } = await db
       .from("students")
-      .upsert([{
-        id: userId,
-        email: verifiedEmail,
-        full_name: fullName,
-        roll_no: rollNo,
+      .update({
         batch_id: batchId,
-        is_approved: true, // Batch creator auto-approved
-      }], {
-        onConflict: "id"
-      });
+        is_approved: true,
+      })
+      .eq("id", verifiedUserId);
 
-    if (studentError) throw new Error(studentError.message);
+    if (updateError) throw new Error(updateError.message);
 
     // Show success
     document.getElementById("step2").style.display = "none";
@@ -441,7 +571,7 @@ function generateBatchCode() {
 function copyBatchCode() {
   const code = document.getElementById("batchCodeDisplay").innerText;
   navigator.clipboard.writeText(code).then(() => {
-    const btn = event.target;
+    const btn = document.getElementById("copyBtn");
     btn.innerText = "✅ Copied!";
     setTimeout(() => {
       btn.innerText = "📋 Copy Code";
