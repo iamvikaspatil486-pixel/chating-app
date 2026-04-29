@@ -15,14 +15,29 @@ window.addEventListener('load', async () => {
     document.getElementById("verifyingState").classList.add("hidden");
     document.getElementById("sendingState").classList.remove("hidden");
 
-    // Get join data from query params or localStorage
-    const params = new URLSearchParams(window.location.search);
-    const batchId = params.get('batch_id') || sessionStorage.getItem('joinBatchId');
+    // Get join data from sessionStorage (set by join.js before sending email)
+    const batchId = sessionStorage.getItem('joinBatchId');
     const fullName = sessionStorage.getItem('joinFullName');
     const rollNo = sessionStorage.getItem('joinRollNo');
 
+    // If missing, check localStorage as fallback
     if (!batchId || !fullName || !rollNo) {
-      throw new Error("Missing join information. Please try again.");
+      const joinData = JSON.parse(localStorage.getItem('joinData') || '{}');
+      if (!joinData.batchId) {
+        throw new Error("Missing join information. Please go back and try again.");
+      }
+      
+      sessionStorage.setItem('joinBatchId', joinData.batchId);
+      sessionStorage.setItem('joinFullName', joinData.fullName);
+      sessionStorage.setItem('joinRollNo', joinData.rollNo);
+    }
+
+    const finalBatchId = batchId || JSON.parse(localStorage.getItem('joinData') || '{}').batchId;
+    const finalFullName = fullName || JSON.parse(localStorage.getItem('joinData') || '{}').fullName;
+    const finalRollNo = rollNo || JSON.parse(localStorage.getItem('joinData') || '{}').rollNo;
+
+    if (!finalBatchId || !finalFullName || !finalRollNo) {
+      throw new Error("Missing join information. Please go back and try again.");
     }
 
     // Update/create student record
@@ -31,9 +46,9 @@ window.addEventListener('load', async () => {
       .upsert([{
         id: userId,
         email: userEmail,
-        full_name: fullName,
-        roll_no: rollNo,
-        batch_id: batchId,
+        full_name: finalFullName,
+        roll_no: finalRollNo,
+        batch_id: finalBatchId,
         is_approved: false, // Pending approval
       }], {
         onConflict: "id"
@@ -45,7 +60,7 @@ window.addEventListener('load', async () => {
     const { data: existingRequest } = await db
       .from("batch_members")
       .select("*")
-      .eq("batch_id", batchId)
+      .eq("batch_id", finalBatchId)
       .eq("student_id", userId)
       .maybeSingle();
 
@@ -59,8 +74,19 @@ window.addEventListener('load', async () => {
         // Still pending
         document.getElementById("sendingState").classList.add("hidden");
         document.getElementById("successState").classList.remove("hidden");
-        document.querySelector("#successState h1").innerText = "Request Already Pending";
-        document.querySelector("#successState p").innerText = "You've already sent a request to join this batch.";
+        
+        const successTitle = document.querySelector("#successState h1");
+        const successMsg = document.querySelector("#successState > p");
+        
+        successTitle.innerText = "Request Already Pending";
+        successMsg.innerText = "You've already sent a request to join this batch.";
+        
+        const daysLeft = 3 - daysDiff;
+        document.querySelector("#successState .bg-slate-800").innerHTML = `
+          <p class="text-slate-400 text-sm">Status: <span class="text-yellow-400 font-semibold">Pending</span></p>
+          <p class="text-slate-400 text-xs">Your request will expire in ${daysLeft} day(s). After that, you can send another request.</p>
+        `;
+        
         return;
       } else {
         // Expired - delete old request and create new one
@@ -75,17 +101,18 @@ window.addEventListener('load', async () => {
     const { error: requestError } = await db
       .from("batch_members")
       .insert([{
-        batch_id: batchId,
+        batch_id: finalBatchId,
         student_id: userId,
         is_approved: false, // Admin will approve
       }]);
 
     if (requestError) throw new Error(requestError.message);
 
-    // Clear session storage
+    // Clear session/local storage
     sessionStorage.removeItem('joinBatchId');
     sessionStorage.removeItem('joinFullName');
     sessionStorage.removeItem('joinRollNo');
+    localStorage.removeItem('joinData');
 
     // Show success
     document.getElementById("sendingState").classList.add("hidden");
