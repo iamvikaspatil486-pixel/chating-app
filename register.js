@@ -75,12 +75,20 @@ document.getElementById("step1Form").addEventListener("submit", async (e) => {
     document.getElementById("displayBatchName").innerText = batch.batch_name;
     document.getElementById("batchDetails").classList.remove("hidden");
 
-    // Store in session storage for Step 2
-    sessionStorage.setItem("joinData", JSON.stringify({
+    // Store join data in multiple places for reliability
+    const joinDataObj = {
       fullName: fullName,
       rollNo: rollNo,
       batchId: batch.id
-    }));
+    };
+    
+    sessionStorage.setItem("joinData", JSON.stringify(joinDataObj));
+    sessionStorage.setItem('joinBatchId', batch.id);
+    sessionStorage.setItem('joinFullName', fullName);
+    sessionStorage.setItem('joinRollNo', rollNo);
+    
+    // Also store in localStorage as backup
+    localStorage.setItem('joinData', JSON.stringify(joinDataObj));
 
     // Move to step 2
     document.getElementById("step1").style.display = "none";
@@ -132,9 +140,6 @@ async function sendVerificationLink() {
   btn.disabled = true;
 
   try {
-    // Get join data to pass to requestadmin
-    const joinData = JSON.parse(sessionStorage.getItem("joinData"));
-    
     const { error } = await db.auth.signInWithOtp({
       email: email,
       options: {
@@ -143,11 +148,6 @@ async function sendVerificationLink() {
     });
 
     if (error) throw new Error("Failed to send verification link");
-
-    // Store join data in sessionStorage so requestadmin.js can access it
-    sessionStorage.setItem('joinBatchId', joinData?.batchId || currentBatchId);
-    sessionStorage.setItem('joinFullName', joinData?.fullName || '');
-    sessionStorage.setItem('joinRollNo', joinData?.rollNo || '');
 
     verifiedEmail = email;
     document.getElementById("verifyEmailBtn").style.display = "none";
@@ -364,8 +364,12 @@ document.getElementById("step2Form").addEventListener("submit", async (e) => {
 
     if (requestError) throw new Error(requestError.message);
 
-    // Clear session storage
+    // Clear session/local storage
     sessionStorage.removeItem("joinData");
+    sessionStorage.removeItem('joinBatchId');
+    sessionStorage.removeItem('joinFullName');
+    sessionStorage.removeItem('joinRollNo');
+    localStorage.removeItem('joinData');
 
     // Show success
     document.getElementById("step2").style.display = "none";
