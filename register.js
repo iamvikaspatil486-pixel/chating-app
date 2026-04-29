@@ -132,14 +132,22 @@ async function sendVerificationLink() {
   btn.disabled = true;
 
   try {
+    // Get join data to pass to requestadmin
+    const joinData = JSON.parse(sessionStorage.getItem("joinData"));
+    
     const { error } = await db.auth.signInWithOtp({
       email: email,
       options: {
-        emailRedirectTo: "https://studentsharate.me/verify.html", // Goes to verify.html
+        emailRedirectTo: "https://studentsharate.me/requestadmin.html", // Goes to requestadmin.html
       },
     });
 
     if (error) throw new Error("Failed to send verification link");
+
+    // Store join data in sessionStorage so requestadmin.js can access it
+    sessionStorage.setItem('joinBatchId', joinData?.batchId || currentBatchId);
+    sessionStorage.setItem('joinFullName', joinData?.fullName || '');
+    sessionStorage.setItem('joinRollNo', joinData?.rollNo || '');
 
     verifiedEmail = email;
     document.getElementById("verifyEmailBtn").style.display = "none";
@@ -188,7 +196,7 @@ async function resendLink() {
     await db.auth.signInWithOtp({
       email: verifiedEmail,
       options: {
-        emailRedirectTo: "https://studentsharate.me/verify.html",
+        emailRedirectTo: "https://studentsharate.me/requestadmin.html",
       },
     });
 
@@ -387,3 +395,4 @@ function backToStep1() {
 function goHome() {
   window.location.href = "home.html";
 }
+
