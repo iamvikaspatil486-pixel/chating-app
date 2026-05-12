@@ -1,123 +1,414 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Login | Students Harate</title>
 
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<title>Login | Students Harate</title>
+  <style>
+    input, button {
+      font-size: 16px;
+    }
 
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://unpkg.com/lucide@latest"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    .step {
+      display: none;
+    }
 
-<style>
-
-input,button{
-font-size:16px;
-}
-
-.step{display:none;}
-.step.active{display:block;}
-
-</style>
-
+    .step.active {
+      display: block;
+    }
+  </style>
 </head>
 
 <body class="bg-slate-900 text-white min-h-screen flex items-center justify-center px-6 overflow-hidden">
 
-<div class="w-full max-w-md bg-slate-800/50 p-8 rounded-3xl border border-slate-700 shadow-2xl">
+  <div class="w-full max-w-md bg-slate-800/50 p-8 rounded-3xl border border-slate-700 shadow-2xl">
 
-<h2 class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-8 text-center">
-Login
-</h2>
+    <h2 class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-8 text-center">
+      Login
+    </h2>
 
-<!-- STEP 1 -->
-<div id="loginStep1" class="step active space-y-4">
+    <!-- ERROR MESSAGE -->
+    <div id="errorMessage" class="hidden mb-4 p-3 bg-red-900/30 border border-red-700 rounded-lg text-red-300 text-sm"></div>
 
-<input
-type="text"
-id="loginRollNo"
-placeholder="Enter Roll No."
-class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 outline-none focus:border-cyan-500">
+    <!-- ── STEP 1: ROLL NO / NAME ── -->
+    <div id="loginStep1" class="step active space-y-4">
 
-<button onclick="checkUser()" class="w-full py-4 bg-slate-700 rounded-2xl font-bold hover:bg-slate-600">
-Next
-</button>
+      <div>
+        <label class="text-xs text-slate-400 mb-2 block">Roll No. or Name</label>
+        <input
+          type="text"
+          id="rollNoOrName"
+          placeholder="Enter Roll No. or Full Name"
+          class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 outline-none focus:border-cyan-500">
+      </div>
 
-</div>
+      <button onclick="checkUser()" class="w-full py-4 bg-slate-700 rounded-2xl font-bold hover:bg-slate-600 transition">
+        Next
+      </button>
 
+    </div>
 
-<!-- STEP 2 -->
-<div id="loginStep2" class="step space-y-4">
+    <!-- ── STEP 2: BATCH CODE ── -->
+    <div id="loginStep2" class="step space-y-4">
 
-<div class="relative">
+      <div class="p-3 bg-slate-700/50 rounded-lg mb-4">
+        <p class="text-sm text-slate-300">
+          <span class="text-cyan-400 font-semibold" id="studentName"></span>
+          <span class="text-slate-500" id="studentRoll"></span>
+        </p>
+      </div>
 
-<input
-type="password"
-id="loginPassword"
-placeholder="Password"
-class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 outline-none focus:border-cyan-500">
+      <div>
+        <label class="text-xs text-slate-400 mb-2 block">Batch Code</label>
+        <input
+          type="text"
+          id="batchCode"
+          placeholder="Enter 6-character batch code"
+          maxlength="6"
+          class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 outline-none focus:border-cyan-500 text-center text-2xl tracking-widest uppercase">
+      </div>
 
-<button onclick="togglePass('loginPassword')" class="absolute right-4 top-3.5 text-slate-500">
-<i id="loginPassword-icon" data-lucide="eye"></i>
-</button>
+      <button onclick="checkBatchCode()" class="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-2xl font-bold hover:shadow-lg transition">
+        Continue
+      </button>
 
-</div>
+      <button onclick="backToStep1()" class="w-full text-center text-xs text-slate-500 uppercase font-bold hover:text-slate-400">
+        Back
+      </button>
 
-<button onclick="handleLogin()" class="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-2xl font-bold">
-Login
-</button>
+    </div>
 
-<div class="flex justify-between px-2">
+    <!-- ── STEP 3: PASSWORD ── -->
+    <div id="loginStep3" class="step space-y-4">
 
-<button onclick="showStep('loginStep1')" class="text-xs text-slate-500 uppercase font-bold">
-Back
-</button>
+      <div class="relative">
+        <input
+          type="password"
+          id="loginPassword"
+          placeholder="Password"
+          class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 outline-none focus:border-cyan-500 pr-12">
 
-<button onclick="showStep('forgotStep')" class="text-xs text-cyan-500 uppercase font-bold">
-Forgot Password?
-</button>
+        <button onclick="togglePass('loginPassword')" class="absolute right-4 top-3.5 text-slate-500 hover:text-slate-300">
+          <i id="loginPassword-icon" data-lucide="eye"></i>
+        </button>
+      </div>
 
-</div>
+      <button onclick="handleLogin()" class="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-2xl font-bold hover:shadow-lg transition">
+        Login
+      </button>
 
-</div>
+      <div class="flex justify-between px-2">
+        <button onclick="backToStep2()" class="text-xs text-slate-500 uppercase font-bold hover:text-slate-400">
+          Back
+        </button>
 
+        <button onclick="showStep('forgotStep')" class="text-xs text-cyan-500 uppercase font-bold hover:text-cyan-400">
+          Forgot Password?
+        </button>
+      </div>
 
-<!-- FORGOT PASSWORD -->
-<div id="forgotStep" class="step space-y-4">
+    </div>
 
-<p class="text-slate-400 text-sm text-center">
-Enter your verified email.
-</p>
+    <!-- ── FORGOT PASSWORD ── -->
+    <div id="forgotStep" class="step space-y-4">
 
-<input
-type="email"
-id="resetEmail"
-placeholder="your@email.com"
-class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 outline-none focus:border-cyan-500">
+      <p class="text-slate-400 text-sm text-center">
+        Enter your verified email.
+      </p>
 
-<button onclick="sendResetLink()" class="w-full py-4 bg-slate-700 rounded-2xl font-bold text-cyan-400">
-Send Reset Link
-</button>
+      <input
+        type="email"
+        id="resetEmail"
+        placeholder="your@email.com"
+        class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 outline-none focus:border-cyan-500">
 
-<button onclick="showStep('loginStep2')" class="w-full text-center text-xs text-slate-500 uppercase font-bold">
-Cancel
-</button>
+      <button onclick="sendResetLink()" class="w-full py-4 bg-slate-700 rounded-2xl font-bold text-cyan-400 hover:bg-slate-600 transition">
+        Send Reset Link
+      </button>
 
-</div>
+      <button onclick="showStep('loginStep3')" class="w-full text-center text-xs text-slate-500 uppercase font-bold hover:text-slate-400">
+        Cancel
+      </button>
 
-</div>
+    </div>
 
+  </div>
 
-<!-- SCRIPT ORDER IMPORTANT -->
+  <script src="supabase.js"></script>
 
-<script src="supabase.js"></script>
-<script src="login.js"></script>
+  <script>
+    lucide.createIcons();
 
-<script>
-lucide.createIcons();
-</script>
+    let studentData = null;
+    let selectedBatch = null;
+
+    // ── SHOW ERROR ──
+    function showError(message) {
+      const errorDiv = document.getElementById('errorMessage');
+      errorDiv.textContent = message;
+      errorDiv.classList.remove('hidden');
+
+      setTimeout(() => {
+        errorDiv.classList.add('hidden');
+      }, 5000);
+    }
+
+    // ── STEP NAVIGATION ──
+    function showStep(stepId) {
+      document.querySelectorAll('.step').forEach(step => step.classList.remove('active'));
+      document.getElementById(stepId).classList.add('active');
+    }
+
+    // ── PASSWORD VISIBILITY ──
+    function togglePass(id) {
+      const input = document.getElementById(id);
+      const icon = document.getElementById(id + '-icon');
+
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.setAttribute('data-lucide', 'eye-off');
+      } else {
+        input.type = 'password';
+        icon.setAttribute('data-lucide', 'eye');
+      }
+
+      lucide.createIcons();
+    }
+
+    // ── STEP 1: CHECK ROLL NUMBER OR NAME ──
+    async function checkUser() {
+      const rollNoOrName = document.getElementById('rollNoOrName').value.trim();
+      document.getElementById('errorMessage').classList.add('hidden');
+
+      if (!rollNoOrName) {
+        showError('Please enter Roll Number or Name');
+        return;
+      }
+
+      try {
+        // Search by roll number first
+        let { data: student, error } = await db
+          .from('students')
+          .select('id, full_name, roll_no, email, is_approved')
+          .eq('roll_no', rollNoOrName.toUpperCase())
+          .single();
+
+        // If not found by roll, search by name
+        if (!student && error) {
+          const { data: studentByName, error: err2 } = await db
+            .from('students')
+            .select('id, full_name, roll_no, email, is_approved')
+            .ilike('full_name', `%${rollNoOrName}%`)
+            .single();
+
+          if (err2 || !studentByName) {
+            showError('Roll number or name not registered');
+            return;
+          }
+
+          student = studentByName;
+        }
+
+        studentData = student;
+
+        // Show student info in Step 2
+        document.getElementById('studentName').textContent = student.full_name;
+        document.getElementById('studentRoll').textContent = ` (${student.roll_no})`;
+
+        showStep('loginStep2');
+      } catch (err) {
+        console.error('Error:', err);
+        showError('Error checking user');
+      }
+    }
+
+    // ── STEP 2: CHECK BATCH CODE ──
+    async function checkBatchCode() {
+      const batchCode = document.getElementById('batchCode').value.trim();
+      document.getElementById('errorMessage').classList.add('hidden');
+
+      if (!batchCode) {
+        showError('Please enter Batch Code');
+        return;
+      }
+
+      try {
+        // Check if batch code exists
+        const { data: batch, error } = await db
+          .from('batches')
+          .select('id, batch_code, college_name, batch_name')
+          .eq('batch_code', batchCode.toUpperCase())
+          .single();
+
+        if (error || !batch) {
+          showError('Invalid Batch Code');
+          return;
+        }
+
+        // Check if student is approved in this batch
+        const { data: batchMember, error: memberErr } = await db
+          .from('batch_members')
+          .select('is_approved')
+          .eq('batch_id', batch.id)
+          .eq('student_id', studentData.id)
+          .single();
+
+        if (memberErr || !batchMember) {
+          showError('You are not approved for this batch');
+          return;
+        }
+
+        if (batchMember.is_approved !== true) {
+          showError('Waiting for batch admin approval');
+          return;
+        }
+
+        // Store batch info
+        selectedBatch = {
+          batchId: batch.id,
+          batchName: batch.batch_name,
+          collegeName: batch.college_name
+        };
+
+        localStorage.setItem('selectedBatch', JSON.stringify(selectedBatch));
+
+        showStep('loginStep3');
+      } catch (err) {
+        console.error('Error:', err);
+        showError('Error checking batch code');
+      }
+    }
+
+    // ── STEP 3: LOGIN WITH PASSWORD ──
+    async function handleLogin() {
+      const password = document.getElementById('loginPassword').value;
+      document.getElementById('errorMessage').classList.add('hidden');
+
+      if (!password) {
+        showError('Please enter password');
+        return;
+      }
+
+      try {
+        // Sign in with email and password
+        const { data: authData, error: loginError } = await db.auth.signInWithPassword({
+          email: studentData.email,
+          password: password
+        });
+
+        if (loginError) {
+          showError('Wrong password');
+          return;
+        }
+
+        // Generate and save session token
+        const sessionToken = crypto.randomUUID();
+        localStorage.setItem('session_token', sessionToken);
+
+        // Update student record with session token
+        await db
+          .from('students')
+          .update({ session_token: sessionToken })
+          .eq('id', studentData.id);
+
+        // Save user info locally
+        localStorage.setItem('anon_user', JSON.stringify({
+          id: authData.user.id,
+          name: studentData.full_name || studentData.roll_no,
+          roll: studentData.roll_no,
+          email: studentData.email
+        }));
+
+        // Redirect to home
+        window.location.href = 'home.html';
+      } catch (err) {
+        console.error('Error:', err);
+        showError('Login failed');
+      }
+    }
+
+    // ── FORGOT PASSWORD ──
+    async function sendResetLink() {
+      const email = document.getElementById('resetEmail').value.trim();
+      document.getElementById('errorMessage').classList.add('hidden');
+
+      if (!email) {
+        showError('Please enter email');
+        return;
+      }
+
+      try {
+        // Check if email exists
+        const { data: student, error: checkErr } = await db
+          .from('students')
+          .select('email')
+          .eq('email', email)
+          .single();
+
+        if (checkErr || !student) {
+          showError('Email not registered');
+          return;
+        }
+
+        // Send reset link
+        const { error: resetError } = await db.auth.resetPasswordForEmail(email, {
+          redirectTo: 'https://studentsharate.me/reset_password.html'
+        });
+
+        if (resetError) {
+          showError(resetError.message);
+          return;
+        }
+
+        alert('Password reset link sent to your email');
+        showStep('loginStep3');
+        document.getElementById('resetEmail').value = '';
+      } catch (err) {
+        console.error('Error:', err);
+        showError('Error sending reset link');
+      }
+    }
+
+    // ── BACK NAVIGATION ──
+    function backToStep1() {
+      showStep('loginStep1');
+      document.getElementById('rollNoOrName').value = '';
+      document.getElementById('batchCode').value = '';
+      studentData = null;
+    }
+
+    function backToStep2() {
+      showStep('loginStep2');
+      document.getElementById('loginPassword').value = '';
+    }
+
+    // ── KEYBOARD ENTER SUPPORT ──
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('rollNoOrName').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') checkUser();
+      });
+
+      document.getElementById('batchCode').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') checkBatchCode();
+      });
+
+      document.getElementById('loginPassword').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') handleLogin();
+      });
+
+      document.getElementById('resetEmail').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') sendResetLink();
+      });
+    });
+
+  </script>
 
 </body>
+
 </html>
+
