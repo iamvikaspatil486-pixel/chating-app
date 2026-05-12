@@ -558,15 +558,40 @@ document.getElementById("step2Form").addEventListener("submit", async (e) => {
 });
 
 // ── GENERATE BATCH CODE ──
-function generateBatchCode() {
+async function generateUniqueBatchCode() {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let isUnique = false;
   let code = "";
-  for (let i = 0; i < 6; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  let attempts = 0;
+  const maxAttempts = 10;
+
+  while (!isUnique && attempts < maxAttempts) {
+    // Generate random 6-char code
+    code = "";
+    for (let i = 0; i < 6; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+
+    // Check if code already exists ← KEY PART
+    const { data: existing } = await db
+      .from('batches')
+      .select('batch_code')
+      .eq('batch_code', code)
+      .maybeSingle();
+
+    if (!existing) {
+      isUnique = true; // ✅ Code is unique
+    }
+
+    attempts++;
   }
+
+  if (!isUnique) {
+    throw new Error("Could not generate unique batch code. Please try again.");
+  }
+
   return code;
 }
-
 // ── COPY BATCH CODE ──
 function copyBatchCode() {
   const code = document.getElementById("batchCodeDisplay").innerText;
