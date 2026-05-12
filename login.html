@@ -44,10 +44,10 @@
           type="text"
           id="rollNoOrName"
           placeholder="Enter Roll No. or Full Name"
-          class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 outline-none focus:border-cyan-500">
+          class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 outline-none focus:border-cyan-500 text-white">
       </div>
 
-      <button onclick="checkUser()" class="w-full py-4 bg-slate-700 rounded-2xl font-bold hover:bg-slate-600 transition">
+      <button type="button" id="nextBtn" class="w-full py-4 bg-slate-700 rounded-2xl font-bold hover:bg-slate-600 transition">
         Next
       </button>
 
@@ -70,14 +70,14 @@
           id="batchCode"
           placeholder="Enter 6-character batch code"
           maxlength="6"
-          class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 outline-none focus:border-cyan-500 text-center text-2xl tracking-widest uppercase">
+          class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 outline-none focus:border-cyan-500 text-center text-2xl tracking-widest uppercase text-white">
       </div>
 
-      <button onclick="checkBatchCode()" class="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-2xl font-bold hover:shadow-lg transition">
+      <button type="button" id="continueBtn" class="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-2xl font-bold hover:shadow-lg transition">
         Continue
       </button>
 
-      <button onclick="backToStep1()" class="w-full text-center text-xs text-slate-500 uppercase font-bold hover:text-slate-400">
+      <button type="button" id="backBtn2" class="w-full text-center text-xs text-slate-500 uppercase font-bold hover:text-slate-400">
         Back
       </button>
 
@@ -91,23 +91,23 @@
           type="password"
           id="loginPassword"
           placeholder="Password"
-          class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 outline-none focus:border-cyan-500 pr-12">
+          class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 outline-none focus:border-cyan-500 pr-12 text-white">
 
-        <button onclick="togglePass('loginPassword')" class="absolute right-4 top-3.5 text-slate-500 hover:text-slate-300">
+        <button type="button" id="togglePasswordBtn" class="absolute right-4 top-3.5 text-slate-500 hover:text-slate-300">
           <i id="loginPassword-icon" data-lucide="eye"></i>
         </button>
       </div>
 
-      <button onclick="handleLogin()" class="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-2xl font-bold hover:shadow-lg transition">
+      <button type="button" id="loginBtn" class="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-2xl font-bold hover:shadow-lg transition">
         Login
       </button>
 
       <div class="flex justify-between px-2">
-        <button onclick="backToStep2()" class="text-xs text-slate-500 uppercase font-bold hover:text-slate-400">
+        <button type="button" id="backBtn3" class="text-xs text-slate-500 uppercase font-bold hover:text-slate-400">
           Back
         </button>
 
-        <button onclick="showStep('forgotStep')" class="text-xs text-cyan-500 uppercase font-bold hover:text-cyan-400">
+        <button type="button" id="forgotPasswordBtn" class="text-xs text-cyan-500 uppercase font-bold hover:text-cyan-400">
           Forgot Password?
         </button>
       </div>
@@ -125,13 +125,13 @@
         type="email"
         id="resetEmail"
         placeholder="your@email.com"
-        class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 outline-none focus:border-cyan-500">
+        class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 outline-none focus:border-cyan-500 text-white">
 
-      <button onclick="sendResetLink()" class="w-full py-4 bg-slate-700 rounded-2xl font-bold text-cyan-400 hover:bg-slate-600 transition">
+      <button type="button" id="resetBtn" class="w-full py-4 bg-slate-700 rounded-2xl font-bold text-cyan-400 hover:bg-slate-600 transition">
         Send Reset Link
       </button>
 
-      <button onclick="showStep('loginStep3')" class="w-full text-center text-xs text-slate-500 uppercase font-bold hover:text-slate-400">
+      <button type="button" id="cancelBtn" class="w-full text-center text-xs text-slate-500 uppercase font-bold hover:text-slate-400">
         Cancel
       </button>
 
@@ -142,6 +142,7 @@
   <script src="supabase.js"></script>
 
   <script>
+    // Initialize lucide icons
     lucide.createIcons();
 
     let studentData = null;
@@ -152,10 +153,16 @@
       const errorDiv = document.getElementById('errorMessage');
       errorDiv.textContent = message;
       errorDiv.classList.remove('hidden');
+      console.log('ERROR:', message);
 
       setTimeout(() => {
         errorDiv.classList.add('hidden');
       }, 5000);
+    }
+
+    // ── HIDE ERROR ──
+    function hideError() {
+      document.getElementById('errorMessage').classList.add('hidden');
     }
 
     // ── STEP NAVIGATION ──
@@ -183,7 +190,9 @@
     // ── STEP 1: CHECK ROLL NUMBER OR NAME ──
     async function checkUser() {
       const rollNoOrName = document.getElementById('rollNoOrName').value.trim();
-      document.getElementById('errorMessage').classList.add('hidden');
+      hideError();
+
+      console.log('Checking user:', rollNoOrName);
 
       if (!rollNoOrName) {
         showError('Please enter Roll Number or Name');
@@ -198,13 +207,19 @@
           .eq('roll_no', rollNoOrName.toUpperCase())
           .single();
 
+        console.log('Search by roll_no result:', student, error);
+
         // If not found by roll, search by name
-        if (!student && error) {
+        if (error || !student) {
+          console.log('Not found by roll, searching by name...');
+          
           const { data: studentByName, error: err2 } = await db
             .from('students')
             .select('id, full_name, roll_no, email, is_approved')
             .ilike('full_name', `%${rollNoOrName}%`)
             .single();
+
+          console.log('Search by name result:', studentByName, err2);
 
           if (err2 || !studentByName) {
             showError('Roll number or name not registered');
@@ -213,6 +228,8 @@
 
           student = studentByName;
         }
+
+        console.log('Student found:', student);
 
         studentData = student;
 
@@ -223,14 +240,16 @@
         showStep('loginStep2');
       } catch (err) {
         console.error('Error:', err);
-        showError('Error checking user');
+        showError('Error checking user: ' + err.message);
       }
     }
 
     // ── STEP 2: CHECK BATCH CODE ──
     async function checkBatchCode() {
       const batchCode = document.getElementById('batchCode').value.trim();
-      document.getElementById('errorMessage').classList.add('hidden');
+      hideError();
+
+      console.log('Checking batch code:', batchCode);
 
       if (!batchCode) {
         showError('Please enter Batch Code');
@@ -245,6 +264,8 @@
           .eq('batch_code', batchCode.toUpperCase())
           .single();
 
+        console.log('Batch result:', batch, error);
+
         if (error || !batch) {
           showError('Invalid Batch Code');
           return;
@@ -257,6 +278,8 @@
           .eq('batch_id', batch.id)
           .eq('student_id', studentData.id)
           .single();
+
+        console.log('Batch member result:', batchMember, memberErr);
 
         if (memberErr || !batchMember) {
           showError('You are not approved for this batch');
@@ -280,14 +303,16 @@
         showStep('loginStep3');
       } catch (err) {
         console.error('Error:', err);
-        showError('Error checking batch code');
+        showError('Error checking batch code: ' + err.message);
       }
     }
 
     // ── STEP 3: LOGIN WITH PASSWORD ──
     async function handleLogin() {
       const password = document.getElementById('loginPassword').value;
-      document.getElementById('errorMessage').classList.add('hidden');
+      hideError();
+
+      console.log('Logging in...');
 
       if (!password) {
         showError('Please enter password');
@@ -300,6 +325,8 @@
           email: studentData.email,
           password: password
         });
+
+        console.log('Login result:', authData, loginError);
 
         if (loginError) {
           showError('Wrong password');
@@ -324,18 +351,22 @@
           email: studentData.email
         }));
 
+        console.log('Login successful, redirecting...');
+
         // Redirect to home
         window.location.href = 'home.html';
       } catch (err) {
         console.error('Error:', err);
-        showError('Login failed');
+        showError('Login failed: ' + err.message);
       }
     }
 
     // ── FORGOT PASSWORD ──
     async function sendResetLink() {
       const email = document.getElementById('resetEmail').value.trim();
-      document.getElementById('errorMessage').classList.add('hidden');
+      hideError();
+
+      console.log('Sending reset link to:', email);
 
       if (!email) {
         showError('Please enter email');
@@ -350,6 +381,8 @@
           .eq('email', email)
           .single();
 
+        console.log('Email check result:', student, checkErr);
+
         if (checkErr || !student) {
           showError('Email not registered');
           return;
@@ -359,6 +392,8 @@
         const { error: resetError } = await db.auth.resetPasswordForEmail(email, {
           redirectTo: 'https://studentsharate.me/reset_password.html'
         });
+
+        console.log('Reset email result:', resetError);
 
         if (resetError) {
           showError(resetError.message);
@@ -370,7 +405,7 @@
         document.getElementById('resetEmail').value = '';
       } catch (err) {
         console.error('Error:', err);
-        showError('Error sending reset link');
+        showError('Error sending reset link: ' + err.message);
       }
     }
 
@@ -380,15 +415,45 @@
       document.getElementById('rollNoOrName').value = '';
       document.getElementById('batchCode').value = '';
       studentData = null;
+      hideError();
     }
 
     function backToStep2() {
       showStep('loginStep2');
       document.getElementById('loginPassword').value = '';
+      hideError();
     }
 
-    // ── KEYBOARD ENTER SUPPORT ──
-    document.addEventListener('DOMContentLoaded', () => {
+    // ── WAIT FOR DB TO LOAD ──
+    async function initializeApp() {
+      console.log('Initializing app...');
+      
+      // Wait for supabase.js to load
+      let attempts = 0;
+      while (!window.db && attempts < 10) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        attempts++;
+      }
+
+      if (!window.db) {
+        showError('Database connection failed. Please refresh the page.');
+        return;
+      }
+
+      console.log('Database connected');
+
+      // ── ATTACH EVENT LISTENERS ──
+      document.getElementById('nextBtn').addEventListener('click', checkUser);
+      document.getElementById('continueBtn').addEventListener('click', checkBatchCode);
+      document.getElementById('loginBtn').addEventListener('click', handleLogin);
+      document.getElementById('resetBtn').addEventListener('click', sendResetLink);
+      document.getElementById('backBtn2').addEventListener('click', backToStep1);
+      document.getElementById('backBtn3').addEventListener('click', backToStep2);
+      document.getElementById('togglePasswordBtn').addEventListener('click', () => togglePass('loginPassword'));
+      document.getElementById('forgotPasswordBtn').addEventListener('click', () => showStep('forgotStep'));
+      document.getElementById('cancelBtn').addEventListener('click', () => showStep('loginStep3'));
+
+      // ── KEYBOARD ENTER SUPPORT ──
       document.getElementById('rollNoOrName').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') checkUser();
       });
@@ -404,7 +469,12 @@
       document.getElementById('resetEmail').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') sendResetLink();
       });
-    });
+
+      console.log('Event listeners attached');
+    }
+
+    // Start the app
+    initializeApp();
 
   </script>
 
