@@ -187,6 +187,23 @@
       lucide.createIcons();
     }
 
+    // ── FUNCTION: CHECK IF APPROVED (Handles TEXT and BOOLEAN) ──
+    function isBatchMemberApproved(is_approved) {
+      // Handle BOOLEAN (true/false)
+      if (typeof is_approved === 'boolean') {
+        return is_approved === true;
+      }
+
+      // Handle TEXT ('true' or 'false' string)
+      if (typeof is_approved === 'string') {
+        return is_approved.toLowerCase() === 'true';
+      }
+
+      // Handle NULL/undefined
+      console.log('is_approved is:', is_approved, '(type:', typeof is_approved + ')');
+      return false;
+    }
+
     // ── STEP 1: CHECK ROLL NUMBER OR NAME ──
     async function checkUser() {
       const rollNoOrName = document.getElementById('rollNoOrName').value.trim();
@@ -280,13 +297,15 @@
           .single();
 
         console.log('Batch member result:', batchMember, memberErr);
+        console.log('is_approved value:', batchMember?.is_approved, 'type:', typeof batchMember?.is_approved);
 
         if (memberErr || !batchMember) {
           showError('You are not approved for this batch');
           return;
         }
 
-        if (batchMember.is_approved !== true) {
+        // ✅ USE FUNCTION - Handles both TEXT ('true'/'false') and BOOLEAN (true/false)
+        if (!isBatchMemberApproved(batchMember.is_approved)) {
           showError('Waiting for batch admin approval');
           return;
         }
