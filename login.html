@@ -142,7 +142,6 @@
   <script src="supabase.js"></script>
 
   <script>
-    // Initialize lucide icons
     lucide.createIcons();
 
     let studentData = null;
@@ -187,29 +186,12 @@
       lucide.createIcons();
     }
 
-    // ── FUNCTION: CHECK IF APPROVED (Handles TEXT and BOOLEAN) ──
-    function isBatchMemberApproved(is_approved) {
-      // Handle BOOLEAN (true/false)
-      if (typeof is_approved === 'boolean') {
-        return is_approved === true;
-      }
-
-      // Handle TEXT ('true' or 'false' string)
-      if (typeof is_approved === 'string') {
-        return is_approved.toLowerCase() === 'true';
-      }
-
-      // Handle NULL/undefined
-      console.log('is_approved is:', is_approved, '(type:', typeof is_approved + ')');
-      return false;
-    }
-
-    // ── STEP 1: CHECK ROLL NUMBER OR NAME ──
+    // ── STEP 1: FIND STUDENT BY ROLL NO OR NAME ──
     async function checkUser() {
       const rollNoOrName = document.getElementById('rollNoOrName').value.trim();
       hideError();
 
-      console.log('Checking user:', rollNoOrName);
+      console.log('Step 1: Searching student by roll_no or name:', rollNoOrName);
 
       if (!rollNoOrName) {
         showError('Please enter Roll Number or Name');
@@ -220,7 +202,7 @@
         // Search by roll number first
         let { data: student, error } = await db
           .from('students')
-          .select('id, full_name, roll_no, email, is_approved')
+          .select('id, full_name, roll_no, email')
           .eq('roll_no', rollNoOrName.toUpperCase())
           .single();
 
@@ -228,11 +210,9 @@
 
         // If not found by roll, search by name
         if (error || !student) {
-          console.log('Not found by roll, searching by name...');
-          
           const { data: studentByName, error: err2 } = await db
             .from('students')
-            .select('id, full_name, roll_no, email, is_approved')
+            .select('id, full_name, roll_no, email')
             .ilike('full_name', `%${rollNoOrName}%`)
             .single();
 
@@ -246,7 +226,7 @@
           student = studentByName;
         }
 
-        console.log('Student found:', student);
+        console.log('✅ Student found:', student);
 
         studentData = student;
 
@@ -261,12 +241,13 @@
       }
     }
 
-    // ── STEP 2: CHECK BATCH CODE ──
+    // ── STEP 2: VERIFY BATCH CODE & APPROVAL ──
     async function checkBatchCode() {
       const batchCode = document.getElementById('batchCode').value.trim();
       hideError();
 
-      console.log('Checking batch code:', batchCode);
+      console.log('Step 2: Checking batch code:', batchCode);
+      console.log('Student ID:', studentData.id);
 
       if (!batchCode) {
         showError('Please enter Batch Code');
@@ -274,47 +255,49 @@
       }
 
       try {
-        // Check if batch code exists
-        const { data: batch, error } = await db
+        // Query 1: Find batch by code
+        const { data: batch, error: batchError } = await db
           .from('batches')
           .select('id, batch_code, college_name, batch_name')
           .eq('batch_code', batchCode.toUpperCase())
           .single();
 
-        console.log('Batch result:', batch, error);
+        console.log('Query 1 - Find batch by code:', batch, batchError);
 
-        if (error || !batch) {
+        if (batchError || !batch) {
           showError('Invalid Batch Code');
           return;
         }
 
-        // Check if student is approved in this batch
-        const { data: batchMember, error: memberErr } = await db
+        // Query 2: Check if student is in this batch AND approved
+        const { data: batchMember, error: memberError } = await db
           .from('batch_members')
           .select('is_approved')
           .eq('batch_id', batch.id)
           .eq('student_id', studentData.id)
           .single();
 
-        console.log('Batch member result:', batchMember, memberErr);
-        console.log('is_approved value:', batchMember?.is_approved, 'type:', typeof batchMember?.is_approved);
+        console.log('Query 2 - Check batch_members:', batchMember, memberError);
 
-        if (memberErr || !batchMember) {
-          showError('You are not approved for this batch');
+        if (memberError || !batchMember) {
+          showError('You are not a member of this batch');
           return;
         }
 
-        // ✅ USE FUNCTION - Handles both TEXT ('true'/'false') and BOOLEAN (true/false)
-        if (!isBatchMemberApproved(batchMember.is_approved)) {
-          showError('Waiting for batch admin approval');
+        // Check if approved in this batch
+        if (batchMember.is_approved !== true) {
+          showError('You are not approved for this batch yet');
           return;
         }
+
+        console.log('✅ Batch verified and student approved');
 
         // Store batch info
         selectedBatch = {
           batchId: batch.id,
           batchName: batch.batch_name,
-          collegeName: batch.college_name
+          collegeName: batch.college_name,
+          batchCode: batch.batch_code
         };
 
         localStorage.setItem('selectedBatch', JSON.stringify(selectedBatch));
@@ -331,7 +314,7 @@
       const password = document.getElementById('loginPassword').value;
       hideError();
 
-      console.log('Logging in...');
+      console.log('Step 3: Logging in...');
 
       if (!password) {
         showError('Please enter password');
@@ -345,18 +328,18 @@
           password: password
         });
 
-        console.log('Login result:', authData, loginError);
+        console.log('Auth result:', authData, loginError);
 
         if (loginError) {
           showError('Wrong password');
           return;
         }
 
-        // Generate and save session token
+        // Generate session token
         const sessionToken = crypto.randomUUID();
         localStorage.setItem('session_token', sessionToken);
 
-        // Update student record with session token
+        // Update student with session token
         await db
           .from('students')
           .update({ session_token: sessionToken })
@@ -367,12 +350,12 @@
           id: authData.user.id,
           name: studentData.full_name || studentData.roll_no,
           roll: studentData.roll_no,
-          email: studentData.email
+          email: studentData.email,
+          batchId: selectedBatch.batchId
         }));
 
-        console.log('Login successful, redirecting...');
+        console.log('✅ Login successful, redirecting to home.html');
 
-        // Redirect to home
         window.location.href = 'home.html';
       } catch (err) {
         console.error('Error:', err);
@@ -400,7 +383,7 @@
           .eq('email', email)
           .single();
 
-        console.log('Email check result:', student, checkErr);
+        console.log('Email check:', student, checkErr);
 
         if (checkErr || !student) {
           showError('Email not registered');
@@ -412,7 +395,7 @@
           redirectTo: 'https://studentsharate.me/reset_password.html'
         });
 
-        console.log('Reset email result:', resetError);
+        console.log('Reset result:', resetError);
 
         if (resetError) {
           showError(resetError.message);
@@ -443,11 +426,10 @@
       hideError();
     }
 
-    // ── WAIT FOR DB TO LOAD ──
+    // ── INITIALIZE ──
     async function initializeApp() {
       console.log('Initializing app...');
       
-      // Wait for supabase.js to load
       let attempts = 0;
       while (!window.db && attempts < 10) {
         await new Promise(resolve => setTimeout(resolve, 100));
@@ -459,9 +441,9 @@
         return;
       }
 
-      console.log('Database connected');
+      console.log('✅ Database connected');
 
-      // ── ATTACH EVENT LISTENERS ──
+      // Attach event listeners
       document.getElementById('nextBtn').addEventListener('click', checkUser);
       document.getElementById('continueBtn').addEventListener('click', checkBatchCode);
       document.getElementById('loginBtn').addEventListener('click', handleLogin);
@@ -472,7 +454,7 @@
       document.getElementById('forgotPasswordBtn').addEventListener('click', () => showStep('forgotStep'));
       document.getElementById('cancelBtn').addEventListener('click', () => showStep('loginStep3'));
 
-      // ── KEYBOARD ENTER SUPPORT ──
+      // Keyboard support
       document.getElementById('rollNoOrName').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') checkUser();
       });
@@ -489,10 +471,9 @@
         if (e.key === 'Enter') sendResetLink();
       });
 
-      console.log('Event listeners attached');
+      console.log('✅ App ready');
     }
 
-    // Start the app
     initializeApp();
 
   </script>
