@@ -202,7 +202,7 @@
         // Search by roll number first
         let { data: student, error } = await db
           .from('students')
-          .select('id, full_name, roll_no, email')
+          .select('id, full_name, roll_no, email, batch_id, is_approved')
           .eq('roll_no', rollNoOrName.toUpperCase())
           .single();
 
@@ -212,7 +212,7 @@
         if (error || !student) {
           const { data: studentByName, error: err2 } = await db
             .from('students')
-            .select('id, full_name, roll_no, email')
+            .select('id, full_name, roll_no, email, batch_id, is_approved')
             .ilike('full_name', `%${rollNoOrName}%`)
             .single();
 
@@ -247,7 +247,7 @@
       hideError();
 
       console.log('Step 2: Checking batch code:', batchCode);
-      console.log('Student ID:', studentData.id);
+      console.log('Student Data:', JSON.stringify(studentData));
 
       if (!batchCode) {
         showError('Please enter Batch Code');
@@ -262,31 +262,33 @@
           .eq('batch_code', batchCode.toUpperCase())
           .single();
 
-        console.log('Query 1 - Find batch by code:', batch, batchError);
+        console.log('Query 1 - Find batch by code:');
+        console.log('  Input batch_code:', batchCode.toUpperCase());
+        console.log('  Result batch:', batch);
+        console.log('  Error:', batchError);
 
         if (batchError || !batch) {
           showError('Invalid Batch Code');
           return;
         }
 
-        // Query 2: Check if student is in this batch AND approved
-        const { data: batchMember, error: memberError } = await db
-          .from('batch_members')
-          .select('is_approved')
-          .eq('batch_id', batch.id)
-          .eq('student_id', studentData.id)
-          .single();
+        console.log('✅ Batch found:', batch.id);
 
-        console.log('Query 2 - Check batch_members:', batchMember, memberError);
+        // Check if student's batch_id matches the batch code's batch_id
+        console.log('Comparing:');
+        console.log('  Student batch_id:', studentData.batch_id);
+        console.log('  Batch id from code:', batch.id);
 
-        if (memberError || !batchMember) {
-          showError('You are not a member of this batch');
+        if (studentData.batch_id !== batch.id) {
+          showError('This batch code does not match your batch');
           return;
         }
 
-        // Check if approved in this batch
-        if (batchMember.is_approved !== true) {
-          showError('You are not approved for this batch yet');
+        // Check if student is approved
+        console.log('Student is_approved:', studentData.is_approved);
+
+        if (studentData.is_approved !== true) {
+          showError('You are not yet approved by admin');
           return;
         }
 
@@ -322,6 +324,16 @@
       }
 
       try {
+        // Check if already logged in elsewhere
+        const { data: existingUser } = await db
+          .from('students')
+          .select('session_token')
+          .eq('id', studentData.id)
+          .single();
+
+        const wasLoggedInElsewhere = existingUser?.session_token !== null 
+          && existingUser?.session_token !== undefined;
+
         // Sign in with email and password
         const { data: authData, error: loginError } = await db.auth.signInWithPassword({
           email: studentData.email,
@@ -335,15 +347,20 @@
           return;
         }
 
-        // Generate session token
+        // Generate new session token
         const sessionToken = crypto.randomUUID();
         localStorage.setItem('session_token', sessionToken);
 
-        // Update student with session token
+        // Update student with new session token
         await db
           .from('students')
           .update({ session_token: sessionToken })
           .eq('id', studentData.id);
+
+        // Alert if was logged in elsewhere
+        if (wasLoggedInElsewhere) {
+          alert('⚠️ Your account was logged out from another device');
+        }
 
         // Save user info locally
         localStorage.setItem('anon_user', JSON.stringify({
@@ -351,7 +368,7 @@
           name: studentData.full_name || studentData.roll_no,
           roll: studentData.roll_no,
           email: studentData.email,
-          batchId: selectedBatch.batchId
+          batchId: studentData.batch_id
         }));
 
         console.log('✅ Login successful, redirecting to home.html');
