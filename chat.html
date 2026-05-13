@@ -1,191 +1,241 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
-<title>AGASTYANS Chat</title>
-
-<!-- Eruda for mobile debugging -->
-<script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-<script>eruda.init();</script>
-
-<!-- OneSignal -->
-
-
-
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-
-
-
-
-
-
-<style>
-* {
-    box-sizing: border-box;
-}
-
-html, body {
-    margin: 0;
-    height: 100dvh;
-    display: flex;
-    flex-direction: column;
-    background: #0f172a;
-    font-family: sans-serif;
-    overflow: hidden;
-}
-
-/* header */
-.header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 16px;
-    color: white;
-    border-bottom: 1px solid #1e293b;
-    flex-shrink: 0;
-}
-
-/* messages */
-.messages {
-    flex: 1;
-    overflow-y: auto;
-    padding: 15px;
-    padding-bottom: 90px; /* space for bottom chat */
-    color: white;
-    scroll-behavior: smooth;
-}
-
-/* bottom chat */
-.bottom-chat {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    background: #0f172a;
-    border-top: 1px solid #1e293b;
-    padding: 8px 12px;
-    padding-bottom: calc(8px + env(safe-area-inset-bottom));
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-/* icons row */
-.action-row {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-}
-
-/* message input row */
-.msg-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.msg-input {
-    flex: 1;
-    min-width: 0;
-    background: #1e293b;
-    border: none;
-    border-radius: 25px;
-    padding: 10px 14px;
-    color: white;
-    outline: none;
-}
-
-/* icons */
-.icon {
-    font-size: 22px;
-    color: white;
-    cursor: pointer;
-}
-
-/* send button */
-.send-btn {
-    font-size: 22px;
-    color: #3b82f6;
-    cursor: pointer;
-}
-
-/* adjust GIF button so it doesn't overlap send */
-#gifBtn {
-    flex-shrink: 0;
-}
-
-</style>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AGASTYANS Chat</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <style>
+        * { box-sizing: border-box; }
+        html, body {
+            margin: 0; height: 100dvh; display: flex; flex-direction: column;
+            background: #0f172a; font-family: sans-serif; overflow: hidden;
+        }
+        .header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 12px 16px; color: white; border-bottom: 1px solid #1e293b; flex-shrink: 0;
+        }
+        .messages {
+            flex: 1; overflow-y: auto; padding: 15px; padding-bottom: 90px;
+            color: white; scroll-behavior: smooth;
+        }
+        .bottom-chat {
+            position: fixed; bottom: 0; left: 0; width: 100%; background: #0f172a;
+            border-top: 1px solid #1e293b; padding: 8px 12px;
+            padding-bottom: calc(8px + env(safe-area-inset-bottom));
+            display: flex; flex-direction: column; gap: 6px;
+        }
+        .action-row { display: flex; gap: 10px; align-items: center; }
+        .msg-row { display: flex; align-items: center; gap: 8px; }
+        .msg-input {
+            flex: 1; min-width: 0; background: #1e293b; border: none;
+            border-radius: 25px; padding: 10px 14px; color: white; outline: none;
+        }
+        .icon { font-size: 22px; color: white; cursor: pointer; background:none; border:none; }
+        .send-btn { font-size: 22px; color: #3b82f6; cursor: pointer; }
+        .msgBubble { 
+            background: #1e293b; color: white; padding: 10px 32px 10px 14px; 
+            border-radius: 14px; display: inline-block; max-width: 85%; 
+            position: relative; transition: transform 0.2s ease; 
+        }
+        @keyframes floatHeart{to{transform:translateY(-50px) scale(1.5);opacity:0;}}
+    </style>
 </head>
-
 <body>
 
-<!-- HEADER -->
 <div class="header">
-    <button onclick="history.back()">←</button>
-    <h2 class="font-bold">AGASTYANS</h2>
-    <div id="onlineCount"></div>
+    <button onclick="history.back()" class="text-white">←</button>
+    <div>
+        <h2 class="font-bold text-center">AGASTYANS</h2>
+        <div id="batchLabel" class="text-[10px] text-blue-400 text-center uppercase tracking-widest">Loading Batch...</div>
+    </div>
     <button id="logoutBtn" class="text-red-400">Logout</button>
 </div>
 
-<!-- MESSAGES -->
-<div class="messages"></div>
+<div class="messages" id="messageArea"></div>
 
-<!-- BOTTOM CHAT -->
 <div class="bottom-chat">
+    <div id="replyBar" style="display:none;align-items:center;justify-content:space-between;background:#1e293b;border-left:3px solid #3b82f6;padding:6px 10px;border-radius:8px;margin-bottom:4px;gap:8px;">
+        <div style="flex:1;overflow:hidden">
+            <div id="replyName" style="font-size:11px;color:#3b82f6;font-weight:bold;"></div>
+            <div id="replyPreview" style="font-size:12px;color:#9ca3af;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+        </div>
+        <button id="cancelReply" style="color:#9ca3af;font-size:18px;">✕</button>
+    </div>
 
-    <!-- ICON ROW -->
     <div class="action-row">
-        <label class="icon">
-            🖼
-            <input type="file" hidden accept="image/*">
-        </label>
-
- <button id="voiceBtn" class="icon">🎤</button>
-<button class="icon" onclick="window.location.href='game.html'">🎮</button>
-        <!-- GIF BUTTON -->
+        <button id="pollBtn" class="icon">📊</button>
+        <label class="icon">🖼<input type="file" id="fileInput" hidden accept="image/*"></label>
+        <button id="voiceBtn" class="icon">🎤</button>
+        <button class="icon" onclick="window.location.href='game.html'">🎮</button>
         <button id="gifBtn" class="icon">GIF</button>
-
-        <!-- SEND BUTTON -->
         <button id="sendBtn" class="send-btn" style="display:none">➤</button>
     </div>
 
-    <!-- MESSAGE INPUT -->
     <div class="msg-row">
         <input id="msgInput" type="text" placeholder="Message..." class="msg-input" />
     </div>
-
 </div>
-<script src="supabase.js"></script>
-<script src="chat.js"></script>
-    <script src="fcm.js"></script>
-</body>
+
 <script>
-  document.getElementById('logoutBtn').addEventListener('click', async () => {
-    const confirmed = confirm('Are you sure you want to logout?');
-    if (!confirmed) return;
+/** 
+ * CONFIGURATION & INITIALIZATION
+ * Ensure 'db' is initialized in your environment via your supabase.js 
+ **/
+document.addEventListener("DOMContentLoaded", async () => {
+    const db = window.supabase.createClient('YOUR_URL', 'YOUR_KEY'); // Replace with your actual init
+    const input = document.getElementById("msgInput");
+    const sendBtn = document.getElementById("sendBtn");
+    const messages = document.getElementById("messageArea");
+    const fileInput = document.getElementById("fileInput");
+    const gifBtn = document.getElementById("gifBtn");
+    const batchLabel = document.getElementById("batchLabel");
 
-    try {// ✅ Clear FCM token first
+    let userBatch = null;
+    let userId = null;
+    let username = "User";
+
+    // 1. GET USER & BATCH (CRITICAL FOR FILTERING)
     const { data: { user } } = await db.auth.getUser();
-    if (user) {
-      await db.from('students')
-        .update({ fcm_token: null })
-        .eq('id', user.id);
+    if (!user) {
+        window.location.href = 'index.html';
+        return;
     }
-      const { error } = await db.auth.signOut();
-      if (error) throw error;
+    userId = user.id;
 
-      // Redirect to login page after logout
-      window.location.href = 'index.html'; // change to your login page
-    } catch (err) {
-      alert('Logout failed: ' + err.message);
+    // Fetch batch from 'students' table
+    const { data: studentData } = await db.from('students').select('name, batch_id').eq('id', userId).single();
+    if (studentData) {
+        userBatch = studentData.batch_id;
+        username = studentData.name;
+        batchLabel.textContent = `Batch: ${userBatch}`;
     }
-  });
+
+    /* ========================= */
+    /* CORE CHAT LOGIC */
+    /* ========================= */
+    const messageMap = {};
+    const reactionCache = {};
+    const pollCache = {};
+    let replyTo = null;
+
+    // Load messages ONLY for user's batch
+    async function loadMessages() {
+        if (!userBatch) return;
+        const { data } = await db.from("chat_messages")
+            .select("*")
+            .eq('batch_id', userBatch) // <--- FILTER BY BATCH
+            .order("created_at", { ascending: true });
+        
+        messages.innerHTML = "";
+        if (!data) return;
+
+        const ids = data.map(m => m.id);
+        await loadReactionsForMessages(ids);
+        await loadPollsForMessages(ids);
+
+        data.forEach(msg => {
+            messageMap[msg.id] = msg;
+            if (msg.reply_to) msg._replyData = messageMap[msg.reply_to] || null;
+            displayMessage(msg);
+        });
+    }
+
+    async function sendMessage() {
+        const text = input.value.trim();
+        if (!text || !userBatch) return;
+
+        const msgData = { 
+            user_id: userId, 
+            username, 
+            message: text, 
+            batch_id: userBatch // <--- TAG WITH BATCH
+        };
+        
+        if (replyTo) msgData.reply_to = replyTo.id;
+        const { data, error } = await db.from("chat_messages").insert(msgData).select().single();
+        
+        if (!error) {
+            displayMessage({ ...data, _replyData: replyTo ? { ...replyTo } : null });
+            input.value = "";
+            clearReply();
+            updateInputUI();
+        }
+    }
+
+    function displayMessage(msg) {
+        // Prevent duplicates in UI
+        if (document.querySelector(`[data-id="${msg.id}"]`)) return;
+        
+        messageMap[msg.id] = msg;
+        const div = document.createElement("div");
+        div.className = "mb-3";
+        div.dataset.id = msg.id;
+
+        const isOwn = msg.user_id === userId;
+        const isPoll = msg.type === "poll";
+
+        div.innerHTML = `
+            <div style="font-size:11px;color:#9ca3af;margin-bottom:2px; text-align: ${isOwn ? 'right':'left'}">${msg.username}</div>
+            <div style="text-align: ${isOwn ? 'right':'left'}">
+                <div class="msgBubble">
+                    <span class="msgText">${msg.message || ""}</span>
+                    ${msg.media_url ? `<img src="${msg.media_url}" class="mt-2 rounded-lg max-w-[200px]">` : ""}
+                    <div class="pollContainer"></div>
+                </div>
+                <div class="reactionsRow flex gap-1 mt-1 ${isOwn ? 'justify-end':'justify-start'}"></div>
+            </div>
+        `;
+
+        messages.appendChild(div);
+        messages.scrollTop = messages.scrollHeight;
+    }
+
+    /* ========================= */
+    /* REALTIME (BATCH FILTERED) */
+    /* ========================= */
+    db.channel("batch-chat")
+        .on("postgres_changes", { 
+            event: "INSERT", 
+            schema: "public", 
+            table: "chat_messages", 
+            filter: `batch_id=eq.${userBatch}` // <--- ONLY LISTEN TO OWN BATCH
+        }, (payload) => {
+            if (payload.new.user_id !== userId) {
+                displayMessage(payload.new);
+            }
+        })
+        .subscribe();
+
+    /* ========================= */
+    /* HELPERS & UI EVENTS */
+    /* ========================= */
+    function updateInputUI() {
+        sendBtn.style.display = input.value.trim() ? "block" : "none";
+        document.getElementById("voiceBtn").style.display = input.value.trim() ? "none" : "block";
+    }
+
+    function clearReply() {
+        replyTo = null;
+        document.getElementById("replyBar").style.display = "none";
+    }
+
+    input.addEventListener("input", updateInputUI);
+    input.addEventListener("keydown", e => e.key === "Enter" && sendMessage());
+    sendBtn.onclick = sendMessage;
+
+    document.getElementById('logoutBtn').onclick = async () => {
+        if(confirm('Logout?')) {
+            await db.auth.signOut();
+            window.location.href = 'index.html';
+        }
+    };
+
+    // Initialize
+    loadMessages();
+});
 </script>
+</body>
 </html>
 
-If 
