@@ -10,7 +10,6 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script src="supabase.js"></script>
-<script src="auth.js"></script>
 
 </head>
 
@@ -52,7 +51,7 @@ class="w-full mt-2 p-3 bg-slate-800 rounded-xl"></textarea>
 <button 
 id="postBtn"
 type="button"
-class="w-full py-3 bg-cyan-500 rounded-xl font-bold text-slate-900">
+class="w-full py-3 bg-cyan-500 rounded-xl font-bold text-slate-900 hover:bg-cyan-400 active:bg-cyan-600 transition">
 Post
 </button>
 
@@ -135,15 +134,32 @@ return
 }
 
 
+// ── GET BATCH ID FROM LOCALSTORAGE ──────────────────────
+const batchStr = localStorage.getItem('selectedBatch')
+const batch = batchStr ? JSON.parse(batchStr) : null
+const batchId = batch?.batchId
+
+console.log('Batch Info:', { batchStr, batch, batchId })
+
+if (!batchId) {
+  alert("Batch not found. Please login again.")
+  window.location.href = 'login.html'
+  return
+}
+
+
 // GET USER
 const { data:{ session } } = await db.auth.getSession()
 
 if(!session){
 alert("Please login first")
+window.location.href = 'login.html'
 return
 }
 
 const user=session.user
+
+console.log('Current User ID:', user.id)
 
 
 
@@ -169,16 +185,19 @@ return
 const nickname = student.nickname
 const full_name = student.full_name
 
+console.log('Student Info:', { nickname, full_name })
 
 
-// CREATE POST
+
+// CREATE POST WITH batch_id ✅
 const { data:post, error } = await db
 .from("posts")
 .insert({
-user_id:user.id,
-caption:caption,
-nickname:nickname,
-full_name:full_name
+  user_id: user.id,
+  caption: caption,
+  nickname: nickname,
+  full_name: full_name,
+  batch_id: batchId  // ✅ IMPORTANT: Add batch_id
 })
 .select()
 .single()
@@ -186,39 +205,44 @@ full_name:full_name
 
 if(error){
 
-console.log(error)
+console.log("Post creation error:", error)
 
-alert("Post creation failed")
+alert("Post creation failed: " + (error.message || "Unknown error"))
 
 return
 
 }
 
+console.log('Post created:', post)
+
 
 
 // UPLOAD IMAGES
+let uploadedCount = 0
+
 for(let i=0;i<files.length;i++){
 
 const file=files[i]
 
-const fileName=`${post.id}_${Date.now()}_${file.name}`
+const fileName=`${post.id}_${Date.now()}_${i}_${file.name}`
 
+console.log('Uploading image:', fileName)
 
 const { error:uploadError } =
 await db.storage
 .from("post-images")
-.upload(fileName,file)
+.upload(fileName, file)
 
 
 if(uploadError){
 
-console.log("Upload error:",uploadError)
+console.log("Upload error:", uploadError)
 
 continue
 
 }
 
-
+uploadedCount++
 
 const { data } =
 db.storage
@@ -226,31 +250,33 @@ db.storage
 .getPublicUrl(fileName)
 
 
-const imageUrl=data.publicUrl
+const imageUrl = data.publicUrl
+
+console.log('Image URL:', imageUrl)
 
 
 
 const { error:insertError } =
 await db.from("post_images").insert({
 
-post_id:post.id,
+post_id: post.id,
 
-image_url:imageUrl,
+image_url: imageUrl,
 
-position:i
+position: i
 
 })
 
 
 if(insertError){
 
-console.log("Insert post_image failed:",insertError)
+console.log("Insert post_image failed:", insertError)
 
 }
 
 }
 
-
+console.log(`Uploaded ${uploadedCount} out of ${files.length} images`)
 
 alert("Post created successfully!")
 
@@ -264,3 +290,4 @@ window.location.href="home.html"
 
 </body>
 </html>
+
