@@ -1,5 +1,6 @@
 // ==========================================
 // FCM - BATCH-ISOLATED NOTIFICATIONS ONLY
+// FIXED VERSION - NO student_id
 // ==========================================
 
 // Get current user and batch info
@@ -19,7 +20,7 @@ if (batchStr) {
   currentBatchId = batch?.batchId;
 }
 
-console.log('Notifications config:', { currentUserId, currentBatchId });
+console.log('🔔 FCM Config:', { currentUserId, currentBatchId });
 
 // ==========================================
 // LISTEN FOR MESSAGES FROM BATCHMATES ONLY
@@ -39,7 +40,7 @@ async function setupBatchNotificationListener() {
       return;
     }
 
-    console.log('Setting up batch notification listener for:', currentBatchId);
+    console.log('🔔 Setting up batch notification listener for:', currentBatchId);
 
     // Subscribe to new messages in THIS BATCH ONLY
     db.channel(`batch-${currentBatchId}:fcm`)
@@ -52,6 +53,8 @@ async function setupBatchNotificationListener() {
         },
         (payload) => {
           const message = payload.new;
+
+          console.log('📨 New message received:', message);
 
           // Don't notify for own messages
           if (message.user_id === currentUserId) {
@@ -83,12 +86,17 @@ async function setupBatchNotificationListener() {
 
 function showNotification(message) {
   if ('Notification' in window && Notification.permission === 'granted') {
-    new Notification(message.username || 'New Message', {
-      body: message.message?.substring(0, 100) || '📷 Sent an image',
-      badge: '/icon.png',
-      icon: '/icon.png',
-      tag: `batch-${currentBatchId}`
-    });
+    try {
+      new Notification(message.username || 'New Message', {
+        body: message.message?.substring(0, 100) || '📷 Sent an image',
+        badge: '/icon.png',
+        icon: '/icon.png',
+        tag: `batch-${currentBatchId}`
+      });
+      console.log('✅ Notification shown');
+    } catch (err) {
+      console.error('Error showing notification:', err);
+    }
   }
 }
 
@@ -97,18 +105,21 @@ function showNotification(message) {
 // ==========================================
 
 window.addEventListener('load', () => {
+  console.log('🔔 FCM initializing...');
+  
   // Wait for db to be ready
   let attempts = 0;
   const checkInterval = setInterval(() => {
     if (window.db && currentBatchId && currentUserId) {
       clearInterval(checkInterval);
+      console.log('✅ DB ready, setting up listener');
       setupBatchNotificationListener();
       requestNotificationPermission();
     }
     attempts++;
     if (attempts > 50) {
       clearInterval(checkInterval);
-      console.error('Database not ready');
+      console.error('Database not ready after timeout');
     }
   }, 100);
 });
@@ -120,10 +131,12 @@ window.addEventListener('load', () => {
 function requestNotificationPermission() {
   if ('Notification' in window && Notification.permission === 'default') {
     Notification.requestPermission().then((permission) => {
-      console.log('Notification permission:', permission);
+      console.log('🔔 Notification permission:', permission);
+    }).catch(err => {
+      console.error('Error requesting notification permission:', err);
     });
   }
 }
 
-console.log('Batch notification handler loaded');
+console.log('✅ Batch notification handler loaded - NO student_id references');
 
