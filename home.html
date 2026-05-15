@@ -317,6 +317,7 @@ async function loadStudents() {
 }
 
 // ── RENDER STUDENTS ──────────────────────────────────────
+
 function renderStudents(students) {
   const list = document.getElementById('studentList');
 
@@ -342,9 +343,9 @@ function renderStudents(students) {
         </div>
       </div>
 
-      <!-- Status badge -->
-      <div class="text-xs font-semibold px-2 py-1 rounded-full flex-shrink-0 whitespace-nowrap ${s.is_approved === true ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}">
-        ${s.is_approved === true ? 'Approved' : 'Not approved yet'}
+      <!-- Status badge - FIXED to handle string or boolean -->
+      <div class="text-xs font-semibold px-2 py-1 rounded-full flex-shrink-0 whitespace-nowrap ${(s.is_approved === true || s.is_approved === 'true') ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}">
+        ${(s.is_approved === true || s.is_approved === 'true') ? 'Approved' : 'Not approved yet'}
       </div>
 
     </div>
@@ -371,13 +372,14 @@ function openProfileModal(student) {
   document.getElementById('profileRoll').textContent = student.roll_no ? `Roll No: ${student.roll_no}` : '';
 
   const statusEl = document.getElementById('profileStatus');
-  if (student.is_approved === true) {
-    statusEl.textContent = '✓ Approved Student';
-    statusEl.className = 'text-xs px-3 py-1 rounded-full font-semibold bg-green-500/20 text-green-400';
-  } else {
-    statusEl.textContent = '⏳ Pending Approval';
-    statusEl.className = 'text-xs px-3 py-1 rounded-full font-semibold bg-red-500/20 text-red-400';
-  }
+  
+if (student.is_approved === true || student.is_approved === 'true') {
+  statusEl.textContent = '✓ Approved Student';
+  statusEl.className = 'text-xs px-3 py-1 rounded-full font-semibold bg-green-500/20 text-green-400';
+} else {
+  statusEl.textContent = '⏳ Pending Approval';
+  statusEl.className = 'text-xs px-3 py-1 rounded-full font-semibold bg-red-500/20 text-red-400';
+}
 
   document.getElementById('profileModal').classList.remove('hidden');
 }
