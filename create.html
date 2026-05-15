@@ -189,15 +189,16 @@ console.log('Student Info:', { nickname, full_name })
 
 
 
-// CREATE POST WITH batch_id ✅
+// CREATE POST WITH CORRECT COLUMNS ✅
+// posts table has: id, user_id, caption, batch_id, nickname, full_name, created_at
 const { data:post, error } = await db
 .from("posts")
 .insert({
-  user_id: user.id,
-  caption: caption,
-  nickname: nickname,
-  full_name: full_name,
-  batch_id: batchId  // ✅ IMPORTANT: Add batch_id
+  user_id: user.id,           // ✅ User who created post
+  caption: caption,            // ✅ Post caption
+  nickname: nickname,          // ✅ User's nickname
+  full_name: full_name,        // ✅ User's full name
+  batch_id: batchId            // ✅ Which batch created it
 })
 .select()
 .single()
