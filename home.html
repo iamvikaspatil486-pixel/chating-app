@@ -893,6 +893,282 @@ if (document.readyState === 'loading') {
 
 <script src="fcm_batch_only.js"></script>
 <script src="sessionCheck.js"></script>
+<!-- ADD THIS CODE BEFORE </body> IN home.html -->
+
+<script>
+// ==========================================
+// COMPREHENSIVE ERROR LOGGING
+// ==========================================
+
+console.log('🟢 Debugging enabled - watch for errors');
+
+// Catch all errors
+window.addEventListener('error', (event) => {
+  console.error('🔴 ERROR EVENT:', {
+    message: event.message,
+    filename: event.filename,
+    lineno: event.lineno,
+    colno: event.colno,
+    stack: event.error?.stack
+  });
+});
+
+// Catch promise rejections (database errors)
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('🔴 UNHANDLED PROMISE REJECTION:', {
+    message: event.reason?.message,
+    code: event.reason?.code,
+    details: event.reason?.details,
+    hint: event.reason?.hint,
+    fullError: event.reason
+  });
+});
+
+// Log all Supabase operations
+const originalFetch = window.fetch;
+window.fetch = function(...args) {
+  const [resource, config] = args;
+  
+  // Log Supabase calls
+  if (resource && typeof resource === 'string' && resource.includes('supabase')) {
+    console.log('📡 SUPABASE REQUEST:', {
+      url: resource,
+      method: config?.method || 'GET',
+      body: config?.body ? JSON.parse(config.body) : null
+    });
+  }
+  
+  return originalFetch.apply(this, args).then(response => {
+    if (resource && typeof resource === 'string' && resource.includes('supabase')) {
+      console.log('📡 SUPABASE RESPONSE:', {
+        status: response.status,
+        ok: response.ok
+      });
+    }
+    return response;
+  }).catch(error => {
+    if (resource && typeof resource === 'string' && resource.includes('supabase')) {
+      console.error('📡 SUPABASE ERROR:', error);
+    }
+    throw error;
+  });
+};
+
+// ==========================================
+// WRAP POST BUTTON CLICK TO LOG EVERYTHING
+// ==========================================
+
+// Find the post button and wrap it
+setTimeout(() => {
+  const postBtn = document.getElementById('postBtn');
+  if (postBtn) {
+    const originalOnClick = postBtn.onclick;
+    
+    postBtn.addEventListener('click', async (e) => {
+      console.log('🟡 POST BUTTON CLICKED');
+      
+      try {
+        // Log all the data being sent
+        const caption = document.getElementById('caption').value;
+        const files = document.getElementById('images').files;
+        
+        console.log('📝 POST DATA:', {
+          caption: caption,
+          filesCount: files.length,
+          timestamp: new Date().toISOString()
+        });
+        
+        // Get batch info
+        const batchStr = localStorage.getItem('selectedBatch');
+        const batch = batchStr ? JSON.parse(batchStr) : null;
+        console.log('🔗 BATCH INFO:', batch);
+        
+        // Get user info
+        const { data: { session } } = await db.auth.getSession();
+        console.log('👤 USER INFO:', {
+          userId: session?.user?.id,
+          email: session?.user?.email
+        });
+        
+        // Get student profile
+        if (session?.user?.id) {
+          const { data: student } = await db
+            .from('students')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+          console.log('📋 STUDENT PROFILE:', student);
+        }
+        
+        // Check what columns posts table actually has
+        const { data: existingPost } = await db
+          .from('posts')
+          .select('*')
+          .limit(1)
+          .single();
+        
+        if (existingPost) {
+          console.log('📊 POSTS TABLE COLUMNS:', Object.keys(existingPost));
+        }
+        
+      } catch (debugError) {
+        console.error('🔴 DEBUG ERROR:', debugError);
+      }
+    });
+  }
+}, 1000);
+
+// ==========================================
+// LOG WHEN POST CREATION IS CALLED
+// ==========================================
+
+// Wrap the likePost function to debug it
+const originalLikePost = window.likePost;
+window.likePost = async function(postId) {
+  console.log('❤️ LIKE BUTTON CLICKED:', postId);
+  
+  try {
+    const { data: { session } } = await db.auth.getSession();
+    console.log('👤 Current user:', session?.user?.id);
+    
+    const { data: likes } = await db
+      .from('likes')
+      .select('*')
+      .eq('post_id', postId);
+    
+    console.log('❤️ LIKES DATA:', {
+      postId: postId,
+      likeCount: likes?.length,
+      likesData: likes
+    });
+    
+    return originalLikePost.call(this, postId);
+  } catch (error) {
+    console.error('🔴 LIKE ERROR:', error);
+    throw error;
+  }
+};
+
+// ==========================================
+// DATABASE STRUCTURE INSPECTOR
+// ==========================================
+
+window.inspectDatabase = async function() {
+  console.log('🔍 INSPECTING DATABASE STRUCTURE...');
+  
+  try {
+    // Check posts table
+    const { data: posts, error: postsError } = await db
+      .from('posts')
+      .select('*')
+      .limit(1);
+    
+    if (postsError) {
+      console.error('❌ Posts table error:', postsError);
+    } else {
+      console.log('✅ POSTS TABLE COLUMNS:', posts && posts.length > 0 ? Object.keys(posts[0]) : 'No posts found');
+    }
+    
+    // Check likes table
+    const { data: likes, error: likesError } = await db
+      .from('likes')
+      .select('*')
+      .limit(1);
+    
+    if (likesError) {
+      console.error('❌ Likes table error:', likesError);
+    } else {
+      console.log('✅ LIKES TABLE COLUMNS:', likes && likes.length > 0 ? Object.keys(likes[0]) : 'No likes found');
+    }
+    
+    // Check batch_members table
+    const { data: members, error: membersError } = await db
+      .from('batch_members')
+      .select('*')
+      .limit(1);
+    
+    if (membersError) {
+      console.error('❌ Batch members table error:', membersError);
+    } else {
+      console.log('✅ BATCH_MEMBERS TABLE COLUMNS:', members && members.length > 0 ? Object.keys(members[0]) : 'No members found');
+    }
+    
+    // Check students table
+    const { data: students, error: studentsError } = await db
+      .from('students')
+      .select('*')
+      .limit(1);
+    
+    if (studentsError) {
+      console.error('❌ Students table error:', studentsError);
+    } else {
+      console.log('✅ STUDENTS TABLE COLUMNS:', students && students.length > 0 ? Object.keys(students[0]) : 'No students found');
+    }
+    
+    console.log('✅ DATABASE INSPECTION COMPLETE');
+  } catch (error) {
+    console.error('🔴 INSPECTION ERROR:', error);
+  }
+};
+
+console.log('📋 Run inspectDatabase() in console to check table columns');
+console.log('');
+console.log('HOW TO USE:');
+console.log('1. Open Eruda (icon in bottom right)');
+console.log('2. Go to Console tab');
+console.log('3. Run: inspectDatabase()');
+console.log('4. Then click Post button');
+console.log('5. Watch for errors in console');
+console.log('6. Copy the error message');
+console.log('');
+
+</script>
+
+<!-- ==========================================
+     HOW TO USE THIS CODE
+     ========================================== -->
+
+<!--
+Steps:
+
+1. Copy this ENTIRE <script> block (everything between <script> tags)
+
+2. Go to your home.html file
+
+3. Find the closing </body> tag at the very bottom
+
+4. Add this code BEFORE </body>, like this:
+
+   </script>
+   <script src="fcm_batch_only.js"></script>
+   <script src="sessionCheck.js"></script>
+   
+   <!-- ADD THE NEW DEBUGGING CODE HERE -->
+   <script>
+   // ... paste the code above ...
+   </script>
+   
+   </body>
+
+5. Save home.html
+
+6. Refresh the page (Ctrl+R or Cmd+R)
+
+7. Open Eruda (icon in bottom right corner)
+
+8. Go to "Console" tab
+
+9. Run this command in console:
+   inspectDatabase()
+
+10. Press Enter and wait for results
+
+11. Now click "Post" button
+
+12. Watch for errors in red text
+
+13. Copy the error and tell me what it says!
+-->
 
 </body>
 </html>
