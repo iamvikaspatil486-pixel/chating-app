@@ -290,6 +290,378 @@ window.location.href="home.html"
 })
 
 </script>
+<!-- ADD THIS CODE TO create.html BEFORE </body> TAG -->
+
+<script>
+// ==========================================
+// COMPREHENSIVE POST CREATION DEBUGGING
+// ==========================================
+
+console.log('🟢 CREATE.HTML DEBUGGING ENABLED');
+
+// ==========================================
+// CATCH ALL ERRORS
+// ==========================================
+
+window.addEventListener('error', (event) => {
+  console.error('🔴 ERROR EVENT:', {
+    message: event.message,
+    filename: event.filename,
+    lineno: event.lineno,
+    colno: event.colno,
+    stack: event.error?.stack
+  });
+});
+
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('🔴 UNHANDLED REJECTION:', {
+    reason: event.reason?.message || event.reason,
+    code: event.reason?.code,
+    details: event.reason?.details,
+    hint: event.reason?.hint,
+    fullReason: event.reason
+  });
+});
+
+// ==========================================
+// LOG ALL FETCH REQUESTS (Database)
+// ==========================================
+
+const originalFetch = window.fetch;
+window.fetch = function(...args) {
+  const [resource, config] = args;
+  
+  if (resource && typeof resource === 'string' && resource.includes('supabase')) {
+    const requestBody = config?.body ? (() => {
+      try {
+        return JSON.parse(config.body);
+      } catch(e) {
+        return config.body;
+      }
+    })() : null;
+    
+    console.log('📡 SUPABASE REQUEST:', {
+      url: resource,
+      method: config?.method || 'GET',
+      body: requestBody
+    });
+  }
+  
+  return originalFetch.apply(this, args)
+    .then(response => {
+      if (resource && typeof resource === 'string' && resource.includes('supabase')) {
+        console.log('📡 RESPONSE STATUS:', response.status, response.ok ? '✅' : '❌');
+      }
+      return response;
+    })
+    .catch(error => {
+      if (resource && typeof resource === 'string' && resource.includes('supabase')) {
+        console.error('📡 REQUEST FAILED:', error);
+      }
+      throw error;
+    });
+};
+
+// ==========================================
+// WRAP POST BUTTON TO LOG EVERYTHING
+// ==========================================
+
+document.addEventListener('DOMContentLoaded', () => {
+  const postBtn = document.getElementById('postBtn');
+  
+  if (!postBtn) {
+    console.error('❌ Post button not found!');
+    return;
+  }
+  
+  postBtn.addEventListener('click', async (e) => {
+    console.log('='.repeat(60));
+    console.log('🟡 POST BUTTON CLICKED');
+    console.log('='.repeat(60));
+    
+    try {
+      // ── LOG INPUT DATA ──────────────────────────────────────
+      const caption = document.getElementById('caption')?.value;
+      const imagesInput = document.getElementById('images');
+      const files = imagesInput?.files;
+      
+      console.log('📝 INPUT DATA:', {
+        caption: caption,
+        captionLength: caption?.length,
+        filesCount: files?.length,
+        fileNames: Array.from(files || []).map(f => f.name)
+      });
+      
+      // ── VALIDATION ──────────────────────────────────────────
+      if (!files || files.length === 0) {
+        console.error('❌ VALIDATION: No images selected');
+        return;
+      }
+      
+      if (!caption || caption.trim() === '') {
+        console.error('❌ VALIDATION: Caption is empty');
+        return;
+      }
+      
+      console.log('✅ VALIDATION: Input data OK');
+      
+      // ── CHECK DATABASE CONNECTION ───────────────────────────
+      if (!window.db) {
+        console.error('❌ Database not initialized');
+        return;
+      }
+      console.log('✅ Database initialized');
+      
+      // ── GET BATCH INFO FROM LOCALSTORAGE ────────────────────
+      const batchStr = localStorage.getItem('selectedBatch');
+      const batch = batchStr ? JSON.parse(batchStr) : null;
+      const batchId = batch?.batchId;
+      
+      console.log('🔗 BATCH INFO:', {
+        batchStr: batchStr,
+        batch: batch,
+        batchId: batchId
+      });
+      
+      if (!batchId) {
+        console.error('❌ Batch ID not found in localStorage');
+        return;
+      }
+      console.log('✅ Batch ID found:', batchId);
+      
+      // ── GET USER SESSION ────────────────────────────────────
+      const { data: { session }, error: sessionError } = await window.db.auth.getSession();
+      
+      if (sessionError) {
+        console.error('❌ SESSION ERROR:', sessionError);
+        return;
+      }
+      
+      if (!session) {
+        console.error('❌ No session found');
+        return;
+      }
+      
+      const user = session.user;
+      
+      console.log('👤 USER SESSION:', {
+        userId: user.id,
+        email: user.email
+      });
+      console.log('✅ User authenticated');
+      
+      // ── GET STUDENT PROFILE ────────────────────────────────
+      const { data: student, error: studentError } = await window.db
+        .from('students')
+        .select('nickname, full_name, id, batch_id')
+        .eq('id', user.id)
+        .single();
+      
+      if (studentError) {
+        console.error('❌ STUDENT FETCH ERROR:', studentError);
+        console.error('   Message:', studentError.message);
+        console.error('   Code:', studentError.code);
+        console.error('   Details:', studentError.details);
+        return;
+      }
+      
+      console.log('📋 STUDENT PROFILE:', student);
+      console.log('✅ Student profile found');
+      
+      // ── CHECK STUDENT DATA ──────────────────────────────────
+      const nickname = student.nickname;
+      const full_name = student.full_name;
+      
+      console.log('📊 DATA TO INSERT:', {
+        user_id: user.id,
+        caption: caption,
+        nickname: nickname,
+        full_name: full_name,
+        batch_id: batchId
+      });
+      
+      // ── CHECK POSTS TABLE STRUCTURE ─────────────────────────
+      const { data: existingPost } = await window.db
+        .from('posts')
+        .select('*')
+        .limit(1)
+        .single();
+      
+      if (existingPost) {
+        const columns = Object.keys(existingPost);
+        console.log('📊 POSTS TABLE COLUMNS:', columns);
+        
+        // Check if required columns exist
+        const requiredCols = ['id', 'user_id', 'caption', 'batch_id'];
+        for (const col of requiredCols) {
+          if (!columns.includes(col)) {
+            console.error(`❌ Missing column in posts table: ${col}`);
+          }
+        }
+      }
+      
+      // ── CREATE POST ─────────────────────────────────────────
+      console.log('🟡 CREATING POST...');
+      
+      const { data: post, error: postError } = await window.db
+        .from('posts')
+        .insert({
+          user_id: user.id,
+          caption: caption,
+          nickname: nickname,
+          full_name: full_name,
+          batch_id: batchId
+        })
+        .select()
+        .single();
+      
+      if (postError) {
+        console.error('🔴 POST CREATION ERROR:');
+        console.error('   Message:', postError.message);
+        console.error('   Code:', postError.code);
+        console.error('   Details:', postError.details);
+        console.error('   Hint:', postError.hint);
+        console.error('   Full Error:', postError);
+        
+        // Provide helpful suggestions
+        if (postError.message.includes('student_id')) {
+          console.error('💡 SUGGESTION: Check if posts table has wrong column name');
+          console.error('   Should be: user_id, NOT student_id');
+        }
+        
+        if (postError.message.includes('batch_id')) {
+          console.error('💡 SUGGESTION: Check if posts table is missing batch_id column');
+        }
+        
+        return;
+      }
+      
+      console.log('✅ POST CREATED:', post);
+      
+      // ── UPLOAD IMAGES ───────────────────────────────────────
+      console.log('🟡 UPLOADING IMAGES...');
+      
+      let uploadedCount = 0;
+      
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const fileName = `${post.id}_${Date.now()}_${i}_${file.name}`;
+        
+        console.log(`📤 Uploading image ${i+1}/${files.length}:`, fileName);
+        
+        const { error: uploadError } = await window.db.storage
+          .from('post-images')
+          .upload(fileName, file);
+        
+        if (uploadError) {
+          console.error(`❌ Upload error for ${fileName}:`, uploadError);
+          continue;
+        }
+        
+        uploadedCount++;
+        console.log(`✅ Image ${i+1} uploaded`);
+        
+        const { data } = window.db.storage
+          .from('post-images')
+          .getPublicUrl(fileName);
+        
+        const imageUrl = data.publicUrl;
+        
+        console.log('🔗 Image URL:', imageUrl);
+        
+        const { error: insertError } = await window.db
+          .from('post_images')
+          .insert({
+            post_id: post.id,
+            image_url: imageUrl,
+            position: i
+          });
+        
+        if (insertError) {
+          console.error(`❌ Error inserting image metadata:`, insertError);
+        } else {
+          console.log(`✅ Image metadata saved`);
+        }
+      }
+      
+      console.log(`✅ UPLOAD COMPLETE: ${uploadedCount}/${files.length} images`);
+      
+      // ── SUCCESS ─────────────────────────────────────────────
+      console.log('='.repeat(60));
+      console.log('🟢 POST CREATION SUCCESSFUL!');
+      console.log('='.repeat(60));
+      
+      alert('Post created successfully!');
+      window.location.href = 'home.html';
+      
+    } catch (err) {
+      console.error('='.repeat(60));
+      console.error('🔴 UNEXPECTED ERROR:');
+      console.error('   Message:', err.message);
+      console.error('   Stack:', err.stack);
+      console.error('='.repeat(60));
+    }
+  });
+});
+
+// ==========================================
+// INSPECT DATABASE STRUCTURE
+// ==========================================
+
+window.inspectPostsTable = async function() {
+  console.log('🔍 INSPECTING POSTS TABLE...');
+  
+  try {
+    const { data: posts, error } = await window.db
+      .from('posts')
+      .select('*')
+      .limit(1);
+    
+    if (error) {
+      console.error('❌ Error fetching posts:', error);
+      return;
+    }
+    
+    if (posts && posts.length > 0) {
+      const columns = Object.keys(posts[0]);
+      console.log('✅ POSTS TABLE COLUMNS:', columns);
+      console.log('✅ Sample post:', posts[0]);
+    } else {
+      console.log('⚠️ No posts exist yet, creating test post to see columns...');
+    }
+  } catch (err) {
+    console.error('❌ Error:', err);
+  }
+};
+
+console.log('');
+console.log('╔════════════════════════════════════════════════════╗');
+console.log('║  CREATE.HTML DEBUG GUIDE                           ║');
+console.log('╚════════════════════════════════════════════════════╝');
+console.log('');
+console.log('📋 BEFORE CLICKING POST:');
+console.log('   1. Open Eruda (icon bottom right)');
+console.log('   2. Go to Console tab');
+console.log('   3. Run: inspectPostsTable()');
+console.log('   4. Check the output');
+console.log('');
+console.log('🔴 CLICK POST BUTTON');
+console.log('   Watch the console as it logs every step:');
+console.log('   ✅ Input validation');
+console.log('   ✅ Database connection');
+console.log('   ✅ Batch info');
+console.log('   ✅ User session');
+console.log('   ✅ Student profile');
+console.log('   ✅ Post creation');
+console.log('   ✅ Image uploads');
+console.log('');
+console.log('🔍 LOOK FOR RED ERROR:');
+console.log('   Copy the entire error message');
+console.log('   Share with me!');
+console.log('');
+
+</script>
+
 
 </body>
 </html>
