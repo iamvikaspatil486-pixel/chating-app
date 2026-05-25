@@ -197,7 +197,7 @@ const { data:post, error } = await db
 .from("posts")
 .insert({
   user_id: user.id,   
-  studen_id:user.id// ✅ User who created post
+  // ✅ User who created post
   caption: caption,            // ✅ Post caption
   nickname: nickname,          // ✅ User's nickname
   full_name: full_name,        // ✅ User's full name
@@ -666,4 +666,3 @@ console.log('');
 
 </body>
 </html>
-
